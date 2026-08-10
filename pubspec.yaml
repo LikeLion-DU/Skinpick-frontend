@@ -1,0 +1,49 @@
+name: skinplate
+description: 오늘의 피부를 위한 오늘의 한 끼
+publish_to: 'none'
+version: 0.1.0+1
+
+environment:
+  sdk: '>=3.5.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # 상태관리
+  flutter_riverpod: ^2.5.1
+  riverpod_annotation: ^2.3.5
+
+  # 라우팅
+  go_router: ^14.2.7
+
+  # 네트워크
+  dio: ^5.7.0
+
+  # 모델
+  freezed_annotation: ^2.4.4
+  json_annotation: ^4.9.0
+
+  # 저장소
+  flutter_secure_storage: ^9.2.2
+
+  # 카메라 · 이미지
+  image_picker: ^1.1.2
+  camera: ^0.11.0                       # 실시간 얼굴 게이트용 프리뷰
+  flutter_image_compress: ^2.3.0
+  image: ^4.2.0                         # 얼굴 크롭 + 평균 휘도 계산
+
+  # 온디바이스 얼굴 감지 (게이트 + 크롭 전용, 피부 판정에는 쓰지 않는다)
+  google_mlkit_face_detection: ^0.11.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+  build_runner: ^2.4.13
+  freezed: ^2.5.7
+  json_serializable: ^6.8.0
+  riverpod_generator: ^2.4.3
+
+flutter:
+  uses-material-design: true
