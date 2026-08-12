@@ -1,6 +1,5 @@
-import 'dart:io';
-
 import 'package:dio/dio.dart';
+import 'package:image_picker/image_picker.dart';
 
 import '../../../../core/network/api_call.dart';
 import '../../../../shared/enums/plate_action_code.dart';
@@ -12,9 +11,9 @@ class PlateRemoteDataSource {
   final Dio _dio;
 
   /// [skinAnalysisId] 를 생략하면 서버가 그 사용자의 최신 피부 분석을 자동으로 쓴다.
-  Future<SkinPlateDto> create(File image, {int? skinAnalysisId}) async {
+  Future<SkinPlateDto> create(XFile image, {int? skinAnalysisId}) async {
     final formData = FormData.fromMap(<String, dynamic>{
-      'image': await MultipartFile.fromFile(image.path, filename: 'food.jpg'),
+      'image': MultipartFile.fromBytes(await image.readAsBytes(), filename: 'food.jpg'),
       if (skinAnalysisId != null) 'skinAnalysisId': skinAnalysisId,
     });
 

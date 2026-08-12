@@ -1,9 +1,9 @@
 import 'dart:async';
-import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
 
 import '../../../../app/router/app_router.dart';
 import '../../../../core/utils/photo_picker.dart';
@@ -18,7 +18,7 @@ class SkinCapturePage extends ConsumerWidget {
   const SkinCapturePage({super.key});
 
   Future<void> _start(
-      BuildContext context, WidgetRef ref, Future<File?> Function() pick) async {
+      BuildContext context, WidgetRef ref, Future<XFile?> Function() pick) async {
     final image = await pick();
     if (image == null || !context.mounted) return;
 

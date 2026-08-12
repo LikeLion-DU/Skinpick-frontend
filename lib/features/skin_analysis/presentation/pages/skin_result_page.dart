@@ -37,10 +37,10 @@ class SkinResultPage extends ConsumerWidget {
       body: ListView(
         padding: const EdgeInsets.all(24),
         children: [
-          if (state.image != null)
+          if (state.imageBytes != null)
             ClipRRect(
               borderRadius: BorderRadius.circular(16),
-              child: Image.file(state.image!, height: 180, fit: BoxFit.cover),
+              child: Image.memory(state.imageBytes!, height: 180, fit: BoxFit.cover),
             ),
           const SizedBox(height: 24),
           Center(child: ScoreGauge(score: analysis.skinScore, label: 'Skin Score')),

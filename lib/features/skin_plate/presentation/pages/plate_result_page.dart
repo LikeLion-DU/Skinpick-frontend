@@ -79,10 +79,10 @@ class _Content extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.all(24),
       children: [
-        if (state.image != null)
+        if (state.imageBytes != null)
           ClipRRect(
             borderRadius: BorderRadius.circular(16),
-            child: Image.file(state.image!, height: 180, fit: BoxFit.cover),
+            child: Image.memory(state.imageBytes!, height: 180, fit: BoxFit.cover),
           ),
         const SizedBox(height: 16),
         Text(plate.food.foodName, style: Theme.of(context).textTheme.titleLarge),

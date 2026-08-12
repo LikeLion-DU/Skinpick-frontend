@@ -1,6 +1,7 @@
-import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_picker/image_picker.dart';
 
 import '../../../../core/di/providers.dart';
 import '../../../../core/result/result.dart';
@@ -14,22 +15,28 @@ final latestSkinAnalysisProvider = FutureProvider<Result<SkinAnalysis?>>(
   (ref) => ref.watch(skinRepositoryProvider).getLatest(),
 );
 
-/// 촬영한 로컬 파일과 분석 결과를 함께 들고 있는다.
+/// 촬영한 사진과 분석 결과를 함께 들고 있는다.
 ///
 /// 이미지가 상태에 있어야 하는 이유 — 결과 화면(S05)은 서버가 준 URL 이 아니라
-/// **앱이 방금 찍은 로컬 파일**을 띄운다. 서버는 사진을 저장하지 않는다. (PRD §9.6)
+/// **앱이 방금 찍은 사진**을 띄운다. 서버는 사진을 저장하지 않는다. (PRD §9.6)
+///
+/// 경로가 아니라 바이트를 들고 있는다. 웹에는 파일 경로가 없어서 Image.file 이
+/// 런타임에 던진다. Image.memory 는 웹·모바일이 같은 코드로 돈다.
 class SkinAnalysisState {
   const SkinAnalysisState({
-    this.image,
+    this.imageBytes,
     this.analysis = const AsyncData<SkinAnalysis?>(null),
   });
 
-  final File? image;
+  final Uint8List? imageBytes;
   final AsyncValue<SkinAnalysis?> analysis;
 
-  SkinAnalysisState copyWith({File? image, AsyncValue<SkinAnalysis?>? analysis}) =>
+  SkinAnalysisState copyWith({
+    Uint8List? imageBytes,
+    AsyncValue<SkinAnalysis?>? analysis,
+  }) =>
       SkinAnalysisState(
-        image: image ?? this.image,
+        imageBytes: imageBytes ?? this.imageBytes,
         analysis: analysis ?? this.analysis,
       );
 }
@@ -42,8 +49,11 @@ class SkinAnalysisNotifier extends Notifier<SkinAnalysisState> {
   @override
   SkinAnalysisState build() => const SkinAnalysisState();
 
-  Future<void> analyze(File image) async {
-    state = SkinAnalysisState(image: image, analysis: const AsyncLoading());
+  Future<void> analyze(XFile image) async {
+    state = SkinAnalysisState(
+      imageBytes: await image.readAsBytes(),
+      analysis: const AsyncLoading(),
+    );
 
     final result = await ref.read(skinRepositoryProvider).analyze(image);
 

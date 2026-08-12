@@ -1,6 +1,7 @@
-import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_picker/image_picker.dart';
 
 import '../../../../core/di/providers.dart';
 import '../../../../shared/enums/plate_action_code.dart';
@@ -12,13 +13,14 @@ import '../../domain/entities/skin_plate.dart';
 /// "점수가 60인데 시뮬 결과는 이전 음식 것"인 순간이 생긴다.
 class PlateState {
   const PlateState({
-    this.image,
+    this.imageBytes,
     this.plate = const AsyncData<SkinPlate?>(null),
     this.simulation,
     this.simulating = false,
   });
 
-  final File? image;
+  /// 경로가 아니라 바이트다. 웹에는 파일 경로가 없어 Image.file 이 런타임에 던진다.
+  final Uint8List? imageBytes;
   final AsyncValue<SkinPlate?> plate;
 
   /// 행동을 실행해 본 결과. null 이면 아직 아무 버튼도 안 눌렀다.
@@ -29,14 +31,14 @@ class PlateState {
   int? get displayedScore => simulation?.afterScore ?? plate.value?.plateScore;
 
   PlateState copyWith({
-    File? image,
+    Uint8List? imageBytes,
     AsyncValue<SkinPlate?>? plate,
     PlateSimulation? simulation,
     bool? simulating,
     bool clearSimulation = false,
   }) =>
       PlateState(
-        image: image ?? this.image,
+        imageBytes: imageBytes ?? this.imageBytes,
         plate: plate ?? this.plate,
         simulation: clearSimulation ? null : (simulation ?? this.simulation),
         simulating: simulating ?? this.simulating,
@@ -51,8 +53,11 @@ class PlateNotifier extends Notifier<PlateState> {
   PlateState build() => const PlateState();
 
   /// [skinAnalysisId] 를 생략하면 서버가 최신 피부 분석을 자동으로 쓴다.
-  Future<void> create(File image, {int? skinAnalysisId}) async {
-    state = PlateState(image: image, plate: const AsyncLoading());
+  Future<void> create(XFile image, {int? skinAnalysisId}) async {
+    state = PlateState(
+      imageBytes: await image.readAsBytes(),
+      plate: const AsyncLoading(),
+    );
 
     final result = await ref
         .read(plateRepositoryProvider)

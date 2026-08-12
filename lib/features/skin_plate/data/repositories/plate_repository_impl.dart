@@ -1,4 +1,4 @@
-import 'dart:io';
+import 'package:image_picker/image_picker.dart';
 
 import '../../../../core/network/api_call.dart';
 import '../../../../core/result/result.dart';
@@ -14,7 +14,7 @@ class PlateRepositoryImpl implements PlateRepository {
   final PlateRemoteDataSource _remote;
 
   @override
-  Future<Result<SkinPlate>> create(File image, {int? skinAnalysisId}) =>
+  Future<Result<SkinPlate>> create(XFile image, {int? skinAnalysisId}) =>
       callApi(() async =>
           (await _remote.create(image, skinAnalysisId: skinAnalysisId)).toEntity());
 

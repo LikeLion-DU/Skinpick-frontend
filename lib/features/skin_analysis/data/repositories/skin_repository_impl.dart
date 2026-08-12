@@ -1,4 +1,4 @@
-import 'dart:io';
+import 'package:image_picker/image_picker.dart';
 
 import '../../../../core/network/api_call.dart';
 import '../../../../core/result/result.dart';
@@ -13,7 +13,7 @@ class SkinRepositoryImpl implements SkinRepository {
   final SkinRemoteDataSource _remote;
 
   @override
-  Future<Result<SkinAnalysis>> analyze(File image) =>
+  Future<Result<SkinAnalysis>> analyze(XFile image) =>
       callApi(() async => (await _remote.analyze(image)).toEntity());
 
   @override
