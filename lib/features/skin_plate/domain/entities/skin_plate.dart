@@ -5,6 +5,7 @@ import '../../../../shared/enums/plate_action_code.dart';
 class SkinPlate {
   const SkinPlate({
     required this.id,
+    required this.skinAnalysisId,
     required this.plateScore,
     this.baseScore = 70,
     required this.summary,
@@ -17,6 +18,10 @@ class SkinPlate {
   });
 
   final int id;
+
+  /// 이 Plate 가 어떤 피부 분석을 기준으로 계산됐는지. S08 추천 조회에 쓴다.
+  final int skinAnalysisId;
+
   final int plateScore;
 
   /// 계산 내역 카드의 첫 줄("기본 70"). 앱이 하드코딩하면 클램프된 점수에서 역산이 틀린다.

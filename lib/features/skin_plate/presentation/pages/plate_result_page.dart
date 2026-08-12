@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../app/router/app_router.dart';
 import '../../../../core/error/failure.dart';
 import '../../../../core/widgets/app_widgets.dart';
 import '../../../../shared/enums/plate_action_code.dart';
@@ -133,6 +134,16 @@ class _Content extends StatelessWidget {
 
         const SizedBox(height: 16),
         _ScoreBreakdown(plate: plate),
+
+        const SizedBox(height: 16),
+        // 서버가 이 Plate 의 기준이 된 skinAnalysisId 를 실어 준다.
+        // "최신 피부 분석"을 대신 쓰면 과거 Plate 를 열었을 때 엉뚱한 추천이 뜬다.
+        FilledButton.tonalIcon(
+          onPressed: () =>
+              context.push('${Routes.recommendations}/${plate.skinAnalysisId}'),
+          icon: const Icon(Icons.restaurant_menu),
+          label: const Text('오늘의 추천 음식 보기'),
+        ),
         const SafetyNotice(),
       ],
     );
