@@ -20,7 +20,13 @@ class SkinResultPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(skinAnalysisNotifierProvider);
-    final analysis = state.analysis.value;
+
+    // 방금 찍고 들어온 경우와 홈에서 "자세히 보기"로 들어온 경우가 다르다.
+    // 후자는 Notifier 가 비어 있으므로 최신 기록으로 떨어뜨린다.
+    // 그 경로에는 로컬 사진이 없다 — 서버가 얼굴 사진을 저장하지 않기 때문이고,
+    // 그래서 아래에서 image 가 null 이면 사진 영역을 통째로 뺀다.
+    final analysis = state.analysis.value ??
+        ref.watch(latestSkinAnalysisProvider).value?.dataOrNull;
 
     if (analysis == null) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
