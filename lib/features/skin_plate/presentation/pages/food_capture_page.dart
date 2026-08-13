@@ -10,6 +10,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../app/router/app_router.dart';
 import '../../../../core/utils/photo_picker.dart';
+import '../../../../core/widgets/camera_preview_box.dart';
 import '../../data/datasources/food_gate.dart';
 import '../../domain/entities/food_detection.dart';
 import '../../domain/food_gate_config.dart';
@@ -144,9 +145,12 @@ class _FoodCapturePageState extends ConsumerState<FoodCapturePage>
         return;
       }
 
+      // _set 은 dispose 된 뒤라면 클로저를 통째로 버린다. 그 사이 이 화면이
+      // 사라지면 _controller 가 null 로 남고, dispose 가 걸어둔 _closeCamera 는
+      // null 을 보고 그냥 돌아가 카메라가 영영 안 닫힌다. 먼저 대입해 둔다.
+      _controller = controller;
       await controller.startImageStream(_onFrame);
       _set(() {
-        _controller = controller;
         _cameraError = null;
       });
     } on Object catch (e) {
@@ -220,7 +224,7 @@ class _FoodCapturePageState extends ConsumerState<FoodCapturePage>
       }
       final shot = await controller.takePicture();
       if (!mounted || _disposed) return;
-      _start(shot);
+      await _start(shot);
     } on Object catch (e) {
       if (!mounted || _disposed) return;
       _runCamera(_resumeStream);
@@ -243,7 +247,7 @@ class _FoodCapturePageState extends ConsumerState<FoodCapturePage>
         _set(() => _busy = false);
         return;
       }
-      _start(image);
+      await _start(image);
     } on Object catch (_) {
       _set(() => _busy = false);
     }
@@ -259,8 +263,22 @@ class _FoodCapturePageState extends ConsumerState<FoodCapturePage>
     } on Object catch (_) {}
   }
 
+  Future<void> _stopStream() async {
+    final controller = _controller;
+    if (controller == null) return;
+    try {
+      if (controller.value.isStreamingImages) {
+        await controller.stopImageStream();
+      }
+    } on Object catch (_) {}
+  }
+
   /// 기존 업로드 경로. 게이트가 붙어도 여기부터는 하나도 바뀌지 않는다.
-  void _start(XFile image) {
+  Future<void> _start(XFile image) async {
+    // 갤러리로 들어온 경로는 스트림이 아직 돌고 있다. 안 멈추면 결과 화면에
+    // 머무는 내내 150ms 마다 ML Kit 이 돌고, 돌아왔을 때 천장을 보고 계산한
+    // notFood 가 배너에 남는다.
+    await _stopStream();
     unawaited(ref.read(plateNotifierProvider.notifier).create(image));
 
     // 결과 화면에서 뒤로 돌아왔을 때를 대비해 넘기기 전에 정리한다.
@@ -272,6 +290,7 @@ class _FoodCapturePageState extends ConsumerState<FoodCapturePage>
       _lastObservation = FoodObservation.empty;
     });
 
+    if (!mounted || _disposed) return;
     context.push(Routes.plateResult);
   }
 
@@ -332,7 +351,7 @@ class _FoodCapturePageState extends ConsumerState<FoodCapturePage>
           child: Stack(
             fit: StackFit.expand,
             children: [
-              CameraPreview(_controller!),
+              CameraPreviewBox(_controller!),
               if (kDebugMode)
                 Positioned(top: 8, left: 8, child: _DebugOverlay(_lastObservation)),
               Positioned(

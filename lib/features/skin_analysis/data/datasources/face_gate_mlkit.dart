@@ -114,10 +114,18 @@ class MlKitFaceGate implements FaceGate {
       if (gate is! FaceGateOk) return PreparedPhoto(null, gate);
 
       final cropped = _crop(photo, gate.faceRect);
-      // 얼굴만 1024px → OpenAI detail:"high" 에서 실효 해상도가 3배 이상 올라간다.
-      // 다만 키우지는 않는다 — 갤러리 원본은 PhotoPicker 가 이미 1024px·q80 으로
-      // 줄여 놓아서, 거기서 잘라낸 얼굴을 1024로 늘리면 정보 없이 용량만 늘고
-      // 압축이 두 번 먹는다.
+      // 크롭만으로도 얼굴의 실효 해상도는 크게 올라간다 — 전체 프레임을 보내면
+      // 얼굴이 200px 남짓인데, 잘라내면 그게 곧 이미지 전체가 된다.
+      //
+      // 다만 **1024px 를 채우지는 못한다.** ResolutionPreset.high 가 1280×720 이라
+      // takePicture 원본도 그 크기이고, 얼굴 박스는 프레임의 절반 남짓이라
+      // 크롭 결과가 400~600px 에 머문다. 아래 분기는 사실상 타지 않는다.
+      // 1024 를 실제로 채우려면 프리셋을 veryHigh 이상으로 올려야 하는데,
+      // 같은 컨트롤러가 실시간 스트림도 물고 있어서 ML Kit 처리량과 맞바꿔야 한다.
+      // 기능 동결 전에 성능을 다시 재지 않고 올리지 않는다.
+      //
+      // 키우지는 않는다 — 없는 정보를 만들어내지 못하면서 용량만 늘고 압축이
+      // 두 번 먹는다.
       final resized = cropped.width >= 1024
           ? img.copyResize(cropped, width: 1024)
           : cropped;
@@ -133,7 +141,11 @@ class MlKitFaceGate implements FaceGate {
   }
 
   @override
-  void dispose() => _detector.close();
+  void dispose() {
+    // prepareSkinPhoto 는 close 를 기다리지만 여기서는 기다릴 수 없다(State.dispose).
+    // 그대로 두면 플랫폼 채널 실패가 미처리 zone 오류로 올라온다.
+    _detector.close().ignore();
+  }
 }
 
 /// 촬영 원본에 얼굴이 정확히 하나인지만 본다. 통과해도 원본을 올리지는 않는다 —

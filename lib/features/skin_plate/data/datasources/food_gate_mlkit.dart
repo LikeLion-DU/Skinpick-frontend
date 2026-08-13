@@ -38,5 +38,8 @@ class MlKitFoodGate implements FoodGate {
   }
 
   @override
-  void dispose() => _labeler.close();
+  void dispose() {
+    // State.dispose 에서 불려 기다릴 수 없다. 미처리 zone 오류로 새지 않게 삼킨다.
+    _labeler.close().ignore();
+  }
 }
