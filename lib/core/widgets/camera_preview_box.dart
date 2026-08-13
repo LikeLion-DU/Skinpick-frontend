@@ -20,13 +20,17 @@ class CameraPreviewBox extends StatelessWidget {
     final size = controller.value.previewSize;
     if (size == null) return CameraPreview(controller);
 
-    return FittedBox(
-      fit: BoxFit.cover,
-      // previewSize 는 센서 기준(가로)이라 세로 화면에서는 뒤집어 쓴다.
-      child: SizedBox(
-        width: size.height,
-        height: size.width,
-        child: CameraPreview(controller),
+    // ClipRect 가 없으면 cover 로 확대된 영상이 부모 영역 밖으로 그려져
+    // 아래에 있는 안내 문구와 버튼 위를 덮는다. FittedBox 는 잘라 주지 않는다.
+    return ClipRect(
+      child: FittedBox(
+        fit: BoxFit.cover,
+        // previewSize 는 센서 기준(가로)이라 세로 화면에서는 뒤집어 쓴다.
+        child: SizedBox(
+          width: size.height,
+          height: size.width,
+          child: CameraPreview(controller),
+        ),
       ),
     );
   }
