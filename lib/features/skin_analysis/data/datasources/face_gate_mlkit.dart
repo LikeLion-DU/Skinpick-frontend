@@ -1,12 +1,13 @@
-import 'dart:io' show File, Platform;
+import 'dart:io' show File;
 import 'dart:math' as math;
-import 'dart:ui' show Offset, Rect, Size;
+import 'dart:ui' show Offset, Rect;
 
 import 'package:camera/camera.dart'
     show CameraDescription, CameraImage, ImageFormatGroup, XFile;
 import 'package:google_mlkit_face_detection/google_mlkit_face_detection.dart';
 import 'package:image/image.dart' as img;
 
+import '../../../../core/mlkit/camera_input_image.dart';
 import '../../domain/entities/face_gate_result.dart';
 import '../../domain/face_gate_config.dart';
 import '../../domain/face_gate_rules.dart';
@@ -33,21 +34,10 @@ class MlKitFaceGate implements FaceGate {
   final CameraDescription _camera;
   final FaceDetector _detector;
 
-  /// 프레임을 세우기 위해 되돌려야 하는 각도.
-  ///
-  /// **iOS 는 항상 0이다.** `camera_avfoundation` 은 모든 카메라에
-  /// `sensorOrientation: 90` 을 하드코딩해 놓고(utils.dart) 스트림 출력은
-  /// `.portrait` 로 고정해서 내려준다 — 즉 프레임은 이미 똑바로 서서 온다.
-  /// ML Kit iOS 브리지도 `InputImageMetadata.rotation` 을 아예 보지 않는다.
-  ///
-  /// 그 90을 그대로 믿으면 (a) 가로세로를 바꿔 얼굴 크기 비율이 1.78배로 부풀고
-  /// 40% 게이트가 사실상 22%가 되며, (b) 걸린 적 없는 회전을 되돌리게 되어
-  /// 휘도를 프레임 구석에서 재게 된다.
-  int get _rotationDeg => Platform.isAndroid ? _camera.sensorOrientation : 0;
 
   @override
   Future<FaceGateResult> check(CameraImage frame, FacePhotoType photoType) async {
-    final input = _toInputImage(frame);
+    final input = toInputImage(frame, _camera);
     // 포맷을 못 읽으면 검증을 할 수 없다. 통과시키지 않는다.
     if (input == null) return const FaceGateUnavailable();
 
@@ -56,8 +46,8 @@ class MlKitFaceGate implements FaceGate {
 
     // 센서가 90/270도 돌아 있으면 ML Kit 좌표계는 가로세로가 바뀐 상태다.
     // 여기서 안 맞추면 얼굴 크기 비율이 통째로 틀어져 "조금 더 가까이"만 계속 뜬다.
-    final rotation = _rotationDeg;
-    final rotated = rotation == 90 || rotation == 270;
+    final rotation = rotationDegreesOf(_camera);
+    final rotated = isRotatedQuarter(rotation);
     final orientedHeight = (rotated ? frame.width : frame.height).toDouble();
 
     return evaluateFaceGate(
@@ -77,33 +67,6 @@ class MlKitFaceGate implements FaceGate {
     );
   }
 
-  /// `InputImage.fromBytes` 는 **플랫폼마다 다른 포맷**을 요구한다. 그리고 어긋나도
-  /// 예외가 안 난다 — 검출이 그냥 0개로 나와서 "얼굴을 찾을 수 없어요"만 계속 뜬다.
-  /// 카메라는 멀쩡히 얼굴을 비추고 있는데. 원인을 게이트 조건에서 찾게 되는 실패다.
-  ///
-  /// CameraController 는 반드시 Android nv21 / iOS bgra8888 로 만든다.
-  InputImage? _toInputImage(CameraImage frame) {
-    final format = InputImageFormatValue.fromRawValue(frame.format.raw);
-    if (format == null) return null;
-
-    // 센서 방향을 안 넘기면 세로로 든 폰에서 얼굴이 90도 누운 채로 들어가고,
-    // ML Kit 은 누운 얼굴을 잘 못 찾는다. 게이트가 상시 막히는 원인 1순위다.
-    // (iOS 는 프레임이 이미 서서 오고 ML Kit 이 이 값을 보지도 않는다 — _rotationDeg 주석)
-    final rotation = InputImageRotationValue.fromRawValue(_rotationDeg);
-    if (rotation == null) return null;
-
-    final plane = frame.planes.first;
-
-    return InputImage.fromBytes(
-      bytes: plane.bytes,
-      metadata: InputImageMetadata(
-        size: Size(frame.width.toDouble(), frame.height.toDouble()),
-        rotation: rotation,
-        format: format,
-        bytesPerRow: plane.bytesPerRow,
-      ),
-    );
-  }
 
   @override
   Future<PreparedPhoto> prepareSkinPhoto(
