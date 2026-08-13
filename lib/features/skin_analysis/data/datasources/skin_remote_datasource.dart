@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../../../core/network/api_call.dart';
+import '../../domain/entities/skin_photo_set.dart';
 import '../models/skin_dtos.dart';
 
 class SkinRemoteDataSource {
@@ -9,15 +10,22 @@ class SkinRemoteDataSource {
 
   final Dio _dio;
 
-  /// 파트 이름은 반드시 `image` 다. 다른 이름으로 보내면 서버가 400(INVALID_INPUT)을
-  /// 돌려주는데, 화면에는 "요청 값이 올바르지 않습니다"만 떠서 원인이 안 보인다.
+  /// 파트 이름은 반드시 `front` · `left` · `right` 셋이다. 서버가
+  /// `@RequestPart` 로 셋을 다 요구하므로 하나라도 빠지거나 이름이 다르면
+  /// 400(INVALID_INPUT)이 돌아오는데, 화면에는 "요청 값이 올바르지 않습니다"만
+  /// 떠서 원인이 안 보인다.
   ///
   /// fromFile 이 아니라 fromBytes 를 쓴다. 웹에는 파일 경로가 없다.
   /// 서버는 Content-Type 헤더가 아니라 실제 바이트로 형식을 판별하므로
   /// 파일명·타입을 정확히 맞출 필요는 없다.
-  Future<SkinAnalysisDto> analyze(XFile image) async {
+  Future<SkinAnalysisDto> analyze(SkinPhotoSet photos) async {
+    Future<MultipartFile> part(XFile file, String name) async =>
+        MultipartFile.fromBytes(await file.readAsBytes(), filename: '$name.jpg');
+
     final formData = FormData.fromMap(<String, dynamic>{
-      'image': MultipartFile.fromBytes(await image.readAsBytes(), filename: 'skin.jpg'),
+      'front': await part(photos.front, 'front'),
+      'left': await part(photos.left, 'left'),
+      'right': await part(photos.right, 'right'),
     });
 
     final response = await _dio.post<dynamic>(

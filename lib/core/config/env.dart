@@ -17,10 +17,14 @@ class Env {
 
   static const Duration connectTimeout = Duration(seconds: 10);
 
-  /// 서버 AI 타임아웃이 18초(단발, 재시도 없음)이므로 25초면 충분하다.
+  /// 서버 AI 타임아웃이 25초(단발, 재시도 없음)다. 429 를 한 번 재시도하면
+  /// 최악 `0.1+2+25 ≈ 27초` 이므로 32초로 둔다.
   ///
   /// 이 값이 서버보다 짧으면 서버는 살아서 GPT를 붙들고 있는데 앱만 포기한 상태가
   /// 되고, 사용자가 재시도를 누르면 같은 일이 반복된다. 서버보다 길되,
   /// 무제한(0)으로 두면 네트워크가 끊겼을 때 로딩 화면에서 못 빠져나온다.
-  static const Duration receiveTimeout = Duration(seconds: 25);
+  ///
+  /// 피부 분석이 3장이 되면서 서버 타임아웃이 18 → 25초로 올라갔다. 앱을 25초로
+  /// 두면 서버와 같은 값이라 앱이 먼저 포기할 수 있다. (PRD §17.2)
+  static const Duration receiveTimeout = Duration(seconds: 32);
 }

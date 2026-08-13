@@ -29,11 +29,7 @@ dependencies:
 
   # 카메라 · 이미지
   image_picker: ^1.1.2
-  # camera: ^0.11.0                     # 얼굴 게이트(§9.5) 프리뷰용. 지금은 import하는 코드가 없다.
-  #   camera_android_camerax 가 끌어오는 camera-core 1.5.3 이
-  #   androidx.concurrent.futures.CallbackToFutureAdapter 를 javac 클래스패스에서 못 찾아
-  #   :camera_android_camerax:compileDebugJavaWithJavac 에서 안드로이드 빌드가 깨진다.
-  #   Day 5~6 게이트 착수할 때 버전을 맞춰 다시 넣는다.
+  camera: ^0.11.0                       # 얼굴 게이트(§9.5) 실시간 프리뷰
   flutter_image_compress: ^2.3.0
   image: ^4.2.0                         # 얼굴 크롭 + 평균 휘도 계산
 
