@@ -1,11 +1,11 @@
 import 'dart:typed_data';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:image_picker/image_picker.dart';
 
 import '../../../../core/di/providers.dart';
 import '../../../../core/result/result.dart';
 import '../../domain/entities/skin_analysis.dart';
+import '../../domain/entities/skin_photo_set.dart';
 
 /// 홈(S02)의 "오늘의 Skin Score" 카드용. 기록이 없으면 Success(null) 이다.
 ///
@@ -49,13 +49,14 @@ class SkinAnalysisNotifier extends Notifier<SkinAnalysisState> {
   @override
   SkinAnalysisState build() => const SkinAnalysisState();
 
-  Future<void> analyze(XFile image) async {
+  Future<void> analyze(SkinPhotoSet photos) async {
+    // 결과 화면(S05)에 띄우는 건 정면 한 장이다. 세 장을 다 들고 있을 이유가 없다.
     state = SkinAnalysisState(
-      imageBytes: await image.readAsBytes(),
+      imageBytes: await photos.front.readAsBytes(),
       analysis: const AsyncLoading(),
     );
 
-    final result = await ref.read(skinRepositoryProvider).analyze(image);
+    final result = await ref.read(skinRepositoryProvider).analyze(photos);
 
     state = state.copyWith(
       analysis: result.when(

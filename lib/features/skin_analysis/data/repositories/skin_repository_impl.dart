@@ -1,8 +1,7 @@
-import 'package:image_picker/image_picker.dart';
-
 import '../../../../core/network/api_call.dart';
 import '../../../../core/result/result.dart';
 import '../../domain/entities/skin_analysis.dart';
+import '../../domain/entities/skin_photo_set.dart';
 import '../../domain/repositories/skin_repository.dart';
 import '../datasources/skin_remote_datasource.dart';
 import '../models/skin_dtos.dart';
@@ -13,8 +12,8 @@ class SkinRepositoryImpl implements SkinRepository {
   final SkinRemoteDataSource _remote;
 
   @override
-  Future<Result<SkinAnalysis>> analyze(XFile image) =>
-      callApi(() async => (await _remote.analyze(image)).toEntity());
+  Future<Result<SkinAnalysis>> analyze(SkinPhotoSet photos) =>
+      callApi(() async => (await _remote.analyze(photos)).toEntity());
 
   @override
   Future<Result<SkinAnalysis?>> getLatest() =>
