@@ -81,7 +81,10 @@ class FaceGateBlocked extends FaceGateResult {
 }
 
 /// 웹처럼 게이트를 쓸 수 없는 환경, 또는 프레임 포맷을 읽지 못한 경우.
-/// 촬영 버튼은 항상 열려 있다.
+///
+/// **통과가 아니다.** [FaceGateResult.canCapture] 가 false 라 촬영 버튼은 꺼진다 —
+/// 검증하지 못한 이미지를 "검증 못 했으니 그냥 보낸다" 로 흘려보내면 게이트의
+/// 존재 이유가 사라진다.
 class FaceGateUnavailable extends FaceGateResult {
   const FaceGateUnavailable();
 

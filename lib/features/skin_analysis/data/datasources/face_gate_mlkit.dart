@@ -163,7 +163,9 @@ class MlKitFaceGate implements FaceGate {
       await File(path).writeAsBytes(img.encodeJpg(resized, quality: 80));
       return PreparedPhoto(XFile(path), gate);
     } finally {
-      still.close(); // 안 닫으면 촬영할 때마다 네이티브 검출기가 쌓인다
+      // 기다리지 않으면 네이티브 검출기가 아직 살아 있는 채로 함수가 끝나고,
+      // 닫다가 난 오류는 미처리 비동기 예외가 된다.
+      await still.close();
     }
   }
 

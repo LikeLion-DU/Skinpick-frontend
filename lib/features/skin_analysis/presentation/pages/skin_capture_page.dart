@@ -1,9 +1,11 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:camera/camera.dart';
 import 'package:flutter/foundation.dart'
     show TargetPlatform, defaultTargetPlatform, kDebugMode, kIsWeb;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show DeviceOrientation, SystemChrome;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -59,13 +61,20 @@ class _SkinCapturePageState extends ConsumerState<SkinCapturePage>
   /// 이전 dispose 가 끝나기 전에 initialize 가 돌아 "camera in use" 가 난다.
   Future<void> _cameraLock = Future<void>.value();
 
-  int _stageIndex = 0;
   final Map<FacePhotoType, XFile> _shots = {};
+
+  /// 지금 찍어야 하는 단계. 모아둔 장수에서 유도한다 —
+  /// 따로 증가시키면 두 번 더해져 _stages 범위를 넘는 순간 화면이 죽는다.
+  int get _stageIndex =>
+      math.min(_shots.length, _stages.length - 1);
 
   FaceGateResult? _result;
 
   /// 연속 통과 프레임 수. 자동 촬영은 이 값이 임계치에 닿을 때만 눌린다.
   int _okStreak = 0;
+
+  /// 촬영이 막힌 뒤 자동 촬영을 잠시 멈춰 두는 시각.
+  DateTime _autoCaptureNotBefore = DateTime.fromMillisecondsSinceEpoch(0);
 
   bool _analyzing = false;
   DateTime _lastAnalyzed = DateTime.fromMillisecondsSinceEpoch(0);
@@ -86,6 +95,12 @@ class _SkinCapturePageState extends ConsumerState<SkinCapturePage>
     super.initState();
     WidgetsBinding.instance.addObserver(this);
 
+    // ML Kit 에 넘기는 회전 보정은 세로로 든 상태를 전제로 한다. 가로로 돌리면
+    // 90도 어긋난 프레임이 들어가 검출이 0개가 되고, 얼굴이 화면에 뻔히 보이는데도
+    // "얼굴을 찾을 수 없어요" 에서 영구히 막힌다. 이 화면에서만 세로로 고정한다.
+    unawaited(SystemChrome.setPreferredOrientations(
+        const [DeviceOrientation.portraitUp]));
+
     // 카메라 열거가 실패해도 갤러리 경로는 살아 있어야 한다.
     if (!kIsWeb) _gate = faceGate(_stillOnlyCamera);
     _runCamera(_openCamera);
@@ -95,13 +110,15 @@ class _SkinCapturePageState extends ConsumerState<SkinCapturePage>
   void dispose() {
     _disposed = true;
     WidgetsBinding.instance.removeObserver(this);
+    unawaited(SystemChrome.setPreferredOrientations(DeviceOrientation.values));
+
     // 검출기를 먼저 닫으면 아직 날아오던 프레임이 닫힌 검출기를 부른다.
-    // 카메라를 다 닫은 뒤에 닫는다.
+    // 카메라를 먼저 다 닫고, 그 뒤에 검출기를 닫는다.
+    _runCamera(_closeCamera);
     _cameraLock = _cameraLock.whenComplete(() {
       _gate?.dispose();
       _gate = null;
     });
-    _runCamera(_closeCamera);
     super.dispose();
   }
 
@@ -216,7 +233,9 @@ class _SkinCapturePageState extends ConsumerState<SkinCapturePage>
             _okStreak = result is FaceGateOk ? _okStreak + 1 : 0;
           });
           // 조건이 잠깐 맞은 게 아니라 유지되고 있을 때만 셔터를 누른다.
-          if (_okStreak >= FaceGateConfig.autoCaptureStableFrames && !_busy) {
+          if (_okStreak >= FaceGateConfig.autoCaptureStableFrames &&
+              !_busy &&
+              DateTime.now().isAfter(_autoCaptureNotBefore)) {
             unawaited(_capture());
           }
         })
@@ -269,17 +288,26 @@ class _SkinCapturePageState extends ConsumerState<SkinCapturePage>
       return;
     }
 
+    // 피커를 열기 **전에** 잠근다. 열어 놓고 잠그면 그 사이 프리뷰가 계속 돌아
+    // 자동 촬영이 끼어들고, 사용자가 정면으로 고른 사진이 다음 단계(왼쪽) 기준으로
+    // 판정된다. 단계도 여기서 고정해 둔다.
+    final stage = _stage;
+    _set(() {
+      _busy = true;
+      _blockedGuide = null;
+    });
+
     try {
       final picked = await PhotoPicker.fromGallery();
-      if (picked == null || !mounted || _disposed) return;
-
-      _set(() {
-        _busy = true;
-        _blockedGuide = null;
-      });
+      if (!mounted || _disposed) return;
+      if (picked == null) {
+        // 사용자가 취소했다. 잠금을 풀고 프리뷰를 되살린다.
+        await _recover('');
+        return;
+      }
 
       final prepared =
-          await gate.prepareSkinPhoto(picked, photoType: _stage, fullGate: true);
+          await gate.prepareSkinPhoto(picked, photoType: stage, fullGate: true);
       if (!mounted || _disposed) return;
 
       if (prepared.file == null) {
@@ -302,7 +330,6 @@ class _SkinCapturePageState extends ConsumerState<SkinCapturePage>
       await _resumeStream();
       _set(() {
         _busy = false;
-        _stageIndex++;
         _result = null; // 방향이 바뀌었으니 이전 판정은 버린다
         _blockedGuide = null; // 이전 단계의 실패 안내도 같이 버린다
         _okStreak = 0;
@@ -319,9 +346,13 @@ class _SkinCapturePageState extends ConsumerState<SkinCapturePage>
     await _resumeStream();
     _set(() {
       _busy = false;
-      _blockedGuide = guide;
-      // 막힌 직후 남은 연속 카운트로 곧바로 다시 찍히면 같은 실패가 반복된다.
+      _blockedGuide = guide.isEmpty ? null : guide;
+      _result = null;
       _okStreak = 0;
+      // 프리뷰는 통과인데 정지 이미지에서만 막히는 경우가 있다 — 프리뷰는 fast,
+      // 업로드 관문은 accurate 라 흔들린 사진에서 갈린다. 쿨다운이 없으면
+      // 0.9초마다 촬영·디코딩을 반복하면서 사용자는 손쓸 수 없는 안내만 본다.
+      _autoCaptureNotBefore = DateTime.now().add(const Duration(seconds: 3));
     });
   }
 
@@ -343,20 +374,37 @@ class _SkinCapturePageState extends ConsumerState<SkinCapturePage>
     // 다음 화면이 곧바로 로딩을 보여준다.
     unawaited(ref.read(skinAnalysisNotifierProvider.notifier).analyze(photos));
 
-    // push 라 이 화면은 살아 있다. 로딩 화면에서 "다시 촬영" 으로 돌아오면
-    // 처음(정면)부터 다시 찍게 한다 — 세 장이 한 벌이라 일부만 새로 찍을 수 없다.
-    await context.push(Routes.skinLoading);
-    if (!mounted || _disposed) return;
-
-    await _resumeStream();
+    // **push 의 완료를 기다려 정리하지 않는다.** 로딩 화면은 성공하면
+    // pushReplacement 로 결과 화면을 띄우는데, go_router 는 교체된 라우트의
+    // completer 를 완료시키지 않아서 그 await 가 영원히 끝나지 않는다. 기다렸다가
+    // 정리하면 _busy 가 선 채로 남아, 결과에서 뒤로 왔을 때 "처리 중…" 에
+    // 버튼이 전부 꺼진 화면이 된다.
+    //
+    // 세 장을 넘긴 시점에 이 화면의 일은 끝났다. 지금 정리해 두면 어느 경로로
+    // 돌아오든 처음(정면)부터 다시 찍을 수 있는 상태다.
+    await _stopStream();
     _set(() {
       _busy = false;
       _blockedGuide = null;
       _result = null;
-      _stageIndex = 0;
       _okStreak = 0;
       _shots.clear();
     });
+
+    if (!mounted || _disposed) return;
+    context.push(Routes.skinLoading);
+  }
+
+  Future<void> _stopStream() async {
+    final controller = _controller;
+    if (controller == null) return;
+    try {
+      if (controller.value.isStreamingImages) {
+        await controller.stopImageStream();
+      }
+    } on Object catch (_) {
+      // 이미 끊긴 스트림이면 그만이다.
+    }
   }
 
   String _guideOf(FaceGateResult gate) => switch (gate) {
@@ -382,8 +430,23 @@ class _SkinCapturePageState extends ConsumerState<SkinCapturePage>
         FacePhotoType.right => '고개를 오른쪽으로 돌려주세요',
       };
 
+  /// 결과 화면에서 뒤로 돌아왔을 때 프리뷰를 되살린다.
+  ///
+  /// push 의 완료 future 를 쓸 수 없어서(위 _start 주석) 라우트가 다시 최상단이
+  /// 되었는지를 build 에서 본다. 스트림이 살아나면 조건이 더 이상 맞지 않으므로
+  /// 매 프레임 호출되지 않는다.
+  void _ensureStreaming() {
+    if (_disposed || _busy || kIsWeb) return;
+    if (ModalRoute.of(context)?.isCurrent == false) return;
+    final controller = _controller;
+    if (controller == null || controller.value.isStreamingImages) return;
+    _runCamera(_resumeStream);
+  }
+
   @override
   Widget build(BuildContext context) {
+    _ensureStreaming();
+
     return Scaffold(
       appBar: AppBar(
         title: Text('피부 촬영  ${_stageIndex + 1}/${_stages.length}'),
