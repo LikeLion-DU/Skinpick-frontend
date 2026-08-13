@@ -161,7 +161,7 @@ FaceGateResult _faceCountOnly(List<Face> faces, Face? face) {
   if (faces.length > 1) {
     return FaceGateBlocked(
       FaceGateReason.multipleFaces,
-      '한 명의 얼굴만 나오도록 촬영해주세요.',
+      '한 명의 얼굴만 나오도록 촬영해주세요.\n화면 밖 사람이나 배경 사진도 얼굴로 잡힐 수 있어요.',
       FaceGateDebug(faceCount: faces.length),
     );
   }

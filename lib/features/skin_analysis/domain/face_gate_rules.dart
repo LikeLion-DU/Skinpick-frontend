@@ -39,9 +39,12 @@ FaceGateResult evaluateFaceGate({
     );
   }
   if (faceCount > 1) {
+    // 프리뷰는 프레임의 위아래를 잘라 보여준다(BoxFit.cover). 잘린 띠에 걸린
+    // 얼굴이나 배경 사진·반사도 검출에 잡히므로, 화면에는 한 명만 보이는데
+    // 막히는 경우가 실제로 나온다. 이유를 같이 알려야 손을 쓸 수 있다.
     return FaceGateBlocked(
       FaceGateReason.multipleFaces,
-      '한 명의 얼굴만 나오도록 촬영해주세요.',
+      '한 명의 얼굴만 나오도록 촬영해주세요.\n화면 밖 사람이나 배경 사진도 얼굴로 잡힐 수 있어요.',
       base,
     );
   }
