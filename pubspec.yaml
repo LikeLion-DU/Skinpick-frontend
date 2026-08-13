@@ -36,6 +36,17 @@ dependencies:
   # 온디바이스 얼굴 감지 (게이트 + 크롭 전용, 피부 판정에는 쓰지 않는다)
   google_mlkit_face_detection: ^0.11.1
 
+  # 온디바이스 이미지 라벨링 — "음식으로 보이는가" 만 본다.
+  # 음식 종류·영양성분은 촬영 후 서버의 OpenAI Vision 이 정한다.
+  #
+  # 0.14 는 face_detection 0.11 과 google_mlkit_commons 버전이 어긋난다.
+  # 얼굴 게이트는 실기기로 임계값·yaw 부호까지 맞춰 놓은 상태라 그쪽을 올리지 않고
+  # 이쪽을 맞춘다. 둘 다 올리려면 얼굴 게이트를 다시 실기기 검증해야 한다.
+  google_mlkit_image_labeling: ^0.12.1
+
+  # InputImage · InputImageMetadata 를 직접 참조한다 (두 ML Kit 패키지의 공통 타입).
+  google_mlkit_commons: ^0.8.1
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

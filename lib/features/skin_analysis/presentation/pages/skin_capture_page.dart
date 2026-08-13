@@ -11,6 +11,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../app/router/app_router.dart';
 import '../../../../core/utils/photo_picker.dart';
+import '../../../../core/widgets/camera_preview_box.dart';
 import '../../data/datasources/face_gate.dart';
 import '../../domain/entities/face_gate_result.dart';
 import '../../domain/entities/skin_photo_set.dart';
@@ -184,9 +185,12 @@ class _SkinCapturePageState extends ConsumerState<SkinCapturePage>
         return;
       }
 
+      // _set 은 dispose 된 뒤라면 클로저를 통째로 버린다. 그 사이 이 화면이
+      // 사라지면 _controller 가 null 로 남고, dispose 가 걸어둔 _closeCamera 는
+      // null 을 보고 그냥 돌아가 카메라가 영영 안 닫힌다. 먼저 대입해 둔다.
+      _controller = controller;
       await controller.startImageStream(_onFrame);
       _set(() {
-        _controller = controller;
         _cameraError = null;
       });
     } on Object catch (e) {
@@ -301,8 +305,13 @@ class _SkinCapturePageState extends ConsumerState<SkinCapturePage>
       final picked = await PhotoPicker.fromGallery();
       if (!mounted || _disposed) return;
       if (picked == null) {
-        // 사용자가 취소했다. 잠금을 풀고 프리뷰를 되살린다.
-        await _recover('');
+        // 사용자가 취소했다. 잠금만 풀고 프리뷰를 되살린다 — 쿨다운은 걸지 않는다.
+        // 걸면 이미 자세를 잡고 있던 사용자가 이유 없이 3초를 기다린다.
+        await _resumeStream();
+        _set(() {
+          _busy = false;
+          _blockedGuide = null;
+        });
         return;
       }
 
@@ -346,7 +355,7 @@ class _SkinCapturePageState extends ConsumerState<SkinCapturePage>
     await _resumeStream();
     _set(() {
       _busy = false;
-      _blockedGuide = guide.isEmpty ? null : guide;
+      _blockedGuide = guide;
       _result = null;
       _okStreak = 0;
       // 프리뷰는 통과인데 정지 이미지에서만 막히는 경우가 있다 — 프리뷰는 fast,
@@ -517,7 +526,7 @@ class _SkinCapturePageState extends ConsumerState<SkinCapturePage>
           child: Stack(
             fit: StackFit.expand,
             children: [
-              CameraPreview(_controller!),
+              CameraPreviewBox(_controller!),
               // 어디에 얼굴을 두어야 하는지 형태로 보여준다. 문장만으로는
               // "조금 더 가까이" 가 얼마나 가까이인지 알 수 없다.
               _FaceGuide(passing: canCapture),

@@ -1,12 +1,13 @@
-import 'dart:io' show File, Platform;
+import 'dart:io' show File;
 import 'dart:math' as math;
-import 'dart:ui' show Offset, Rect, Size;
+import 'dart:ui' show Offset, Rect;
 
 import 'package:camera/camera.dart'
     show CameraDescription, CameraImage, ImageFormatGroup, XFile;
 import 'package:google_mlkit_face_detection/google_mlkit_face_detection.dart';
 import 'package:image/image.dart' as img;
 
+import '../../../../core/mlkit/camera_input_image.dart';
 import '../../domain/entities/face_gate_result.dart';
 import '../../domain/face_gate_config.dart';
 import '../../domain/face_gate_rules.dart';
@@ -33,21 +34,10 @@ class MlKitFaceGate implements FaceGate {
   final CameraDescription _camera;
   final FaceDetector _detector;
 
-  /// 프레임을 세우기 위해 되돌려야 하는 각도.
-  ///
-  /// **iOS 는 항상 0이다.** `camera_avfoundation` 은 모든 카메라에
-  /// `sensorOrientation: 90` 을 하드코딩해 놓고(utils.dart) 스트림 출력은
-  /// `.portrait` 로 고정해서 내려준다 — 즉 프레임은 이미 똑바로 서서 온다.
-  /// ML Kit iOS 브리지도 `InputImageMetadata.rotation` 을 아예 보지 않는다.
-  ///
-  /// 그 90을 그대로 믿으면 (a) 가로세로를 바꿔 얼굴 크기 비율이 1.78배로 부풀고
-  /// 40% 게이트가 사실상 22%가 되며, (b) 걸린 적 없는 회전을 되돌리게 되어
-  /// 휘도를 프레임 구석에서 재게 된다.
-  int get _rotationDeg => Platform.isAndroid ? _camera.sensorOrientation : 0;
 
   @override
   Future<FaceGateResult> check(CameraImage frame, FacePhotoType photoType) async {
-    final input = _toInputImage(frame);
+    final input = toInputImage(frame, _camera);
     // 포맷을 못 읽으면 검증을 할 수 없다. 통과시키지 않는다.
     if (input == null) return const FaceGateUnavailable();
 
@@ -56,8 +46,8 @@ class MlKitFaceGate implements FaceGate {
 
     // 센서가 90/270도 돌아 있으면 ML Kit 좌표계는 가로세로가 바뀐 상태다.
     // 여기서 안 맞추면 얼굴 크기 비율이 통째로 틀어져 "조금 더 가까이"만 계속 뜬다.
-    final rotation = _rotationDeg;
-    final rotated = rotation == 90 || rotation == 270;
+    final rotation = rotationDegreesOf(_camera);
+    final rotated = isRotatedQuarter(rotation);
     final orientedHeight = (rotated ? frame.width : frame.height).toDouble();
 
     return evaluateFaceGate(
@@ -77,33 +67,6 @@ class MlKitFaceGate implements FaceGate {
     );
   }
 
-  /// `InputImage.fromBytes` 는 **플랫폼마다 다른 포맷**을 요구한다. 그리고 어긋나도
-  /// 예외가 안 난다 — 검출이 그냥 0개로 나와서 "얼굴을 찾을 수 없어요"만 계속 뜬다.
-  /// 카메라는 멀쩡히 얼굴을 비추고 있는데. 원인을 게이트 조건에서 찾게 되는 실패다.
-  ///
-  /// CameraController 는 반드시 Android nv21 / iOS bgra8888 로 만든다.
-  InputImage? _toInputImage(CameraImage frame) {
-    final format = InputImageFormatValue.fromRawValue(frame.format.raw);
-    if (format == null) return null;
-
-    // 센서 방향을 안 넘기면 세로로 든 폰에서 얼굴이 90도 누운 채로 들어가고,
-    // ML Kit 은 누운 얼굴을 잘 못 찾는다. 게이트가 상시 막히는 원인 1순위다.
-    // (iOS 는 프레임이 이미 서서 오고 ML Kit 이 이 값을 보지도 않는다 — _rotationDeg 주석)
-    final rotation = InputImageRotationValue.fromRawValue(_rotationDeg);
-    if (rotation == null) return null;
-
-    final plane = frame.planes.first;
-
-    return InputImage.fromBytes(
-      bytes: plane.bytes,
-      metadata: InputImageMetadata(
-        size: Size(frame.width.toDouble(), frame.height.toDouble()),
-        rotation: rotation,
-        format: format,
-        bytesPerRow: plane.bytesPerRow,
-      ),
-    );
-  }
 
   @override
   Future<PreparedPhoto> prepareSkinPhoto(
@@ -151,10 +114,18 @@ class MlKitFaceGate implements FaceGate {
       if (gate is! FaceGateOk) return PreparedPhoto(null, gate);
 
       final cropped = _crop(photo, gate.faceRect);
-      // 얼굴만 1024px → OpenAI detail:"high" 에서 실효 해상도가 3배 이상 올라간다.
-      // 다만 키우지는 않는다 — 갤러리 원본은 PhotoPicker 가 이미 1024px·q80 으로
-      // 줄여 놓아서, 거기서 잘라낸 얼굴을 1024로 늘리면 정보 없이 용량만 늘고
-      // 압축이 두 번 먹는다.
+      // 크롭만으로도 얼굴의 실효 해상도는 크게 올라간다 — 전체 프레임을 보내면
+      // 얼굴이 200px 남짓인데, 잘라내면 그게 곧 이미지 전체가 된다.
+      //
+      // 다만 **1024px 를 채우지는 못한다.** ResolutionPreset.high 가 1280×720 이라
+      // takePicture 원본도 그 크기이고, 얼굴 박스는 프레임의 절반 남짓이라
+      // 크롭 결과가 400~600px 에 머문다. 아래 분기는 사실상 타지 않는다.
+      // 1024 를 실제로 채우려면 프리셋을 veryHigh 이상으로 올려야 하는데,
+      // 같은 컨트롤러가 실시간 스트림도 물고 있어서 ML Kit 처리량과 맞바꿔야 한다.
+      // 기능 동결 전에 성능을 다시 재지 않고 올리지 않는다.
+      //
+      // 키우지는 않는다 — 없는 정보를 만들어내지 못하면서 용량만 늘고 압축이
+      // 두 번 먹는다.
       final resized = cropped.width >= 1024
           ? img.copyResize(cropped, width: 1024)
           : cropped;
@@ -170,7 +141,11 @@ class MlKitFaceGate implements FaceGate {
   }
 
   @override
-  void dispose() => _detector.close();
+  void dispose() {
+    // prepareSkinPhoto 는 close 를 기다리지만 여기서는 기다릴 수 없다(State.dispose).
+    // 그대로 두면 플랫폼 채널 실패가 미처리 zone 오류로 올라온다.
+    _detector.close().ignore();
+  }
 }
 
 /// 촬영 원본에 얼굴이 정확히 하나인지만 본다. 통과해도 원본을 올리지는 않는다 —
