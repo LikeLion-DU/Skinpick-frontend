@@ -69,24 +69,29 @@ void main() {
   });
 
   group('조건 3 — 얼굴 방향', () {
-    const side = FaceGateConfig.sideMinYaw + 5; // 확실히 돌린 각도
+    // 사용자 기준 좌/우를 ML Kit yaw 로 환산한다. 부호는 전면 카메라 미러 처리에
+    // 따라 달라지는 **기기 특성**이지 규칙이 아니다. 여기에 숫자를 박아두면
+    // 실기기에서 부호를 뒤집는 순간 멀쩡한 규칙 테스트가 같이 깨진다.
+    const turned = FaceGateConfig.sideMinYaw + 5; // 확실히 돌린 각도
+    const userLeft = turned * FaceGateConfig.userLeftYawSign;
+    const userRight = -userLeft;
 
     test('FRONT + 정면 → 통과', () {
       expect(run(type: FacePhotoType.front, yaw: 0), isA<FaceGateOk>());
     });
 
     test('FRONT + 좌측 → 막힘', () {
-      expect(reasonOf(run(type: FacePhotoType.front, yaw: side)),
+      expect(reasonOf(run(type: FacePhotoType.front, yaw: userLeft)),
           FaceGateReason.wrongOrientation);
     });
 
     test('FRONT + 우측 → 막힘', () {
-      expect(reasonOf(run(type: FacePhotoType.front, yaw: -side)),
+      expect(reasonOf(run(type: FacePhotoType.front, yaw: userRight)),
           FaceGateReason.wrongOrientation);
     });
 
     test('LEFT + 좌측 → 통과', () {
-      expect(run(type: FacePhotoType.left, yaw: side), isA<FaceGateOk>());
+      expect(run(type: FacePhotoType.left, yaw: userLeft), isA<FaceGateOk>());
     });
 
     test('LEFT + 정면 → 막힘 (조금 더 돌리라고 안내)', () {
@@ -96,12 +101,12 @@ void main() {
     });
 
     test('LEFT + 우측 → 막힘 (반대쪽이라고 안내)', () {
-      final result = run(type: FacePhotoType.left, yaw: -side);
+      final result = run(type: FacePhotoType.left, yaw: userRight);
       expect((result as FaceGateBlocked).guide, contains('왼쪽 얼굴을'));
     });
 
     test('RIGHT + 우측 → 통과', () {
-      expect(run(type: FacePhotoType.right, yaw: -side), isA<FaceGateOk>());
+      expect(run(type: FacePhotoType.right, yaw: userRight), isA<FaceGateOk>());
     });
 
     test('RIGHT + 정면 → 막힘 (조금 더 돌리라고 안내)', () {
@@ -110,7 +115,7 @@ void main() {
     });
 
     test('RIGHT + 좌측 → 막힘 (반대쪽이라고 안내)', () {
-      final result = run(type: FacePhotoType.right, yaw: side);
+      final result = run(type: FacePhotoType.right, yaw: userLeft);
       expect((result as FaceGateBlocked).guide, contains('오른쪽 얼굴을'));
     });
 

@@ -63,6 +63,10 @@ class _SkinCapturePageState extends ConsumerState<SkinCapturePage>
   final Map<FacePhotoType, XFile> _shots = {};
 
   FaceGateResult? _result;
+
+  /// 연속 통과 프레임 수. 자동 촬영은 이 값이 임계치에 닿을 때만 눌린다.
+  int _okStreak = 0;
+
   bool _analyzing = false;
   DateTime _lastAnalyzed = DateTime.fromMillisecondsSinceEpoch(0);
 
@@ -206,7 +210,16 @@ class _SkinCapturePageState extends ConsumerState<SkinCapturePage>
 
     unawaited(gate
         .check(frame, _stage)
-        .then((result) => _set(() => _result = result))
+        .then((result) {
+          _set(() {
+            _result = result;
+            _okStreak = result is FaceGateOk ? _okStreak + 1 : 0;
+          });
+          // 조건이 잠깐 맞은 게 아니라 유지되고 있을 때만 셔터를 누른다.
+          if (_okStreak >= FaceGateConfig.autoCaptureStableFrames && !_busy) {
+            unawaited(_capture());
+          }
+        })
         // 버퍼·메타데이터가 어긋나면 processImage 가 던진다. 300ms 마다 반복되므로
         // 잡지 않으면 미처리 비동기 예외가 계속 쌓인다.
         .catchError((_) {})
@@ -291,6 +304,8 @@ class _SkinCapturePageState extends ConsumerState<SkinCapturePage>
         _busy = false;
         _stageIndex++;
         _result = null; // 방향이 바뀌었으니 이전 판정은 버린다
+        _blockedGuide = null; // 이전 단계의 실패 안내도 같이 버린다
+        _okStreak = 0;
       });
       return;
     }
@@ -305,6 +320,8 @@ class _SkinCapturePageState extends ConsumerState<SkinCapturePage>
     _set(() {
       _busy = false;
       _blockedGuide = guide;
+      // 막힌 직후 남은 연속 카운트로 곧바로 다시 찍히면 같은 실패가 반복된다.
+      _okStreak = 0;
     });
   }
 
@@ -337,6 +354,7 @@ class _SkinCapturePageState extends ConsumerState<SkinCapturePage>
       _blockedGuide = null;
       _result = null;
       _stageIndex = 0;
+      _okStreak = 0;
       _shots.clear();
     });
   }
@@ -411,21 +429,35 @@ class _SkinCapturePageState extends ConsumerState<SkinCapturePage>
     final result = _result;
     final canCapture = result?.canCapture ?? false;
 
+    // 지금 프레임의 판정이 항상 우선이다. 이 순서를 뒤집으면 이전 촬영 시도에서
+    // 세운 문구가 남아, 체크리스트는 "방향" 이 틀렸다는데 안내는 "한 명의 얼굴만"
+    // 이라고 말하는 화면이 된다.
+    //
+    // _blockedGuide 는 라이브 게이트가 통과인데 촬영만 실패한 경우를 설명한다.
     // 게이트를 걸 수 없는 프레임은 안내가 없으면 이유 없이 버튼만 꺼진 화면이 된다.
-    final guide = _blockedGuide ??
-        switch (result) {
-          FaceGateBlocked(:final guide) => guide,
-          FaceGateUnavailable() => _unavailableGuide,
-          _ => null,
-        };
+    final guide = switch (result) {
+      FaceGateBlocked(:final guide) => guide,
+      FaceGateUnavailable() => _unavailableGuide,
+      _ => _blockedGuide,
+    };
 
     return Column(
       children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          child: _StepIndicator(
+            current: _stageIndex,
+            labels: [for (final s in _stages) _label(s)],
+          ),
+        ),
         Expanded(
           child: Stack(
             fit: StackFit.expand,
             children: [
               CameraPreview(_controller!),
+              // 어디에 얼굴을 두어야 하는지 형태로 보여준다. 문장만으로는
+              // "조금 더 가까이" 가 얼마나 가까이인지 알 수 없다.
+              _FaceGuide(passing: canCapture),
               if (kDebugMode && result?.debug != null)
                 Positioned(top: 8, left: 8, child: _DebugOverlay(result!)),
               Positioned(
@@ -467,7 +499,13 @@ class _SkinCapturePageState extends ConsumerState<SkinCapturePage>
                         height: 18,
                         child: CircularProgressIndicator(strokeWidth: 2))
                     : const Icon(Icons.camera_alt),
-                label: Text(_stageIndex == _stages.length - 1 ? '촬영 후 분석' : '촬영'),
+                label: Text(_busy
+                    ? '처리 중…'
+                    : canCapture
+                        // 조건이 맞으면 곧 자동으로 찍힌다. 버튼은 기다리기 싫은
+                        // 사용자를 위한 수동 경로다.
+                        ? '곧 자동으로 촬영됩니다 · 탭하면 바로 촬영'
+                        : '조건을 맞추면 자동으로 촬영됩니다'),
               ),
               const SizedBox(height: 4),
               TextButton.icon(
@@ -621,6 +659,129 @@ class _DebugOverlay extends StatelessWidget {
               color: Colors.greenAccent, fontSize: 11, fontFamily: 'monospace'),
         ),
       ),
+    );
+  }
+}
+
+/// 얼굴을 어디에 두어야 하는지 보여주는 타원 가이드.
+///
+/// 통과 여부를 **색으로** 바꾼다 — 문장을 읽지 않아도 초록이면 된 것이고,
+/// 그 상태를 유지하면 자동으로 찍힌다.
+class _FaceGuide extends StatelessWidget {
+  const _FaceGuide({required this.passing});
+
+  final bool passing;
+
+  @override
+  Widget build(BuildContext context) =>
+      CustomPaint(painter: _FaceGuidePainter(passing));
+}
+
+class _FaceGuidePainter extends CustomPainter {
+  const _FaceGuidePainter(this.passing);
+
+  final bool passing;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final oval = Rect.fromCenter(
+      center: Offset(size.width / 2, size.height * 0.46),
+      width: size.width * 0.68,
+      height: size.height * 0.56,
+    );
+
+    // 타원 바깥만 어둡게 깔면 "안"이 어디인지 설명 없이 보인다.
+    canvas.drawPath(
+      Path()
+        ..addRect(Offset.zero & size)
+        ..addOval(oval)
+        ..fillType = PathFillType.evenOdd,
+      Paint()..color = Colors.black.withValues(alpha: 0.35),
+    );
+
+    canvas.drawOval(
+      oval,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = passing ? 5 : 3
+        ..color = passing ? Colors.greenAccent : Colors.white70,
+    );
+  }
+
+  @override
+  bool shouldRepaint(_FaceGuidePainter oldDelegate) =>
+      oldDelegate.passing != passing;
+}
+
+/// 정면 → 왼쪽 → 오른쪽 진행 상태. 3단계라 지금 몇 번째인지가 보여야 한다.
+class _StepIndicator extends StatelessWidget {
+  const _StepIndicator({required this.current, required this.labels});
+
+  final int current;
+  final List<String> labels;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        for (var i = 0; i < labels.length; i++) ...[
+          if (i > 0)
+            Container(
+              width: 28,
+              height: 2,
+              margin: const EdgeInsets.only(bottom: 18),
+              color: i <= current ? scheme.primary : scheme.outlineVariant,
+            ),
+          Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _dot(scheme, i),
+              const SizedBox(height: 4),
+              Text(
+                labels[i],
+                style: TextStyle(
+                  fontSize: 12,
+                  color: i == current ? scheme.primary : scheme.outline,
+                  fontWeight: i == current ? FontWeight.w600 : FontWeight.w400,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _dot(ColorScheme scheme, int i) {
+    final done = i < current;
+    final active = i == current;
+    final filled = done || active;
+
+    return Container(
+      width: 28,
+      height: 28,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: filled ? scheme.primary : Colors.transparent,
+        border: Border.all(
+          color: filled ? scheme.primary : scheme.outlineVariant,
+          width: 2,
+        ),
+      ),
+      child: done
+          ? Icon(Icons.check, size: 16, color: scheme.onPrimary)
+          : Text(
+              '${i + 1}',
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: active ? scheme.onPrimary : scheme.outline,
+              ),
+            ),
     );
   }
 }
