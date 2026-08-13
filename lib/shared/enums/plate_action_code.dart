@@ -20,4 +20,15 @@ enum PlateActionCode {
     }
     return null; // 서버가 새 액션을 추가해도 앱이 죽지 않는다
   }
+
+  /// 어느 감점 카드에 이 버튼을 붙일지 결정한다.
+  /// 서버 `PlateActionCode.relatedRuleCode()` 와 같은 표다 — 한쪽만 고치면
+  /// 버튼이 엉뚱한 카드에 붙거나 아예 안 뜬다.
+  static PlateActionCode? forRuleCode(String? ruleCode) => switch (ruleCode) {
+        'R04' => halveSoup,
+        'R02' => lessSpicy,
+        'R03' => noSugarDrink,
+        'R07' => removeBatter,
+        _ => null,
+      };
 }

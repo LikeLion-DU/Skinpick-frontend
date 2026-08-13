@@ -122,6 +122,7 @@ Map<String, dynamic> _$$FeedbackGroupDtoImplToJson(
 _$SkinPlateDtoImpl _$$SkinPlateDtoImplFromJson(Map<String, dynamic> json) =>
     _$SkinPlateDtoImpl(
       plateId: (json['plateId'] as num).toInt(),
+      skinAnalysisId: (json['skinAnalysisId'] as num).toInt(),
       plateScore: (json['plateScore'] as num).toInt(),
       baseScore: (json['baseScore'] as num?)?.toInt() ?? 70,
       summary: json['summary'] as String? ?? '',
@@ -138,6 +139,7 @@ _$SkinPlateDtoImpl _$$SkinPlateDtoImplFromJson(Map<String, dynamic> json) =>
 Map<String, dynamic> _$$SkinPlateDtoImplToJson(_$SkinPlateDtoImpl instance) =>
     <String, dynamic>{
       'plateId': instance.plateId,
+      'skinAnalysisId': instance.skinAnalysisId,
       'plateScore': instance.plateScore,
       'baseScore': instance.baseScore,
       'summary': instance.summary,

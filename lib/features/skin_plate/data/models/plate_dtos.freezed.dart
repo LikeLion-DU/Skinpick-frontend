@@ -1360,6 +1360,11 @@ SkinPlateDto _$SkinPlateDtoFromJson(Map<String, dynamic> json) {
 /// @nodoc
 mixin _$SkinPlateDto {
   int get plateId => throw _privateConstructorUsedError;
+
+  /// S07 에서 S08 추천으로 넘어갈 때 필요하다. 추천 조회가 이 값을 요구한다.
+  /// 앱이 "최신 피부 분석"을 대신 쓰면 과거 Plate 를 열었을 때 엉뚱한 날짜의
+  /// 추천이 뜬다. 서버가 응답에 실어 준다.
+  int get skinAnalysisId => throw _privateConstructorUsedError;
   int get plateScore => throw _privateConstructorUsedError;
   int get baseScore => throw _privateConstructorUsedError;
   String get summary => throw _privateConstructorUsedError;
@@ -1386,6 +1391,7 @@ abstract class $SkinPlateDtoCopyWith<$Res> {
   @useResult
   $Res call(
       {int plateId,
+      int skinAnalysisId,
       int plateScore,
       int baseScore,
       String summary,
@@ -1414,6 +1420,7 @@ class _$SkinPlateDtoCopyWithImpl<$Res, $Val extends SkinPlateDto>
   @override
   $Res call({
     Object? plateId = null,
+    Object? skinAnalysisId = null,
     Object? plateScore = null,
     Object? baseScore = null,
     Object? summary = null,
@@ -1426,6 +1433,10 @@ class _$SkinPlateDtoCopyWithImpl<$Res, $Val extends SkinPlateDto>
       plateId: null == plateId
           ? _value.plateId
           : plateId // ignore: cast_nullable_to_non_nullable
+              as int,
+      skinAnalysisId: null == skinAnalysisId
+          ? _value.skinAnalysisId
+          : skinAnalysisId // ignore: cast_nullable_to_non_nullable
               as int,
       plateScore: null == plateScore
           ? _value.plateScore
@@ -1489,6 +1500,7 @@ abstract class _$$SkinPlateDtoImplCopyWith<$Res>
   @useResult
   $Res call(
       {int plateId,
+      int skinAnalysisId,
       int plateScore,
       int baseScore,
       String summary,
@@ -1517,6 +1529,7 @@ class __$$SkinPlateDtoImplCopyWithImpl<$Res>
   @override
   $Res call({
     Object? plateId = null,
+    Object? skinAnalysisId = null,
     Object? plateScore = null,
     Object? baseScore = null,
     Object? summary = null,
@@ -1529,6 +1542,10 @@ class __$$SkinPlateDtoImplCopyWithImpl<$Res>
       plateId: null == plateId
           ? _value.plateId
           : plateId // ignore: cast_nullable_to_non_nullable
+              as int,
+      skinAnalysisId: null == skinAnalysisId
+          ? _value.skinAnalysisId
+          : skinAnalysisId // ignore: cast_nullable_to_non_nullable
               as int,
       plateScore: null == plateScore
           ? _value.plateScore
@@ -1567,6 +1584,7 @@ class __$$SkinPlateDtoImplCopyWithImpl<$Res>
 class _$SkinPlateDtoImpl implements _SkinPlateDto {
   const _$SkinPlateDtoImpl(
       {required this.plateId,
+      required this.skinAnalysisId,
       required this.plateScore,
       this.baseScore = 70,
       this.summary = '',
@@ -1581,6 +1599,12 @@ class _$SkinPlateDtoImpl implements _SkinPlateDto {
 
   @override
   final int plateId;
+
+  /// S07 에서 S08 추천으로 넘어갈 때 필요하다. 추천 조회가 이 값을 요구한다.
+  /// 앱이 "최신 피부 분석"을 대신 쓰면 과거 Plate 를 열었을 때 엉뚱한 날짜의
+  /// 추천이 뜬다. 서버가 응답에 실어 준다.
+  @override
+  final int skinAnalysisId;
   @override
   final int plateScore;
   @override
@@ -1607,7 +1631,7 @@ class _$SkinPlateDtoImpl implements _SkinPlateDto {
 
   @override
   String toString() {
-    return 'SkinPlateDto(plateId: $plateId, plateScore: $plateScore, baseScore: $baseScore, summary: $summary, food: $food, feedbacks: $feedbacks, appliedRules: $appliedRules, createdAt: $createdAt)';
+    return 'SkinPlateDto(plateId: $plateId, skinAnalysisId: $skinAnalysisId, plateScore: $plateScore, baseScore: $baseScore, summary: $summary, food: $food, feedbacks: $feedbacks, appliedRules: $appliedRules, createdAt: $createdAt)';
   }
 
   @override
@@ -1616,6 +1640,8 @@ class _$SkinPlateDtoImpl implements _SkinPlateDto {
         (other.runtimeType == runtimeType &&
             other is _$SkinPlateDtoImpl &&
             (identical(other.plateId, plateId) || other.plateId == plateId) &&
+            (identical(other.skinAnalysisId, skinAnalysisId) ||
+                other.skinAnalysisId == skinAnalysisId) &&
             (identical(other.plateScore, plateScore) ||
                 other.plateScore == plateScore) &&
             (identical(other.baseScore, baseScore) ||
@@ -1635,6 +1661,7 @@ class _$SkinPlateDtoImpl implements _SkinPlateDto {
   int get hashCode => Object.hash(
       runtimeType,
       plateId,
+      skinAnalysisId,
       plateScore,
       baseScore,
       summary,
@@ -1662,6 +1689,7 @@ class _$SkinPlateDtoImpl implements _SkinPlateDto {
 abstract class _SkinPlateDto implements SkinPlateDto {
   const factory _SkinPlateDto(
       {required final int plateId,
+      required final int skinAnalysisId,
       required final int plateScore,
       final int baseScore,
       final String summary,
@@ -1675,6 +1703,12 @@ abstract class _SkinPlateDto implements SkinPlateDto {
 
   @override
   int get plateId;
+
+  /// S07 에서 S08 추천으로 넘어갈 때 필요하다. 추천 조회가 이 값을 요구한다.
+  /// 앱이 "최신 피부 분석"을 대신 쓰면 과거 Plate 를 열었을 때 엉뚱한 날짜의
+  /// 추천이 뜬다. 서버가 응답에 실어 준다.
+  @override
+  int get skinAnalysisId;
   @override
   int get plateScore;
   @override

@@ -1,0 +1,13 @@
+{
+  "success": true,
+  "data": {
+    "accessToken": "REDACTED_TOKEN",
+    "tokenType": "Bearer",
+    "expiresIn": 604800,
+    "user": {
+      "userId": 1,
+      "email": "test@skinplate.app",
+      "nickname": "테스트유저"
+    }
+  }
+}

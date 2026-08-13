@@ -92,6 +92,12 @@ class FeedbackGroupDto with _$FeedbackGroupDto {
 class SkinPlateDto with _$SkinPlateDto {
   const factory SkinPlateDto({
     required int plateId,
+
+    /// S07 에서 S08 추천으로 넘어갈 때 필요하다. 추천 조회가 이 값을 요구한다.
+    /// 앱이 "최신 피부 분석"을 대신 쓰면 과거 Plate 를 열었을 때 엉뚱한 날짜의
+    /// 추천이 뜬다. 서버가 응답에 실어 준다.
+    required int skinAnalysisId,
+
     required int plateScore,
     @Default(70) int baseScore,
     @Default('') String summary,
@@ -110,6 +116,7 @@ class SkinPlateDto with _$SkinPlateDto {
 extension SkinPlateDtoX on SkinPlateDto {
   domain.SkinPlate toEntity() => domain.SkinPlate(
         id: plateId,
+        skinAnalysisId: skinAnalysisId,
         plateScore: plateScore,
         baseScore: baseScore,
         summary: summary,

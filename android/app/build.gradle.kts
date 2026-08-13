@@ -1,5 +1,9 @@
 plugins {
     id("com.android.application")
+    // settings.gradle.kts 가 이 플러그인을 apply false 로 선언만 해두고 여기서 적용하지
+    // 않아 빌드가 깨져 있었다. MainActivity 가 Kotlin 이고 아래 kotlin { } 블록도
+    // 이 플러그인이 등록하는 확장이라, 없으면 assembleDebug 가 컴파일 전에 실패한다.
+    id("org.jetbrains.kotlin.android")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
 }
