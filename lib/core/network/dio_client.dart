@@ -57,7 +57,10 @@ Failure mapToFailure(Object error) {
         'FACE_NOT_DETECTED' ||
         'FOOD_NOT_DETECTED' ||
         'AI_ANALYSIS_FAILED' ||
-        'AI_TIMEOUT' =>
+        'AI_TIMEOUT' ||
+        // 저장 토큰 만료(422). ServerFailure 로 떨어뜨리면 메시지는 뜨는데
+        // 재촬영 경로를 안 탄다.
+        'ANALYSIS_EXPIRED' =>
           AnalysisFailure(code, message),
         _ => ServerFailure(code, message),
       };

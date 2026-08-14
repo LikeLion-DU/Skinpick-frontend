@@ -4,6 +4,9 @@ import '../../../../core/di/providers.dart';
 import '../../../../core/error/failure.dart';
 import '../../../../core/network/unauthorized_signal.dart';
 import '../../../../shared/enums/skin_type.dart';
+import '../../../recommendation/presentation/providers/recommendation_provider.dart';
+import '../../../skin_analysis/presentation/providers/skin_analysis_notifier.dart';
+import '../../../skin_plate/presentation/providers/plate_notifier.dart';
 import '../../domain/entities/auth_user.dart';
 
 /// 전역 인증 상태. 라우터가 이 값만 보고 화면을 결정한다. (PRD §10.5)
@@ -37,6 +40,7 @@ class AuthNotifier extends Notifier<AuthState> {
   AuthState build() {
     // 인터셉터가 이미 토큰을 지웠다. 여기서는 상태만 되돌린다.
     ref.listen(unauthorizedSignalProvider, (_, __) {
+      _clearSession();
       state = const Unauthenticated(expired: true);
     });
 
@@ -127,6 +131,25 @@ class AuthNotifier extends Notifier<AuthState> {
 
   Future<void> logout() async {
     await ref.read(authRepositoryProvider).logout();
+    _clearSession();
     state = const Unauthenticated();
+  }
+
+  /// 화면별 프로바이더는 keep-alive 라 로그아웃해도 살아남는다. 그대로 두면 다음
+  /// 계정이 로그인했을 때 이전 사용자의 얼굴·음식 사진(수 MB)과 점수가 화면에 남는다.
+  ///
+  /// 세션이 끝나는 길은 두 개다 — 사용자가 누른 로그아웃과 401(토큰 만료·무효).
+  /// 둘 다 여기를 지나게 한다. 한쪽만 걸면 만료로 튕긴 경우에 그대로 남는다.
+  ///
+  /// ponytail: 디스크에 남은 기록 사진(`<documents>/plates/*.jpg`)은 지우지 않는다.
+  /// 기록 삭제 기능이 아직 없어서 지우면 되살릴 방법이 없다. 계정 전환이 잦아지거나
+  /// 용량이 문제가 되면 PlateImageStore 에 삭제 경로를 만든다.
+  void _clearSession() {
+    ref
+      ..invalidate(plateNotifierProvider)
+      ..invalidate(skinAnalysisNotifierProvider)
+      ..invalidate(latestSkinAnalysisProvider)
+      // family 전체를 비운다. 이전 사용자의 피부 지표로 만든 추천 문구가 남는다.
+      ..invalidate(recommendationProvider);
   }
 }

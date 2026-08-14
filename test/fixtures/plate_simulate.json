@@ -1,1 +1,15 @@
-{"success":true,"data":{"plateId":1,"beforeScore":60,"afterScore":68,"appliedActions":["HALVE_SOUP"],"removedRules":["R04"],"summary":"국물을 절반만 남기기 — 실행했을 때의 예상 점수입니다."}}
+{
+  "success": true,
+  "data": {
+    "beforeScore": 60,
+    "afterScore": 72,
+    "appliedActions": [
+      "REMOVE_BATTER",
+      "LESS_SPICY"
+    ],
+    "removedRules": [
+      "R02"
+    ],
+    "summary": "튀김옷 일부 제거 · 매운 양념 덜어내기 — 실행했을 때의 예상 점수입니다."
+  }
+}

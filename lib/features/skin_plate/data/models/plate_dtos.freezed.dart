@@ -450,7 +450,9 @@ FoodAnalysisDto _$FoodAnalysisDtoFromJson(Map<String, dynamic> json) {
 
 /// @nodoc
 mixin _$FoodAnalysisDto {
-  int get foodAnalysisId => throw _privateConstructorUsedError;
+  /// `POST /plates/analyze` 응답에는 없다. 저장 전이라 행이 없고, 서버는
+  /// non_null 직렬화라 키 자체를 뺀다. required 로 두면 분석 응답이 파싱에서 죽는다.
+  int? get foodAnalysisId => throw _privateConstructorUsedError;
   String get foodName => throw _privateConstructorUsedError;
   String? get foodCategory => throw _privateConstructorUsedError;
   String get cookingMethod => throw _privateConstructorUsedError;
@@ -475,7 +477,7 @@ abstract class $FoodAnalysisDtoCopyWith<$Res> {
       _$FoodAnalysisDtoCopyWithImpl<$Res, FoodAnalysisDto>;
   @useResult
   $Res call(
-      {int foodAnalysisId,
+      {int? foodAnalysisId,
       String foodName,
       String? foodCategory,
       String cookingMethod,
@@ -501,7 +503,7 @@ class _$FoodAnalysisDtoCopyWithImpl<$Res, $Val extends FoodAnalysisDto>
   @pragma('vm:prefer-inline')
   @override
   $Res call({
-    Object? foodAnalysisId = null,
+    Object? foodAnalysisId = freezed,
     Object? foodName = null,
     Object? foodCategory = freezed,
     Object? cookingMethod = null,
@@ -510,10 +512,10 @@ class _$FoodAnalysisDtoCopyWithImpl<$Res, $Val extends FoodAnalysisDto>
     Object? nutrition = null,
   }) {
     return _then(_value.copyWith(
-      foodAnalysisId: null == foodAnalysisId
+      foodAnalysisId: freezed == foodAnalysisId
           ? _value.foodAnalysisId
           : foodAnalysisId // ignore: cast_nullable_to_non_nullable
-              as int,
+              as int?,
       foodName: null == foodName
           ? _value.foodName
           : foodName // ignore: cast_nullable_to_non_nullable
@@ -561,7 +563,7 @@ abstract class _$$FoodAnalysisDtoImplCopyWith<$Res>
   @override
   @useResult
   $Res call(
-      {int foodAnalysisId,
+      {int? foodAnalysisId,
       String foodName,
       String? foodCategory,
       String cookingMethod,
@@ -586,7 +588,7 @@ class __$$FoodAnalysisDtoImplCopyWithImpl<$Res>
   @pragma('vm:prefer-inline')
   @override
   $Res call({
-    Object? foodAnalysisId = null,
+    Object? foodAnalysisId = freezed,
     Object? foodName = null,
     Object? foodCategory = freezed,
     Object? cookingMethod = null,
@@ -595,10 +597,10 @@ class __$$FoodAnalysisDtoImplCopyWithImpl<$Res>
     Object? nutrition = null,
   }) {
     return _then(_$FoodAnalysisDtoImpl(
-      foodAnalysisId: null == foodAnalysisId
+      foodAnalysisId: freezed == foodAnalysisId
           ? _value.foodAnalysisId
           : foodAnalysisId // ignore: cast_nullable_to_non_nullable
-              as int,
+              as int?,
       foodName: null == foodName
           ? _value.foodName
           : foodName // ignore: cast_nullable_to_non_nullable
@@ -631,7 +633,7 @@ class __$$FoodAnalysisDtoImplCopyWithImpl<$Res>
 @JsonSerializable()
 class _$FoodAnalysisDtoImpl implements _FoodAnalysisDto {
   const _$FoodAnalysisDtoImpl(
-      {required this.foodAnalysisId,
+      {this.foodAnalysisId,
       required this.foodName,
       this.foodCategory,
       this.cookingMethod = 'ETC',
@@ -643,8 +645,10 @@ class _$FoodAnalysisDtoImpl implements _FoodAnalysisDto {
   factory _$FoodAnalysisDtoImpl.fromJson(Map<String, dynamic> json) =>
       _$$FoodAnalysisDtoImplFromJson(json);
 
+  /// `POST /plates/analyze` 응답에는 없다. 저장 전이라 행이 없고, 서버는
+  /// non_null 직렬화라 키 자체를 뺀다. required 로 두면 분석 응답이 파싱에서 죽는다.
   @override
-  final int foodAnalysisId;
+  final int? foodAnalysisId;
   @override
   final String foodName;
   @override
@@ -723,7 +727,7 @@ class _$FoodAnalysisDtoImpl implements _FoodAnalysisDto {
 
 abstract class _FoodAnalysisDto implements FoodAnalysisDto {
   const factory _FoodAnalysisDto(
-      {required final int foodAnalysisId,
+      {final int? foodAnalysisId,
       required final String foodName,
       final String? foodCategory,
       final String cookingMethod,
@@ -734,8 +738,10 @@ abstract class _FoodAnalysisDto implements FoodAnalysisDto {
   factory _FoodAnalysisDto.fromJson(Map<String, dynamic> json) =
       _$FoodAnalysisDtoImpl.fromJson;
 
+  /// `POST /plates/analyze` 응답에는 없다. 저장 전이라 행이 없고, 서버는
+  /// non_null 직렬화라 키 자체를 뺀다. required 로 두면 분석 응답이 파싱에서 죽는다.
   @override
-  int get foodAnalysisId;
+  int? get foodAnalysisId;
   @override
   String get foodName;
   @override
@@ -1353,6 +1359,352 @@ abstract class _FeedbackGroupDto implements FeedbackGroupDto {
       throw _privateConstructorUsedError;
 }
 
+PlateAnalysisDto _$PlateAnalysisDtoFromJson(Map<String, dynamic> json) {
+  return _PlateAnalysisDto.fromJson(json);
+}
+
+/// @nodoc
+mixin _$PlateAnalysisDto {
+  String get analysisToken => throw _privateConstructorUsedError;
+  int get skinAnalysisId => throw _privateConstructorUsedError;
+  int get plateScore => throw _privateConstructorUsedError;
+  int get baseScore => throw _privateConstructorUsedError;
+  String get summary => throw _privateConstructorUsedError;
+  FoodAnalysisDto get food => throw _privateConstructorUsedError;
+  FeedbackGroupDto get feedbacks => throw _privateConstructorUsedError;
+  List<String> get appliedRules => throw _privateConstructorUsedError;
+
+  /// Serializes this PlateAnalysisDto to a JSON map.
+  Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
+
+  /// Create a copy of PlateAnalysisDto
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  $PlateAnalysisDtoCopyWith<PlateAnalysisDto> get copyWith =>
+      throw _privateConstructorUsedError;
+}
+
+/// @nodoc
+abstract class $PlateAnalysisDtoCopyWith<$Res> {
+  factory $PlateAnalysisDtoCopyWith(
+          PlateAnalysisDto value, $Res Function(PlateAnalysisDto) then) =
+      _$PlateAnalysisDtoCopyWithImpl<$Res, PlateAnalysisDto>;
+  @useResult
+  $Res call(
+      {String analysisToken,
+      int skinAnalysisId,
+      int plateScore,
+      int baseScore,
+      String summary,
+      FoodAnalysisDto food,
+      FeedbackGroupDto feedbacks,
+      List<String> appliedRules});
+
+  $FoodAnalysisDtoCopyWith<$Res> get food;
+  $FeedbackGroupDtoCopyWith<$Res> get feedbacks;
+}
+
+/// @nodoc
+class _$PlateAnalysisDtoCopyWithImpl<$Res, $Val extends PlateAnalysisDto>
+    implements $PlateAnalysisDtoCopyWith<$Res> {
+  _$PlateAnalysisDtoCopyWithImpl(this._value, this._then);
+
+  // ignore: unused_field
+  final $Val _value;
+  // ignore: unused_field
+  final $Res Function($Val) _then;
+
+  /// Create a copy of PlateAnalysisDto
+  /// with the given fields replaced by the non-null parameter values.
+  @pragma('vm:prefer-inline')
+  @override
+  $Res call({
+    Object? analysisToken = null,
+    Object? skinAnalysisId = null,
+    Object? plateScore = null,
+    Object? baseScore = null,
+    Object? summary = null,
+    Object? food = null,
+    Object? feedbacks = null,
+    Object? appliedRules = null,
+  }) {
+    return _then(_value.copyWith(
+      analysisToken: null == analysisToken
+          ? _value.analysisToken
+          : analysisToken // ignore: cast_nullable_to_non_nullable
+              as String,
+      skinAnalysisId: null == skinAnalysisId
+          ? _value.skinAnalysisId
+          : skinAnalysisId // ignore: cast_nullable_to_non_nullable
+              as int,
+      plateScore: null == plateScore
+          ? _value.plateScore
+          : plateScore // ignore: cast_nullable_to_non_nullable
+              as int,
+      baseScore: null == baseScore
+          ? _value.baseScore
+          : baseScore // ignore: cast_nullable_to_non_nullable
+              as int,
+      summary: null == summary
+          ? _value.summary
+          : summary // ignore: cast_nullable_to_non_nullable
+              as String,
+      food: null == food
+          ? _value.food
+          : food // ignore: cast_nullable_to_non_nullable
+              as FoodAnalysisDto,
+      feedbacks: null == feedbacks
+          ? _value.feedbacks
+          : feedbacks // ignore: cast_nullable_to_non_nullable
+              as FeedbackGroupDto,
+      appliedRules: null == appliedRules
+          ? _value.appliedRules
+          : appliedRules // ignore: cast_nullable_to_non_nullable
+              as List<String>,
+    ) as $Val);
+  }
+
+  /// Create a copy of PlateAnalysisDto
+  /// with the given fields replaced by the non-null parameter values.
+  @override
+  @pragma('vm:prefer-inline')
+  $FoodAnalysisDtoCopyWith<$Res> get food {
+    return $FoodAnalysisDtoCopyWith<$Res>(_value.food, (value) {
+      return _then(_value.copyWith(food: value) as $Val);
+    });
+  }
+
+  /// Create a copy of PlateAnalysisDto
+  /// with the given fields replaced by the non-null parameter values.
+  @override
+  @pragma('vm:prefer-inline')
+  $FeedbackGroupDtoCopyWith<$Res> get feedbacks {
+    return $FeedbackGroupDtoCopyWith<$Res>(_value.feedbacks, (value) {
+      return _then(_value.copyWith(feedbacks: value) as $Val);
+    });
+  }
+}
+
+/// @nodoc
+abstract class _$$PlateAnalysisDtoImplCopyWith<$Res>
+    implements $PlateAnalysisDtoCopyWith<$Res> {
+  factory _$$PlateAnalysisDtoImplCopyWith(_$PlateAnalysisDtoImpl value,
+          $Res Function(_$PlateAnalysisDtoImpl) then) =
+      __$$PlateAnalysisDtoImplCopyWithImpl<$Res>;
+  @override
+  @useResult
+  $Res call(
+      {String analysisToken,
+      int skinAnalysisId,
+      int plateScore,
+      int baseScore,
+      String summary,
+      FoodAnalysisDto food,
+      FeedbackGroupDto feedbacks,
+      List<String> appliedRules});
+
+  @override
+  $FoodAnalysisDtoCopyWith<$Res> get food;
+  @override
+  $FeedbackGroupDtoCopyWith<$Res> get feedbacks;
+}
+
+/// @nodoc
+class __$$PlateAnalysisDtoImplCopyWithImpl<$Res>
+    extends _$PlateAnalysisDtoCopyWithImpl<$Res, _$PlateAnalysisDtoImpl>
+    implements _$$PlateAnalysisDtoImplCopyWith<$Res> {
+  __$$PlateAnalysisDtoImplCopyWithImpl(_$PlateAnalysisDtoImpl _value,
+      $Res Function(_$PlateAnalysisDtoImpl) _then)
+      : super(_value, _then);
+
+  /// Create a copy of PlateAnalysisDto
+  /// with the given fields replaced by the non-null parameter values.
+  @pragma('vm:prefer-inline')
+  @override
+  $Res call({
+    Object? analysisToken = null,
+    Object? skinAnalysisId = null,
+    Object? plateScore = null,
+    Object? baseScore = null,
+    Object? summary = null,
+    Object? food = null,
+    Object? feedbacks = null,
+    Object? appliedRules = null,
+  }) {
+    return _then(_$PlateAnalysisDtoImpl(
+      analysisToken: null == analysisToken
+          ? _value.analysisToken
+          : analysisToken // ignore: cast_nullable_to_non_nullable
+              as String,
+      skinAnalysisId: null == skinAnalysisId
+          ? _value.skinAnalysisId
+          : skinAnalysisId // ignore: cast_nullable_to_non_nullable
+              as int,
+      plateScore: null == plateScore
+          ? _value.plateScore
+          : plateScore // ignore: cast_nullable_to_non_nullable
+              as int,
+      baseScore: null == baseScore
+          ? _value.baseScore
+          : baseScore // ignore: cast_nullable_to_non_nullable
+              as int,
+      summary: null == summary
+          ? _value.summary
+          : summary // ignore: cast_nullable_to_non_nullable
+              as String,
+      food: null == food
+          ? _value.food
+          : food // ignore: cast_nullable_to_non_nullable
+              as FoodAnalysisDto,
+      feedbacks: null == feedbacks
+          ? _value.feedbacks
+          : feedbacks // ignore: cast_nullable_to_non_nullable
+              as FeedbackGroupDto,
+      appliedRules: null == appliedRules
+          ? _value._appliedRules
+          : appliedRules // ignore: cast_nullable_to_non_nullable
+              as List<String>,
+    ));
+  }
+}
+
+/// @nodoc
+@JsonSerializable()
+class _$PlateAnalysisDtoImpl implements _PlateAnalysisDto {
+  const _$PlateAnalysisDtoImpl(
+      {required this.analysisToken,
+      required this.skinAnalysisId,
+      required this.plateScore,
+      this.baseScore = 70,
+      this.summary = '',
+      required this.food,
+      required this.feedbacks,
+      final List<String> appliedRules = const <String>[]})
+      : _appliedRules = appliedRules;
+
+  factory _$PlateAnalysisDtoImpl.fromJson(Map<String, dynamic> json) =>
+      _$$PlateAnalysisDtoImplFromJson(json);
+
+  @override
+  final String analysisToken;
+  @override
+  final int skinAnalysisId;
+  @override
+  final int plateScore;
+  @override
+  @JsonKey()
+  final int baseScore;
+  @override
+  @JsonKey()
+  final String summary;
+  @override
+  final FoodAnalysisDto food;
+  @override
+  final FeedbackGroupDto feedbacks;
+  final List<String> _appliedRules;
+  @override
+  @JsonKey()
+  List<String> get appliedRules {
+    if (_appliedRules is EqualUnmodifiableListView) return _appliedRules;
+    // ignore: implicit_dynamic_type
+    return EqualUnmodifiableListView(_appliedRules);
+  }
+
+  @override
+  String toString() {
+    return 'PlateAnalysisDto(analysisToken: $analysisToken, skinAnalysisId: $skinAnalysisId, plateScore: $plateScore, baseScore: $baseScore, summary: $summary, food: $food, feedbacks: $feedbacks, appliedRules: $appliedRules)';
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return identical(this, other) ||
+        (other.runtimeType == runtimeType &&
+            other is _$PlateAnalysisDtoImpl &&
+            (identical(other.analysisToken, analysisToken) ||
+                other.analysisToken == analysisToken) &&
+            (identical(other.skinAnalysisId, skinAnalysisId) ||
+                other.skinAnalysisId == skinAnalysisId) &&
+            (identical(other.plateScore, plateScore) ||
+                other.plateScore == plateScore) &&
+            (identical(other.baseScore, baseScore) ||
+                other.baseScore == baseScore) &&
+            (identical(other.summary, summary) || other.summary == summary) &&
+            (identical(other.food, food) || other.food == food) &&
+            (identical(other.feedbacks, feedbacks) ||
+                other.feedbacks == feedbacks) &&
+            const DeepCollectionEquality()
+                .equals(other._appliedRules, _appliedRules));
+  }
+
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  @override
+  int get hashCode => Object.hash(
+      runtimeType,
+      analysisToken,
+      skinAnalysisId,
+      plateScore,
+      baseScore,
+      summary,
+      food,
+      feedbacks,
+      const DeepCollectionEquality().hash(_appliedRules));
+
+  /// Create a copy of PlateAnalysisDto
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  @override
+  @pragma('vm:prefer-inline')
+  _$$PlateAnalysisDtoImplCopyWith<_$PlateAnalysisDtoImpl> get copyWith =>
+      __$$PlateAnalysisDtoImplCopyWithImpl<_$PlateAnalysisDtoImpl>(
+          this, _$identity);
+
+  @override
+  Map<String, dynamic> toJson() {
+    return _$$PlateAnalysisDtoImplToJson(
+      this,
+    );
+  }
+}
+
+abstract class _PlateAnalysisDto implements PlateAnalysisDto {
+  const factory _PlateAnalysisDto(
+      {required final String analysisToken,
+      required final int skinAnalysisId,
+      required final int plateScore,
+      final int baseScore,
+      final String summary,
+      required final FoodAnalysisDto food,
+      required final FeedbackGroupDto feedbacks,
+      final List<String> appliedRules}) = _$PlateAnalysisDtoImpl;
+
+  factory _PlateAnalysisDto.fromJson(Map<String, dynamic> json) =
+      _$PlateAnalysisDtoImpl.fromJson;
+
+  @override
+  String get analysisToken;
+  @override
+  int get skinAnalysisId;
+  @override
+  int get plateScore;
+  @override
+  int get baseScore;
+  @override
+  String get summary;
+  @override
+  FoodAnalysisDto get food;
+  @override
+  FeedbackGroupDto get feedbacks;
+  @override
+  List<String> get appliedRules;
+
+  /// Create a copy of PlateAnalysisDto
+  /// with the given fields replaced by the non-null parameter values.
+  @override
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  _$$PlateAnalysisDtoImplCopyWith<_$PlateAnalysisDtoImpl> get copyWith =>
+      throw _privateConstructorUsedError;
+}
+
 SkinPlateDto _$SkinPlateDtoFromJson(Map<String, dynamic> json) {
   return _SkinPlateDto.fromJson(json);
 }
@@ -1738,7 +2090,6 @@ PlateSimulationDto _$PlateSimulationDtoFromJson(Map<String, dynamic> json) {
 
 /// @nodoc
 mixin _$PlateSimulationDto {
-  int get plateId => throw _privateConstructorUsedError;
   int get beforeScore => throw _privateConstructorUsedError;
   int get afterScore => throw _privateConstructorUsedError;
   List<String> get appliedActions => throw _privateConstructorUsedError;
@@ -1762,8 +2113,7 @@ abstract class $PlateSimulationDtoCopyWith<$Res> {
       _$PlateSimulationDtoCopyWithImpl<$Res, PlateSimulationDto>;
   @useResult
   $Res call(
-      {int plateId,
-      int beforeScore,
+      {int beforeScore,
       int afterScore,
       List<String> appliedActions,
       List<String> removedRules,
@@ -1785,7 +2135,6 @@ class _$PlateSimulationDtoCopyWithImpl<$Res, $Val extends PlateSimulationDto>
   @pragma('vm:prefer-inline')
   @override
   $Res call({
-    Object? plateId = null,
     Object? beforeScore = null,
     Object? afterScore = null,
     Object? appliedActions = null,
@@ -1793,10 +2142,6 @@ class _$PlateSimulationDtoCopyWithImpl<$Res, $Val extends PlateSimulationDto>
     Object? summary = null,
   }) {
     return _then(_value.copyWith(
-      plateId: null == plateId
-          ? _value.plateId
-          : plateId // ignore: cast_nullable_to_non_nullable
-              as int,
       beforeScore: null == beforeScore
           ? _value.beforeScore
           : beforeScore // ignore: cast_nullable_to_non_nullable
@@ -1830,8 +2175,7 @@ abstract class _$$PlateSimulationDtoImplCopyWith<$Res>
   @override
   @useResult
   $Res call(
-      {int plateId,
-      int beforeScore,
+      {int beforeScore,
       int afterScore,
       List<String> appliedActions,
       List<String> removedRules,
@@ -1851,7 +2195,6 @@ class __$$PlateSimulationDtoImplCopyWithImpl<$Res>
   @pragma('vm:prefer-inline')
   @override
   $Res call({
-    Object? plateId = null,
     Object? beforeScore = null,
     Object? afterScore = null,
     Object? appliedActions = null,
@@ -1859,10 +2202,6 @@ class __$$PlateSimulationDtoImplCopyWithImpl<$Res>
     Object? summary = null,
   }) {
     return _then(_$PlateSimulationDtoImpl(
-      plateId: null == plateId
-          ? _value.plateId
-          : plateId // ignore: cast_nullable_to_non_nullable
-              as int,
       beforeScore: null == beforeScore
           ? _value.beforeScore
           : beforeScore // ignore: cast_nullable_to_non_nullable
@@ -1891,8 +2230,7 @@ class __$$PlateSimulationDtoImplCopyWithImpl<$Res>
 @JsonSerializable()
 class _$PlateSimulationDtoImpl implements _PlateSimulationDto {
   const _$PlateSimulationDtoImpl(
-      {required this.plateId,
-      required this.beforeScore,
+      {required this.beforeScore,
       required this.afterScore,
       final List<String> appliedActions = const <String>[],
       final List<String> removedRules = const <String>[],
@@ -1903,8 +2241,6 @@ class _$PlateSimulationDtoImpl implements _PlateSimulationDto {
   factory _$PlateSimulationDtoImpl.fromJson(Map<String, dynamic> json) =>
       _$$PlateSimulationDtoImplFromJson(json);
 
-  @override
-  final int plateId;
   @override
   final int beforeScore;
   @override
@@ -1933,7 +2269,7 @@ class _$PlateSimulationDtoImpl implements _PlateSimulationDto {
 
   @override
   String toString() {
-    return 'PlateSimulationDto(plateId: $plateId, beforeScore: $beforeScore, afterScore: $afterScore, appliedActions: $appliedActions, removedRules: $removedRules, summary: $summary)';
+    return 'PlateSimulationDto(beforeScore: $beforeScore, afterScore: $afterScore, appliedActions: $appliedActions, removedRules: $removedRules, summary: $summary)';
   }
 
   @override
@@ -1941,7 +2277,6 @@ class _$PlateSimulationDtoImpl implements _PlateSimulationDto {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
             other is _$PlateSimulationDtoImpl &&
-            (identical(other.plateId, plateId) || other.plateId == plateId) &&
             (identical(other.beforeScore, beforeScore) ||
                 other.beforeScore == beforeScore) &&
             (identical(other.afterScore, afterScore) ||
@@ -1957,7 +2292,6 @@ class _$PlateSimulationDtoImpl implements _PlateSimulationDto {
   @override
   int get hashCode => Object.hash(
       runtimeType,
-      plateId,
       beforeScore,
       afterScore,
       const DeepCollectionEquality().hash(_appliedActions),
@@ -1983,8 +2317,7 @@ class _$PlateSimulationDtoImpl implements _PlateSimulationDto {
 
 abstract class _PlateSimulationDto implements PlateSimulationDto {
   const factory _PlateSimulationDto(
-      {required final int plateId,
-      required final int beforeScore,
+      {required final int beforeScore,
       required final int afterScore,
       final List<String> appliedActions,
       final List<String> removedRules,
@@ -1993,8 +2326,6 @@ abstract class _PlateSimulationDto implements PlateSimulationDto {
   factory _PlateSimulationDto.fromJson(Map<String, dynamic> json) =
       _$PlateSimulationDtoImpl.fromJson;
 
-  @override
-  int get plateId;
   @override
   int get beforeScore;
   @override

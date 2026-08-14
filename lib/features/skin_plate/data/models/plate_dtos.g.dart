@@ -41,7 +41,7 @@ Map<String, dynamic> _$$IngredientDtoImplToJson(_$IngredientDtoImpl instance) =>
 _$FoodAnalysisDtoImpl _$$FoodAnalysisDtoImplFromJson(
         Map<String, dynamic> json) =>
     _$FoodAnalysisDtoImpl(
-      foodAnalysisId: (json['foodAnalysisId'] as num).toInt(),
+      foodAnalysisId: (json['foodAnalysisId'] as num?)?.toInt(),
       foodName: json['foodName'] as String,
       foodCategory: json['foodCategory'] as String?,
       cookingMethod: json['cookingMethod'] as String? ?? 'ETC',
@@ -119,6 +119,36 @@ Map<String, dynamic> _$$FeedbackGroupDtoImplToJson(
       'action': instance.action,
     };
 
+_$PlateAnalysisDtoImpl _$$PlateAnalysisDtoImplFromJson(
+        Map<String, dynamic> json) =>
+    _$PlateAnalysisDtoImpl(
+      analysisToken: json['analysisToken'] as String,
+      skinAnalysisId: (json['skinAnalysisId'] as num).toInt(),
+      plateScore: (json['plateScore'] as num).toInt(),
+      baseScore: (json['baseScore'] as num?)?.toInt() ?? 70,
+      summary: json['summary'] as String? ?? '',
+      food: FoodAnalysisDto.fromJson(json['food'] as Map<String, dynamic>),
+      feedbacks:
+          FeedbackGroupDto.fromJson(json['feedbacks'] as Map<String, dynamic>),
+      appliedRules: (json['appliedRules'] as List<dynamic>?)
+              ?.map((e) => e as String)
+              .toList() ??
+          const <String>[],
+    );
+
+Map<String, dynamic> _$$PlateAnalysisDtoImplToJson(
+        _$PlateAnalysisDtoImpl instance) =>
+    <String, dynamic>{
+      'analysisToken': instance.analysisToken,
+      'skinAnalysisId': instance.skinAnalysisId,
+      'plateScore': instance.plateScore,
+      'baseScore': instance.baseScore,
+      'summary': instance.summary,
+      'food': instance.food,
+      'feedbacks': instance.feedbacks,
+      'appliedRules': instance.appliedRules,
+    };
+
 _$SkinPlateDtoImpl _$$SkinPlateDtoImplFromJson(Map<String, dynamic> json) =>
     _$SkinPlateDtoImpl(
       plateId: (json['plateId'] as num).toInt(),
@@ -152,7 +182,6 @@ Map<String, dynamic> _$$SkinPlateDtoImplToJson(_$SkinPlateDtoImpl instance) =>
 _$PlateSimulationDtoImpl _$$PlateSimulationDtoImplFromJson(
         Map<String, dynamic> json) =>
     _$PlateSimulationDtoImpl(
-      plateId: (json['plateId'] as num).toInt(),
       beforeScore: (json['beforeScore'] as num).toInt(),
       afterScore: (json['afterScore'] as num).toInt(),
       appliedActions: (json['appliedActions'] as List<dynamic>?)
@@ -169,7 +198,6 @@ _$PlateSimulationDtoImpl _$$PlateSimulationDtoImplFromJson(
 Map<String, dynamic> _$$PlateSimulationDtoImplToJson(
         _$PlateSimulationDtoImpl instance) =>
     <String, dynamic>{
-      'plateId': instance.plateId,
       'beforeScore': instance.beforeScore,
       'afterScore': instance.afterScore,
       'appliedActions': instance.appliedActions,

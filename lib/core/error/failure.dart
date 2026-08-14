@@ -27,8 +27,13 @@ class AnalysisFailure extends Failure {
   const AnalysisFailure(this.code, super.message);
   final String code;
 
+  /// ANALYSIS_EXPIRED 는 저장 토큰(30분)이 지난 것이다. 서버가 401 이 아니라 422 로
+  /// 내리므로 UnauthorizedInterceptor 를 타지 않는다 — 로그인 세션은 그대로 두고
+  /// 재촬영만 시킨다.
   bool get shouldRetakePhoto =>
-      code == 'FACE_NOT_DETECTED' || code == 'FOOD_NOT_DETECTED';
+      code == 'FACE_NOT_DETECTED' ||
+      code == 'FOOD_NOT_DETECTED' ||
+      code == 'ANALYSIS_EXPIRED';
 }
 
 class UnknownFailure extends Failure {
