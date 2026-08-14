@@ -1,6 +1,6 @@
-import 'package:dio/dio.dart';
 import 'dart:typed_data';
 
+import 'package:dio/dio.dart';
 
 import '../../../../core/network/api_call.dart';
 import '../../../../shared/enums/plate_action_code.dart';

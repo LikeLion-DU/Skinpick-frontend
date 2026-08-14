@@ -4,6 +4,7 @@ import '../../../../core/di/providers.dart';
 import '../../../../core/error/failure.dart';
 import '../../../../core/network/unauthorized_signal.dart';
 import '../../../../shared/enums/skin_type.dart';
+import '../../../recommendation/presentation/providers/recommendation_provider.dart';
 import '../../../skin_analysis/presentation/providers/skin_analysis_notifier.dart';
 import '../../../skin_plate/presentation/providers/plate_notifier.dart';
 import '../../domain/entities/auth_user.dart';
@@ -147,6 +148,8 @@ class AuthNotifier extends Notifier<AuthState> {
     ref
       ..invalidate(plateNotifierProvider)
       ..invalidate(skinAnalysisNotifierProvider)
-      ..invalidate(latestSkinAnalysisProvider);
+      ..invalidate(latestSkinAnalysisProvider)
+      // family 전체를 비운다. 이전 사용자의 피부 지표로 만든 추천 문구가 남는다.
+      ..invalidate(recommendationProvider);
   }
 }

@@ -352,6 +352,62 @@ void main() {
       expect(state.isSaved, isTrue);
     });
 
+    test('저장해도 시뮬레이션 결과가 유지된다', () async {
+      final app = boot(_FakeRepository(
+        analysis: Success(analysisOf(token)),
+        save: Success(savedOf(7)),
+      )..simulateResult = const Success(simulation));
+
+      await app.notifier.analyze(image);
+      await app.notifier.simulate([PlateActionCode.removeBatter]);
+      expect(app.container.read(plateNotifierProvider).displayedScore, 72);
+
+      await app.notifier.saveRecord();
+      final state = app.container.read(plateNotifierProvider);
+
+      // 게이지가 72 에서 60 으로 떨어지면 액션 버튼은 "되돌리기" 인데 점수만 원복된다.
+      expect(state.status, PlateRecordStatus.saved);
+      expect(state.displayedScore, 72);
+    });
+
+    test('되돌린 뒤 늦게 온 응답이 점수를 되살리지 않는다', () async {
+      final gate = Completer<Result<PlateSimulation>>();
+      final app = boot(_FakeRepository(analysis: Success(analysisOf(token)))
+        ..simulateGate = gate);
+
+      await app.notifier.analyze(image);
+      final pending = app.notifier.simulate([PlateActionCode.removeBatter]);
+
+      app.notifier.clearSimulation(); // 사용자가 되돌렸다
+
+      gate.complete(const Success(simulation));
+      await pending;
+
+      final state = app.container.read(plateNotifierProvider);
+      expect(state.simulation, isNull);
+      expect(state.displayedScore, 60); // 분석 점수 그대로
+    });
+
+    test('저장이 끝나는 사이 온 응답은 버리지 않는다 — 같은 끼니다', () async {
+      final gate = Completer<Result<PlateSimulation>>();
+      final app = boot(_FakeRepository(
+        analysis: Success(analysisOf(token)),
+        save: Success(savedOf(7)),
+      )..simulateGate = gate);
+
+      await app.notifier.analyze(image);
+      final pending = app.notifier.simulate([PlateActionCode.removeBatter]);
+      await app.notifier.saveRecord(); // 기다리는 사이 저장 완료
+
+      gate.complete(const Success(simulation));
+      await pending;
+
+      final state = app.container.read(plateNotifierProvider);
+      expect(state.isSaved, isTrue);
+      expect(state.displayedScore, 72); // 저장됐다는 이유로 버리면 화면이 멈춘다
+      expect(state.simulating, isFalse);
+    });
+
     test('그 밖의 실패는 원래 점수를 그대로 둔다', () async {
       final app = boot(_FakeRepository(analysis: Success(analysisOf(token)))
         ..simulateResult = const FailureResult(NetworkFailure()));
@@ -408,10 +464,14 @@ class _FakeRepository implements PlateRepository {
 
   Result<PlateSimulation>? simulateResult;
 
+  /// 응답을 붙잡아 두고 그 사이 사용자가 조작하는 상황을 만든다.
+  Completer<Result<PlateSimulation>>? simulateGate;
+
   @override
   Future<Result<PlateSimulation>> simulateAnalysis(
       String analysisToken, List<PlateActionCode> actions) async {
     simulateCalls.add('token:$analysisToken');
+    if (simulateGate != null) return simulateGate!.future;
     return simulateResult ?? (throw UnimplementedError());
   }
 
@@ -419,6 +479,7 @@ class _FakeRepository implements PlateRepository {
   Future<Result<PlateSimulation>> simulate(
       int plateId, List<PlateActionCode> actions) async {
     simulateCalls.add('plateId:$plateId');
+    if (simulateGate != null) return simulateGate!.future;
     return simulateResult ?? (throw UnimplementedError());
   }
 

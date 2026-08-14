@@ -116,29 +116,37 @@ class PlateNotifier extends Notifier<PlateState> {
   /// 몇 번째 분석인지. 결과 화면에서 뒤로 나가 다시 찍으면 요청이 둘이 되는데,
   /// AI 호출이라 수십 초가 걸려 먼저 보낸 쪽이 나중에 도착할 수 있다. 세대가
   /// 다르면 그 응답은 사용자가 이미 버린 음식의 것이다.
-  int _generation = 0;
+  int _analysisGeneration = 0;
+
+  /// 시뮬레이션도 같은 문제를 겪는다. 버튼을 눌렀다가 되돌리면 요청은 이미 나갔고,
+  /// 늦게 온 응답이 "되돌린" 화면에 점수를 다시 붙인다.
+  int _simulationGeneration = 0;
 
   /// 분석만 한다. 서버에 기록이 생기지 않는다.
   ///
   /// [skinAnalysisId] 를 생략하면 서버가 최신 피부 분석을 자동으로 쓴다.
   Future<void> analyze(XFile image, {int? skinAnalysisId}) async {
-    final generation = ++_generation;
+    final generation = ++_analysisGeneration;
+    ++_simulationGeneration; // 다른 음식이 됐다. 날아가던 시뮬레이션도 무효다.
+
+    // **첫 줄에서 비운다.** 촬영 화면은 이 함수를 await 하지 않고 곧바로 결과 화면을
+    // push 한다(food_capture_page). 아래 readAsBytes 뒤로 미루면 그 사이 결과 화면이
+    // 이전 음식의 사진·점수·"저장됐어요" 배너를 그리고, 이전 결과가 READY 였다면
+    // 살아 있는 저장 버튼까지 보인다 — 눌리면 방금 찍은 것과 다른 끼니가 기록된다.
+    state = const PlateState();
 
     // 여기서 한 번만 읽는다. XFile 을 그대로 데이터소스에 넘기면 업로드 직전에
-    // 같은 파일을 한 번 더 읽어 멀티 MB 사본이 둘이 된다.
+    // 같은 파일을 한 번 더 읽어 사본이 둘이 된다.
     final bytes = await image.readAsBytes();
-    if (generation != _generation) return;
+    if (generation != _analysisGeneration) return;
 
-    // 프로바이더가 keep-alive 고 화면을 나가도 상태가 살아 있다. 새 분석이
-    // 이전 임시 결과를 **덮어쓰는 것**이 유일한 정리 경로다. 부분 갱신이 아니라
-    // 통째로 갈아엎어야 이전 음식의 결과·저장 상태가 섞이지 않는다.
     state = PlateState(imageBytes: bytes);
 
     final result = await ref
         .read(plateRepositoryProvider)
         .analyze(bytes, skinAnalysisId: skinAnalysisId);
 
-    if (generation != _generation) return;
+    if (generation != _analysisGeneration) return;
 
     state = result.when(
       success: (analysis) => PlateState(
@@ -166,10 +174,17 @@ class PlateNotifier extends Notifier<PlateState> {
       return;
     }
 
+    // 시뮬레이션을 여기서 붙잡아 둔다. 아래 세 상태를 전부 새로 만들기 때문에,
+    // 잡아두지 않으면 SAVING 으로 넘어가는 순간 null 이 되고 그 뒤에 `state.simulation`
+    // 을 읽어봐야 이미 지워진 값이다 — 게이지가 72 에서 60 으로 떨어지는데 액션
+    // 버튼은 "되돌리기" 로 남는다.
+    final simulation = state.simulation;
+
     state = PlateState(
       imageBytes: bytes,
       analysis: analysis,
       status: PlateRecordStatus.saving,
+      simulation: simulation,
     );
 
     final result =
@@ -185,9 +200,7 @@ class PlateNotifier extends Notifier<PlateState> {
         analysis: analysis,
         savedPlate: saved,
         status: PlateRecordStatus.saved,
-        // 저장했다고 시뮬레이션 결과를 지우지 않는다. 지우면 게이지가 72 에서 60
-        // 으로 되돌아가는데 액션 버튼은 "되돌리기" 상태로 남는다.
-        simulation: state.simulation,
+        simulation: simulation,
       ),
       // analysis 를 버리지 않는다. 재시도가 같은 토큰을 써야 한다.
       failure: (failure) => PlateState(
@@ -195,7 +208,7 @@ class PlateNotifier extends Notifier<PlateState> {
         analysis: analysis,
         status: PlateRecordStatus.saveFailed,
         failure: failure,
-        simulation: state.simulation,
+        simulation: simulation,
       ),
     );
   }
@@ -215,6 +228,8 @@ class PlateNotifier extends Notifier<PlateState> {
     final analysis = state.analysis;
     if (actions.isEmpty || (saved == null && analysis == null)) return;
 
+    final generation = ++_simulationGeneration;
+
     state = state.withSimulation(
       simulation: state.simulation,
       simulating: true,
@@ -225,13 +240,13 @@ class PlateNotifier extends Notifier<PlateState> {
         ? await repository.simulate(saved.id, actions)
         : await repository.simulateAnalysis(analysis!.analysisToken, actions);
 
-    // 응답을 기다리는 사이 새 음식을 찍었거나 저장이 끝났을 수 있다. 그러면 이
-    // 결과는 다른 끼니의 것이라 지금 화면에 붙이면 안 된다 — 사진과 음식명은 B 인데
-    // "60점 → 72점" 배너만 A 의 것인 화면이 만들어진다.
-    if (state.savedPlate?.id != saved?.id ||
-        state.analysis?.analysisToken != analysis?.analysisToken) {
-      return;
-    }
+    // 응답을 기다리는 사이 사용자가 되돌렸거나, 다른 액션을 눌렀거나, 새 음식을
+    // 찍었을 수 있다. 그러면 이 결과는 지금 화면이 말하는 것과 다르다 — 액션은
+    // 하나도 안 눌린 채 게이지만 72 에 서 있는 화면이 만들어진다.
+    //
+    // 저장 여부는 보지 않는다. 기다리는 사이 저장이 끝나도 **같은 끼니**라
+    // 결과는 그대로 유효하다. 저장됐다는 이유로 버리면 화면이 아무 반응 없이 멈춘다.
+    if (generation != _simulationGeneration) return;
 
     state = result.when(
       success: (simulation) =>
@@ -265,6 +280,11 @@ class PlateNotifier extends Notifier<PlateState> {
   }
 
   /// 되돌리기 — 원래 점수로 복귀한다. 서버에 저장된 적이 없으므로 지우기만 하면 된다.
-  void clearSimulation() =>
-      state = state.withSimulation(simulation: null, simulating: false);
+  ///
+  /// 세대를 올려 **날아가던 요청도 함께 무효로 만든다.** 안 그러면 되돌린 직후
+  /// 늦게 온 응답이 점수를 다시 붙여, 아무 액션도 안 눌린 화면에 72 가 떠 있는다.
+  void clearSimulation() {
+    ++_simulationGeneration;
+    state = state.withSimulation(simulation: null, simulating: false);
+  }
 }
