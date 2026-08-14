@@ -2084,6 +2084,582 @@ abstract class _SkinPlateDto implements SkinPlateDto {
       throw _privateConstructorUsedError;
 }
 
+PlateHistoryItemDto _$PlateHistoryItemDtoFromJson(Map<String, dynamic> json) {
+  return _PlateHistoryItemDto.fromJson(json);
+}
+
+/// @nodoc
+mixin _$PlateHistoryItemDto {
+  int get plateId => throw _privateConstructorUsedError;
+  String get foodName => throw _privateConstructorUsedError;
+  int get plateScore => throw _privateConstructorUsedError;
+  DateTime get recordedAt => throw _privateConstructorUsedError;
+
+  /// Serializes this PlateHistoryItemDto to a JSON map.
+  Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
+
+  /// Create a copy of PlateHistoryItemDto
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  $PlateHistoryItemDtoCopyWith<PlateHistoryItemDto> get copyWith =>
+      throw _privateConstructorUsedError;
+}
+
+/// @nodoc
+abstract class $PlateHistoryItemDtoCopyWith<$Res> {
+  factory $PlateHistoryItemDtoCopyWith(
+          PlateHistoryItemDto value, $Res Function(PlateHistoryItemDto) then) =
+      _$PlateHistoryItemDtoCopyWithImpl<$Res, PlateHistoryItemDto>;
+  @useResult
+  $Res call(
+      {int plateId, String foodName, int plateScore, DateTime recordedAt});
+}
+
+/// @nodoc
+class _$PlateHistoryItemDtoCopyWithImpl<$Res, $Val extends PlateHistoryItemDto>
+    implements $PlateHistoryItemDtoCopyWith<$Res> {
+  _$PlateHistoryItemDtoCopyWithImpl(this._value, this._then);
+
+  // ignore: unused_field
+  final $Val _value;
+  // ignore: unused_field
+  final $Res Function($Val) _then;
+
+  /// Create a copy of PlateHistoryItemDto
+  /// with the given fields replaced by the non-null parameter values.
+  @pragma('vm:prefer-inline')
+  @override
+  $Res call({
+    Object? plateId = null,
+    Object? foodName = null,
+    Object? plateScore = null,
+    Object? recordedAt = null,
+  }) {
+    return _then(_value.copyWith(
+      plateId: null == plateId
+          ? _value.plateId
+          : plateId // ignore: cast_nullable_to_non_nullable
+              as int,
+      foodName: null == foodName
+          ? _value.foodName
+          : foodName // ignore: cast_nullable_to_non_nullable
+              as String,
+      plateScore: null == plateScore
+          ? _value.plateScore
+          : plateScore // ignore: cast_nullable_to_non_nullable
+              as int,
+      recordedAt: null == recordedAt
+          ? _value.recordedAt
+          : recordedAt // ignore: cast_nullable_to_non_nullable
+              as DateTime,
+    ) as $Val);
+  }
+}
+
+/// @nodoc
+abstract class _$$PlateHistoryItemDtoImplCopyWith<$Res>
+    implements $PlateHistoryItemDtoCopyWith<$Res> {
+  factory _$$PlateHistoryItemDtoImplCopyWith(_$PlateHistoryItemDtoImpl value,
+          $Res Function(_$PlateHistoryItemDtoImpl) then) =
+      __$$PlateHistoryItemDtoImplCopyWithImpl<$Res>;
+  @override
+  @useResult
+  $Res call(
+      {int plateId, String foodName, int plateScore, DateTime recordedAt});
+}
+
+/// @nodoc
+class __$$PlateHistoryItemDtoImplCopyWithImpl<$Res>
+    extends _$PlateHistoryItemDtoCopyWithImpl<$Res, _$PlateHistoryItemDtoImpl>
+    implements _$$PlateHistoryItemDtoImplCopyWith<$Res> {
+  __$$PlateHistoryItemDtoImplCopyWithImpl(_$PlateHistoryItemDtoImpl _value,
+      $Res Function(_$PlateHistoryItemDtoImpl) _then)
+      : super(_value, _then);
+
+  /// Create a copy of PlateHistoryItemDto
+  /// with the given fields replaced by the non-null parameter values.
+  @pragma('vm:prefer-inline')
+  @override
+  $Res call({
+    Object? plateId = null,
+    Object? foodName = null,
+    Object? plateScore = null,
+    Object? recordedAt = null,
+  }) {
+    return _then(_$PlateHistoryItemDtoImpl(
+      plateId: null == plateId
+          ? _value.plateId
+          : plateId // ignore: cast_nullable_to_non_nullable
+              as int,
+      foodName: null == foodName
+          ? _value.foodName
+          : foodName // ignore: cast_nullable_to_non_nullable
+              as String,
+      plateScore: null == plateScore
+          ? _value.plateScore
+          : plateScore // ignore: cast_nullable_to_non_nullable
+              as int,
+      recordedAt: null == recordedAt
+          ? _value.recordedAt
+          : recordedAt // ignore: cast_nullable_to_non_nullable
+              as DateTime,
+    ));
+  }
+}
+
+/// @nodoc
+@JsonSerializable()
+class _$PlateHistoryItemDtoImpl implements _PlateHistoryItemDto {
+  const _$PlateHistoryItemDtoImpl(
+      {required this.plateId,
+      required this.foodName,
+      this.plateScore = 0,
+      required this.recordedAt});
+
+  factory _$PlateHistoryItemDtoImpl.fromJson(Map<String, dynamic> json) =>
+      _$$PlateHistoryItemDtoImplFromJson(json);
+
+  @override
+  final int plateId;
+  @override
+  final String foodName;
+  @override
+  @JsonKey()
+  final int plateScore;
+  @override
+  final DateTime recordedAt;
+
+  @override
+  String toString() {
+    return 'PlateHistoryItemDto(plateId: $plateId, foodName: $foodName, plateScore: $plateScore, recordedAt: $recordedAt)';
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return identical(this, other) ||
+        (other.runtimeType == runtimeType &&
+            other is _$PlateHistoryItemDtoImpl &&
+            (identical(other.plateId, plateId) || other.plateId == plateId) &&
+            (identical(other.foodName, foodName) ||
+                other.foodName == foodName) &&
+            (identical(other.plateScore, plateScore) ||
+                other.plateScore == plateScore) &&
+            (identical(other.recordedAt, recordedAt) ||
+                other.recordedAt == recordedAt));
+  }
+
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  @override
+  int get hashCode =>
+      Object.hash(runtimeType, plateId, foodName, plateScore, recordedAt);
+
+  /// Create a copy of PlateHistoryItemDto
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  @override
+  @pragma('vm:prefer-inline')
+  _$$PlateHistoryItemDtoImplCopyWith<_$PlateHistoryItemDtoImpl> get copyWith =>
+      __$$PlateHistoryItemDtoImplCopyWithImpl<_$PlateHistoryItemDtoImpl>(
+          this, _$identity);
+
+  @override
+  Map<String, dynamic> toJson() {
+    return _$$PlateHistoryItemDtoImplToJson(
+      this,
+    );
+  }
+}
+
+abstract class _PlateHistoryItemDto implements PlateHistoryItemDto {
+  const factory _PlateHistoryItemDto(
+      {required final int plateId,
+      required final String foodName,
+      final int plateScore,
+      required final DateTime recordedAt}) = _$PlateHistoryItemDtoImpl;
+
+  factory _PlateHistoryItemDto.fromJson(Map<String, dynamic> json) =
+      _$PlateHistoryItemDtoImpl.fromJson;
+
+  @override
+  int get plateId;
+  @override
+  String get foodName;
+  @override
+  int get plateScore;
+  @override
+  DateTime get recordedAt;
+
+  /// Create a copy of PlateHistoryItemDto
+  /// with the given fields replaced by the non-null parameter values.
+  @override
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  _$$PlateHistoryItemDtoImplCopyWith<_$PlateHistoryItemDtoImpl> get copyWith =>
+      throw _privateConstructorUsedError;
+}
+
+PlateHistoryDayDto _$PlateHistoryDayDtoFromJson(Map<String, dynamic> json) {
+  return _PlateHistoryDayDto.fromJson(json);
+}
+
+/// @nodoc
+mixin _$PlateHistoryDayDto {
+  DateTime get date => throw _privateConstructorUsedError;
+
+  /// 그날 피부 분석이 없으면 서버가 키를 뺀다. required 로 두면 파싱이 죽는다.
+  int? get skinScore => throw _privateConstructorUsedError;
+  List<PlateHistoryItemDto> get plates => throw _privateConstructorUsedError;
+
+  /// Serializes this PlateHistoryDayDto to a JSON map.
+  Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
+
+  /// Create a copy of PlateHistoryDayDto
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  $PlateHistoryDayDtoCopyWith<PlateHistoryDayDto> get copyWith =>
+      throw _privateConstructorUsedError;
+}
+
+/// @nodoc
+abstract class $PlateHistoryDayDtoCopyWith<$Res> {
+  factory $PlateHistoryDayDtoCopyWith(
+          PlateHistoryDayDto value, $Res Function(PlateHistoryDayDto) then) =
+      _$PlateHistoryDayDtoCopyWithImpl<$Res, PlateHistoryDayDto>;
+  @useResult
+  $Res call({DateTime date, int? skinScore, List<PlateHistoryItemDto> plates});
+}
+
+/// @nodoc
+class _$PlateHistoryDayDtoCopyWithImpl<$Res, $Val extends PlateHistoryDayDto>
+    implements $PlateHistoryDayDtoCopyWith<$Res> {
+  _$PlateHistoryDayDtoCopyWithImpl(this._value, this._then);
+
+  // ignore: unused_field
+  final $Val _value;
+  // ignore: unused_field
+  final $Res Function($Val) _then;
+
+  /// Create a copy of PlateHistoryDayDto
+  /// with the given fields replaced by the non-null parameter values.
+  @pragma('vm:prefer-inline')
+  @override
+  $Res call({
+    Object? date = null,
+    Object? skinScore = freezed,
+    Object? plates = null,
+  }) {
+    return _then(_value.copyWith(
+      date: null == date
+          ? _value.date
+          : date // ignore: cast_nullable_to_non_nullable
+              as DateTime,
+      skinScore: freezed == skinScore
+          ? _value.skinScore
+          : skinScore // ignore: cast_nullable_to_non_nullable
+              as int?,
+      plates: null == plates
+          ? _value.plates
+          : plates // ignore: cast_nullable_to_non_nullable
+              as List<PlateHistoryItemDto>,
+    ) as $Val);
+  }
+}
+
+/// @nodoc
+abstract class _$$PlateHistoryDayDtoImplCopyWith<$Res>
+    implements $PlateHistoryDayDtoCopyWith<$Res> {
+  factory _$$PlateHistoryDayDtoImplCopyWith(_$PlateHistoryDayDtoImpl value,
+          $Res Function(_$PlateHistoryDayDtoImpl) then) =
+      __$$PlateHistoryDayDtoImplCopyWithImpl<$Res>;
+  @override
+  @useResult
+  $Res call({DateTime date, int? skinScore, List<PlateHistoryItemDto> plates});
+}
+
+/// @nodoc
+class __$$PlateHistoryDayDtoImplCopyWithImpl<$Res>
+    extends _$PlateHistoryDayDtoCopyWithImpl<$Res, _$PlateHistoryDayDtoImpl>
+    implements _$$PlateHistoryDayDtoImplCopyWith<$Res> {
+  __$$PlateHistoryDayDtoImplCopyWithImpl(_$PlateHistoryDayDtoImpl _value,
+      $Res Function(_$PlateHistoryDayDtoImpl) _then)
+      : super(_value, _then);
+
+  /// Create a copy of PlateHistoryDayDto
+  /// with the given fields replaced by the non-null parameter values.
+  @pragma('vm:prefer-inline')
+  @override
+  $Res call({
+    Object? date = null,
+    Object? skinScore = freezed,
+    Object? plates = null,
+  }) {
+    return _then(_$PlateHistoryDayDtoImpl(
+      date: null == date
+          ? _value.date
+          : date // ignore: cast_nullable_to_non_nullable
+              as DateTime,
+      skinScore: freezed == skinScore
+          ? _value.skinScore
+          : skinScore // ignore: cast_nullable_to_non_nullable
+              as int?,
+      plates: null == plates
+          ? _value._plates
+          : plates // ignore: cast_nullable_to_non_nullable
+              as List<PlateHistoryItemDto>,
+    ));
+  }
+}
+
+/// @nodoc
+@JsonSerializable()
+class _$PlateHistoryDayDtoImpl implements _PlateHistoryDayDto {
+  const _$PlateHistoryDayDtoImpl(
+      {required this.date,
+      this.skinScore,
+      final List<PlateHistoryItemDto> plates = const <PlateHistoryItemDto>[]})
+      : _plates = plates;
+
+  factory _$PlateHistoryDayDtoImpl.fromJson(Map<String, dynamic> json) =>
+      _$$PlateHistoryDayDtoImplFromJson(json);
+
+  @override
+  final DateTime date;
+
+  /// 그날 피부 분석이 없으면 서버가 키를 뺀다. required 로 두면 파싱이 죽는다.
+  @override
+  final int? skinScore;
+  final List<PlateHistoryItemDto> _plates;
+  @override
+  @JsonKey()
+  List<PlateHistoryItemDto> get plates {
+    if (_plates is EqualUnmodifiableListView) return _plates;
+    // ignore: implicit_dynamic_type
+    return EqualUnmodifiableListView(_plates);
+  }
+
+  @override
+  String toString() {
+    return 'PlateHistoryDayDto(date: $date, skinScore: $skinScore, plates: $plates)';
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return identical(this, other) ||
+        (other.runtimeType == runtimeType &&
+            other is _$PlateHistoryDayDtoImpl &&
+            (identical(other.date, date) || other.date == date) &&
+            (identical(other.skinScore, skinScore) ||
+                other.skinScore == skinScore) &&
+            const DeepCollectionEquality().equals(other._plates, _plates));
+  }
+
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  @override
+  int get hashCode => Object.hash(runtimeType, date, skinScore,
+      const DeepCollectionEquality().hash(_plates));
+
+  /// Create a copy of PlateHistoryDayDto
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  @override
+  @pragma('vm:prefer-inline')
+  _$$PlateHistoryDayDtoImplCopyWith<_$PlateHistoryDayDtoImpl> get copyWith =>
+      __$$PlateHistoryDayDtoImplCopyWithImpl<_$PlateHistoryDayDtoImpl>(
+          this, _$identity);
+
+  @override
+  Map<String, dynamic> toJson() {
+    return _$$PlateHistoryDayDtoImplToJson(
+      this,
+    );
+  }
+}
+
+abstract class _PlateHistoryDayDto implements PlateHistoryDayDto {
+  const factory _PlateHistoryDayDto(
+      {required final DateTime date,
+      final int? skinScore,
+      final List<PlateHistoryItemDto> plates}) = _$PlateHistoryDayDtoImpl;
+
+  factory _PlateHistoryDayDto.fromJson(Map<String, dynamic> json) =
+      _$PlateHistoryDayDtoImpl.fromJson;
+
+  @override
+  DateTime get date;
+
+  /// 그날 피부 분석이 없으면 서버가 키를 뺀다. required 로 두면 파싱이 죽는다.
+  @override
+  int? get skinScore;
+  @override
+  List<PlateHistoryItemDto> get plates;
+
+  /// Create a copy of PlateHistoryDayDto
+  /// with the given fields replaced by the non-null parameter values.
+  @override
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  _$$PlateHistoryDayDtoImplCopyWith<_$PlateHistoryDayDtoImpl> get copyWith =>
+      throw _privateConstructorUsedError;
+}
+
+PlateHistoryDto _$PlateHistoryDtoFromJson(Map<String, dynamic> json) {
+  return _PlateHistoryDto.fromJson(json);
+}
+
+/// @nodoc
+mixin _$PlateHistoryDto {
+  List<PlateHistoryDayDto> get days => throw _privateConstructorUsedError;
+
+  /// Serializes this PlateHistoryDto to a JSON map.
+  Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
+
+  /// Create a copy of PlateHistoryDto
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  $PlateHistoryDtoCopyWith<PlateHistoryDto> get copyWith =>
+      throw _privateConstructorUsedError;
+}
+
+/// @nodoc
+abstract class $PlateHistoryDtoCopyWith<$Res> {
+  factory $PlateHistoryDtoCopyWith(
+          PlateHistoryDto value, $Res Function(PlateHistoryDto) then) =
+      _$PlateHistoryDtoCopyWithImpl<$Res, PlateHistoryDto>;
+  @useResult
+  $Res call({List<PlateHistoryDayDto> days});
+}
+
+/// @nodoc
+class _$PlateHistoryDtoCopyWithImpl<$Res, $Val extends PlateHistoryDto>
+    implements $PlateHistoryDtoCopyWith<$Res> {
+  _$PlateHistoryDtoCopyWithImpl(this._value, this._then);
+
+  // ignore: unused_field
+  final $Val _value;
+  // ignore: unused_field
+  final $Res Function($Val) _then;
+
+  /// Create a copy of PlateHistoryDto
+  /// with the given fields replaced by the non-null parameter values.
+  @pragma('vm:prefer-inline')
+  @override
+  $Res call({
+    Object? days = null,
+  }) {
+    return _then(_value.copyWith(
+      days: null == days
+          ? _value.days
+          : days // ignore: cast_nullable_to_non_nullable
+              as List<PlateHistoryDayDto>,
+    ) as $Val);
+  }
+}
+
+/// @nodoc
+abstract class _$$PlateHistoryDtoImplCopyWith<$Res>
+    implements $PlateHistoryDtoCopyWith<$Res> {
+  factory _$$PlateHistoryDtoImplCopyWith(_$PlateHistoryDtoImpl value,
+          $Res Function(_$PlateHistoryDtoImpl) then) =
+      __$$PlateHistoryDtoImplCopyWithImpl<$Res>;
+  @override
+  @useResult
+  $Res call({List<PlateHistoryDayDto> days});
+}
+
+/// @nodoc
+class __$$PlateHistoryDtoImplCopyWithImpl<$Res>
+    extends _$PlateHistoryDtoCopyWithImpl<$Res, _$PlateHistoryDtoImpl>
+    implements _$$PlateHistoryDtoImplCopyWith<$Res> {
+  __$$PlateHistoryDtoImplCopyWithImpl(
+      _$PlateHistoryDtoImpl _value, $Res Function(_$PlateHistoryDtoImpl) _then)
+      : super(_value, _then);
+
+  /// Create a copy of PlateHistoryDto
+  /// with the given fields replaced by the non-null parameter values.
+  @pragma('vm:prefer-inline')
+  @override
+  $Res call({
+    Object? days = null,
+  }) {
+    return _then(_$PlateHistoryDtoImpl(
+      days: null == days
+          ? _value._days
+          : days // ignore: cast_nullable_to_non_nullable
+              as List<PlateHistoryDayDto>,
+    ));
+  }
+}
+
+/// @nodoc
+@JsonSerializable()
+class _$PlateHistoryDtoImpl implements _PlateHistoryDto {
+  const _$PlateHistoryDtoImpl(
+      {final List<PlateHistoryDayDto> days = const <PlateHistoryDayDto>[]})
+      : _days = days;
+
+  factory _$PlateHistoryDtoImpl.fromJson(Map<String, dynamic> json) =>
+      _$$PlateHistoryDtoImplFromJson(json);
+
+  final List<PlateHistoryDayDto> _days;
+  @override
+  @JsonKey()
+  List<PlateHistoryDayDto> get days {
+    if (_days is EqualUnmodifiableListView) return _days;
+    // ignore: implicit_dynamic_type
+    return EqualUnmodifiableListView(_days);
+  }
+
+  @override
+  String toString() {
+    return 'PlateHistoryDto(days: $days)';
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return identical(this, other) ||
+        (other.runtimeType == runtimeType &&
+            other is _$PlateHistoryDtoImpl &&
+            const DeepCollectionEquality().equals(other._days, _days));
+  }
+
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  @override
+  int get hashCode =>
+      Object.hash(runtimeType, const DeepCollectionEquality().hash(_days));
+
+  /// Create a copy of PlateHistoryDto
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  @override
+  @pragma('vm:prefer-inline')
+  _$$PlateHistoryDtoImplCopyWith<_$PlateHistoryDtoImpl> get copyWith =>
+      __$$PlateHistoryDtoImplCopyWithImpl<_$PlateHistoryDtoImpl>(
+          this, _$identity);
+
+  @override
+  Map<String, dynamic> toJson() {
+    return _$$PlateHistoryDtoImplToJson(
+      this,
+    );
+  }
+}
+
+abstract class _PlateHistoryDto implements PlateHistoryDto {
+  const factory _PlateHistoryDto({final List<PlateHistoryDayDto> days}) =
+      _$PlateHistoryDtoImpl;
+
+  factory _PlateHistoryDto.fromJson(Map<String, dynamic> json) =
+      _$PlateHistoryDtoImpl.fromJson;
+
+  @override
+  List<PlateHistoryDayDto> get days;
+
+  /// Create a copy of PlateHistoryDto
+  /// with the given fields replaced by the non-null parameter values.
+  @override
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  _$$PlateHistoryDtoImplCopyWith<_$PlateHistoryDtoImpl> get copyWith =>
+      throw _privateConstructorUsedError;
+}
+
 PlateSimulationDto _$PlateSimulationDtoFromJson(Map<String, dynamic> json) {
   return _PlateSimulationDto.fromJson(json);
 }

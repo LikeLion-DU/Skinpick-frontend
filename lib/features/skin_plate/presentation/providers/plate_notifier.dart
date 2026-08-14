@@ -6,6 +6,7 @@ import 'package:image_picker/image_picker.dart';
 import '../../../../core/di/providers.dart';
 import '../../../../core/error/failure.dart';
 import '../../../../shared/enums/plate_action_code.dart';
+import '../../data/datasources/plate_image_store.dart';
 import '../../domain/entities/plate_analysis.dart';
 import '../../domain/entities/skin_plate.dart';
 
@@ -190,7 +191,20 @@ class PlateNotifier extends Notifier<PlateState> {
     final result =
         await ref.read(plateRepositoryProvider).saveRecord(analysis.analysisToken);
 
-    // 기다리는 동안 사용자가 뒤로 나가 다른 음식을 찍었을 수 있다(타임아웃이 32초다). 아래 대입은 상태를 통째로 새로 만들기
+    // 201 이면 화면이 그새 어디로 갔든 **서버에는 기록이 생겼다.** 이 사진은 그
+    // 기록의 것이므로 먼저 남긴다 — 아래 이탈 가드에서 건너뛰면 그 기록은 영영
+    // 음식 아이콘으로만 보인다. 상태를 뒤집기 전에 쓰는 이유도 같다. 저장됐다고
+    // 알린 직후 히스토리로 넘어가면 아직 없는 파일을 읽는다.
+    //
+    // 파일 쓰기가 실패해도 아무것도 하지 않는다. 되돌릴 방법이 없고, 히스토리는
+    // 음식명·점수·시각으로 이미 완결돼 있다.
+    final saved = result.dataOrNull;
+    if (saved != null && bytes != null) {
+      await PlateImageStore.save(saved.id, bytes);
+    }
+
+    // 기다리는 동안 사용자가 뒤로 나가 다른 음식을 찍었을 수 있다(타임아웃이 32초고,
+    // 위 압축·디스크 쓰기도 수백 ms 다). 아래 대입은 상태를 통째로 새로 만들기
     // 때문에, 확인하지 않으면 방금 찍은 결과가 이전 음식의 사진·점수로 덮인다.
     if (state.analysis?.analysisToken != analysis.analysisToken) return;
 

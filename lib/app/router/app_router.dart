@@ -13,6 +13,7 @@ import '../../features/skin_analysis/presentation/pages/skin_capture_page.dart';
 import '../../features/skin_analysis/presentation/pages/skin_loading_page.dart';
 import '../../features/skin_analysis/presentation/pages/skin_result_page.dart';
 import '../../features/skin_plate/presentation/pages/food_capture_page.dart';
+import '../../features/skin_plate/presentation/pages/plate_history_page.dart';
 import '../../features/skin_plate/presentation/pages/plate_result_page.dart';
 
 /// 경로를 문자열 리터럴로 흩뿌리면 오타가 런타임까지 살아남는다.
@@ -30,6 +31,7 @@ class Routes {
   static const foodCapture = '/plate/capture'; // S06
   static const plateResult = '/plate/result';  // S07
   static const recommendations = '/recommendations'; // S08
+  static const plateHistory = '/plate/history'; // S09
 }
 
 final routerProvider = Provider<GoRouter>((ref) {
@@ -68,6 +70,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: Routes.skinResult, builder: (_, __) => const SkinResultPage()),
       GoRoute(path: Routes.foodCapture, builder: (_, __) => const FoodCapturePage()),
       GoRoute(path: Routes.plateResult, builder: (_, __) => const PlateResultPage()),
+      GoRoute(path: Routes.plateHistory, builder: (_, __) => const PlateHistoryPage()),
       GoRoute(
         path: '${Routes.recommendations}/:skinAnalysisId',
         builder: (_, state) => RecommendationPage(

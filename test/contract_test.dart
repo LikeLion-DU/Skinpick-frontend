@@ -113,6 +113,25 @@ void main() {
     expect(plate.food.nutrition.sodiumMg, 1850);
   });
 
+  test('GET /plates?from=&to= — 날짜 내림차순, 같은 날은 시각 내림차순', () {
+    // ⚠️ 이 픽스처도 실서버 curl 이 아니다. 백엔드 응답이 오면 교체할 것.
+    final days = PlateHistoryDto.fromJson(data('plate_history')).toEntity();
+
+    expect(days.length, 2);
+    expect(days.first.date, DateTime(2026, 8, 14));
+
+    // 서버가 createdAt 내림차순으로 준다(PlateHistoryService). 앱은 다시 정렬하지
+    // 않고 받은 순서대로 그린다 — 여기가 그 계약이다.
+    expect(days.first.plates.map((p) => p.recordedAt.hour), [19, 12]);
+
+    // 그날 얼굴을 안 찍었어도 비지 않는다. 서버가 그날 첫 Plate 의 기준 분석 점수로
+    // 채운다(설계서 §5). DTO 를 nullable 로 둔 건 방어일 뿐 정상 응답에는 항상 있다.
+    expect(days.every((day) => day.skinScore != null), isTrue);
+
+    // plateId 가 곧 로컬 사진 파일명이다 — <documents>/plates/{plateId}.jpg
+    expect(days.last.plates.single.plateId, 3);
+  });
+
   test('POST /plates/records — 저장되면 plateId·createdAt·foodAnalysisId 가 생긴다', () {
     final json = data('plate_record');
 

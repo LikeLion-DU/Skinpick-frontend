@@ -47,6 +47,24 @@ class PlateRemoteDataSource {
     return SkinPlateDto.fromJson(requireEnvelopeData(response));
   }
 
+  /// from·to 는 둘 다 필수이고 to 도 포함하는 달력일이다(서버가 KST 로 해석한다).
+  Future<PlateHistoryDto> history(DateTime from, DateTime to) async {
+    final response = await _dio.get<dynamic>(
+      '/plates',
+      queryParameters: <String, dynamic>{
+        'from': _isoDate(from),
+        'to': _isoDate(to),
+      },
+    );
+    return PlateHistoryDto.fromJson(requireEnvelopeData(response));
+  }
+
+  /// `toIso8601String()` 은 시각까지 붙어서 서버의 `ISO.DATE` 바인딩이 400 을 낸다.
+  static String _isoDate(DateTime date) =>
+      '${date.year.toString().padLeft(4, '0')}-'
+      '${date.month.toString().padLeft(2, '0')}-'
+      '${date.day.toString().padLeft(2, '0')}';
+
   /// 저장 전 임시 분석을 대상으로 점수를 다시 계산한다. 경로에 id 가 없다.
   ///
   /// 토큰 TTL 이 30분이라 만료되면 422 ANALYSIS_EXPIRED 다. 저장된 뒤에는

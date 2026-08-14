@@ -4,6 +4,7 @@ import '../../../../shared/enums/cooking_method.dart';
 import '../../../../shared/enums/ingredient_tag.dart';
 import '../../../../shared/enums/plate_action_code.dart';
 import '../../domain/entities/plate_analysis.dart' as domain;
+import '../../domain/entities/plate_history.dart' as domain;
 import '../../domain/entities/skin_plate.dart' as domain;
 
 part 'plate_dtos.freezed.dart';
@@ -208,6 +209,62 @@ extension FoodAnalysisDtoX on FoodAnalysisDto {
           sugarG: nutrition.sugarG.toDouble(),
         ),
       );
+}
+
+// ---------- 히스토리 (S09) ----------
+
+@freezed
+class PlateHistoryItemDto with _$PlateHistoryItemDto {
+  const factory PlateHistoryItemDto({
+    required int plateId,
+    required String foodName,
+    @Default(0) int plateScore,
+    required DateTime recordedAt,
+  }) = _PlateHistoryItemDto;
+
+  factory PlateHistoryItemDto.fromJson(Map<String, dynamic> json) =>
+      _$PlateHistoryItemDtoFromJson(json);
+}
+
+@freezed
+class PlateHistoryDayDto with _$PlateHistoryDayDto {
+  const factory PlateHistoryDayDto({
+    required DateTime date,
+
+    /// 그날 피부 분석이 없으면 서버가 키를 뺀다. required 로 두면 파싱이 죽는다.
+    int? skinScore,
+    @Default(<PlateHistoryItemDto>[]) List<PlateHistoryItemDto> plates,
+  }) = _PlateHistoryDayDto;
+
+  factory PlateHistoryDayDto.fromJson(Map<String, dynamic> json) =>
+      _$PlateHistoryDayDtoFromJson(json);
+}
+
+@freezed
+class PlateHistoryDto with _$PlateHistoryDto {
+  const factory PlateHistoryDto({
+    @Default(<PlateHistoryDayDto>[]) List<PlateHistoryDayDto> days,
+  }) = _PlateHistoryDto;
+
+  factory PlateHistoryDto.fromJson(Map<String, dynamic> json) =>
+      _$PlateHistoryDtoFromJson(json);
+}
+
+extension PlateHistoryDtoX on PlateHistoryDto {
+  List<domain.PlateHistoryDay> toEntity() => days
+      .map((day) => domain.PlateHistoryDay(
+            date: day.date,
+            skinScore: day.skinScore,
+            plates: day.plates
+                .map((item) => domain.PlateHistoryItem(
+                      plateId: item.plateId,
+                      foodName: item.foodName,
+                      plateScore: item.plateScore,
+                      recordedAt: item.recordedAt,
+                    ))
+                .toList(),
+          ))
+      .toList();
 }
 
 /// 두 엔드포인트가 이 DTO 하나를 공유한다.

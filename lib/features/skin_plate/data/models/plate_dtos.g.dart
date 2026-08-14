@@ -179,6 +179,60 @@ Map<String, dynamic> _$$SkinPlateDtoImplToJson(_$SkinPlateDtoImpl instance) =>
       'createdAt': instance.createdAt.toIso8601String(),
     };
 
+_$PlateHistoryItemDtoImpl _$$PlateHistoryItemDtoImplFromJson(
+        Map<String, dynamic> json) =>
+    _$PlateHistoryItemDtoImpl(
+      plateId: (json['plateId'] as num).toInt(),
+      foodName: json['foodName'] as String,
+      plateScore: (json['plateScore'] as num?)?.toInt() ?? 0,
+      recordedAt: DateTime.parse(json['recordedAt'] as String),
+    );
+
+Map<String, dynamic> _$$PlateHistoryItemDtoImplToJson(
+        _$PlateHistoryItemDtoImpl instance) =>
+    <String, dynamic>{
+      'plateId': instance.plateId,
+      'foodName': instance.foodName,
+      'plateScore': instance.plateScore,
+      'recordedAt': instance.recordedAt.toIso8601String(),
+    };
+
+_$PlateHistoryDayDtoImpl _$$PlateHistoryDayDtoImplFromJson(
+        Map<String, dynamic> json) =>
+    _$PlateHistoryDayDtoImpl(
+      date: DateTime.parse(json['date'] as String),
+      skinScore: (json['skinScore'] as num?)?.toInt(),
+      plates: (json['plates'] as List<dynamic>?)
+              ?.map((e) =>
+                  PlateHistoryItemDto.fromJson(e as Map<String, dynamic>))
+              .toList() ??
+          const <PlateHistoryItemDto>[],
+    );
+
+Map<String, dynamic> _$$PlateHistoryDayDtoImplToJson(
+        _$PlateHistoryDayDtoImpl instance) =>
+    <String, dynamic>{
+      'date': instance.date.toIso8601String(),
+      'skinScore': instance.skinScore,
+      'plates': instance.plates,
+    };
+
+_$PlateHistoryDtoImpl _$$PlateHistoryDtoImplFromJson(
+        Map<String, dynamic> json) =>
+    _$PlateHistoryDtoImpl(
+      days: (json['days'] as List<dynamic>?)
+              ?.map(
+                  (e) => PlateHistoryDayDto.fromJson(e as Map<String, dynamic>))
+              .toList() ??
+          const <PlateHistoryDayDto>[],
+    );
+
+Map<String, dynamic> _$$PlateHistoryDtoImplToJson(
+        _$PlateHistoryDtoImpl instance) =>
+    <String, dynamic>{
+      'days': instance.days,
+    };
+
 _$PlateSimulationDtoImpl _$$PlateSimulationDtoImplFromJson(
         Map<String, dynamic> json) =>
     _$PlateSimulationDtoImpl(
