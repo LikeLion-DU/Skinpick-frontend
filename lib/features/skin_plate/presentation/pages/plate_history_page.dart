@@ -28,31 +28,60 @@ class PlateHistoryPage extends ConsumerWidget {
         onRefresh: () => ref.refresh(plateHistoryProvider.future),
         child: history.when(
           loading: () => const Center(child: CircularProgressIndicator()),
-          // 여기의 error 는 Failure 가 아니라 예상 못 한 예외다.
-          error: (error, _) => Center(child: Text('불러오지 못했습니다: $error')),
+          // 여기의 error 는 Failure 가 아니라 예상 못 한 예외다. 그래도 빠져나갈
+          // 길은 줘야 한다 — 아래 FailureView 와 달리 문구를 지어낼 수 없을 뿐이다.
+          error: (error, _) => _Scrollable(
+            children: [
+              Text('불러오지 못했습니다: $error', textAlign: TextAlign.center),
+              const SizedBox(height: 16),
+              Center(
+                child: FilledButton(
+                  onPressed: () => ref.invalidate(plateHistoryProvider),
+                  child: const Text('다시 시도'),
+                ),
+              ),
+            ],
+          ),
           data: (result) => result.when(
             failure: (failure) => FailureView(
               failure: failure,
               onRetry: () => ref.invalidate(plateHistoryProvider),
             ),
             success: (days) => days.isEmpty
-                ? ListView(
-                    // ListView 여야 당겨서 새로고침이 된다. Center 만 두면 스크롤이
-                    // 없어서 RefreshIndicator 가 반응하지 않는다.
-                    padding: const EdgeInsets.symmetric(vertical: 120),
-                    children: const [
-                      Center(child: Text('아직 저장한 기록이 없어요')),
-                    ],
+                ? const _Scrollable(
+                    children: [Center(child: Text('아직 저장한 기록이 없어요'))],
                   )
                 : ListView(
+                    // 목록이 짧아도 당겨서 새로고침이 되어야 한다. 기본 physics 는
+                    // 스크롤 여지가 없으면 오버스크롤 자체를 안 만들어 RefreshIndicator
+                    // 가 반응하지 않는다.
+                    physics: const AlwaysScrollableScrollPhysics(),
                     padding: const EdgeInsets.all(24),
                     children: [
                       for (final day in days) _DaySection(day: day),
+                      const SafetyNotice(),
                     ],
                   ),
           ),
         ),
       ),
+    );
+  }
+}
+
+/// 내용이 한 화면보다 짧아도 당겨서 새로고침이 되게 한다.
+/// Center 만 두면 스크롤 여지가 없어 RefreshIndicator 가 영영 안 뜬다.
+class _Scrollable extends StatelessWidget {
+  const _Scrollable({required this.children});
+
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 120),
+      children: children,
     );
   }
 }
@@ -132,7 +161,10 @@ class _Thumbnail extends ConsumerWidget {
         fit: BoxFit.cover,
         // 48dp 썸네일에 1024px 원본을 디코드하면 한 장에 5MB 가 넘는다. 일주일치를
         // 한 화면에 그리면 이미지 캐시 예산(100MB)을 넘겨 계속 다시 디코드한다.
-        cacheWidth: (_size * 3).round(),
+        //
+        // 배율을 3 으로 박지 않는다. 4x 기기에서는 흐리게 확대되고 2x 기기에서는
+        // 필요보다 크게 디코드해, 줄이려던 예산을 도로 쓴다.
+        cacheWidth: (_size * MediaQuery.devicePixelRatioOf(context)).round(),
         errorBuilder: (_, __, ___) => const _FoodIcon(size: _size),
       ),
     );

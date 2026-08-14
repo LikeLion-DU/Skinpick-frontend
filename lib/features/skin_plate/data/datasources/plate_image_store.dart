@@ -31,6 +31,11 @@ class PlateImageStore {
     return plates;
   }
 
+  /// ponytail: 파일명이 서버 `plateId` 뿐이라 계정이나 백엔드 환경이 바뀌면
+  /// 어긋난다 — DB 를 초기화해 id 가 1부터 다시 매겨지면 예전 끼니의 사진이 새
+  /// 기록 옆에 붙는다. 사용자 단위로 디렉터리를 나누면(`plates/{userId}/`) 계정
+  /// 전환은 막히지만 DB 초기화는 여전하다. 시연 계정 하나로 쓰는 동안은 겪지 않고,
+  /// 겪는 순간이 오면 그때는 앱 데이터를 지우는 게 더 빠르다.
   static File fileFor(Directory directory, int plateId) =>
       File('${directory.path}/$plateId.jpg');
 
