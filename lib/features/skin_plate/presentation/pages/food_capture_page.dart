@@ -279,7 +279,9 @@ class _FoodCapturePageState extends ConsumerState<FoodCapturePage>
     // 머무는 내내 150ms 마다 ML Kit 이 돌고, 돌아왔을 때 천장을 보고 계산한
     // notFood 가 배너에 남는다.
     await _stopStream();
-    unawaited(ref.read(plateNotifierProvider.notifier).create(image));
+    // 분석만 한다. 기록은 결과 화면에서 사용자가 [기록에 저장하기] 를 눌러야 생긴다.
+    // 여기서 돌아 나가면 서버에 아무것도 남지 않는다.
+    unawaited(ref.read(plateNotifierProvider.notifier).analyze(image));
 
     // 결과 화면에서 뒤로 돌아왔을 때를 대비해 넘기기 전에 정리한다.
     // (로딩·결과 화면이 pushReplacement 를 쓰면 push 의 완료 future 가 오지 않는다)

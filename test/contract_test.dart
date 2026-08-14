@@ -6,6 +6,7 @@ import 'package:skinplate/features/auth/data/models/auth_dtos.dart';
 import 'package:skinplate/features/recommendation/data/models/recommendation_dtos.dart';
 import 'package:skinplate/features/skin_analysis/data/models/skin_dtos.dart';
 import 'package:skinplate/features/skin_plate/data/models/plate_dtos.dart';
+import 'package:skinplate/features/skin_plate/domain/entities/skin_plate.dart';
 import 'package:skinplate/shared/enums/cooking_method.dart';
 import 'package:skinplate/shared/enums/highlight_status.dart';
 import 'package:skinplate/shared/enums/ingredient_tag.dart';
@@ -64,6 +65,30 @@ void main() {
     expect(analysis.skinTypeGap!.message, isNotEmpty);
   });
 
+  test('POST /plates/analyze — 토큰은 있고 plateId 는 없다', () {
+    final json = data('plate_analyze');
+
+    // 저장 전이라 서버가 이 세 키를 아예 내려보내지 않는다.
+    expect(json.containsKey('plateId'), isFalse);
+    expect(json.containsKey('createdAt'), isFalse);
+    expect((json['food'] as Map<String, dynamic>).containsKey('foodAnalysisId'),
+        isFalse);
+
+    final analysis = PlateAnalysisDto.fromJson(json).toEntity();
+
+    expect(analysis.analysisToken, isNotEmpty);
+    expect(analysis.food.id, isNull); // required 였다면 위 fromJson 에서 죽는다
+    expect(analysis.plateScore, 60);
+    expect(analysis.baseScore, 70);
+    expect(analysis.skinAnalysisId, greaterThan(0));
+    expect(analysis.actions.map((a) => a.expectedGain), [8, 6]);
+    expect(analysis.food.cookingMethod, CookingMethod.boiled);
+    expect(analysis.food.nutrition.proteinG, 28.5);
+
+    // 저장된 기록과 같은 화면을 그린다. 위젯을 두 벌 만들지 않기 위한 계약이다.
+    expect(analysis, isA<PlateView>());
+  });
+
   test('GET /plates/{id} — 60점과 피드백 3종', () {
     final plate = SkinPlateDto.fromJson(data('plate')).toEntity();
 
@@ -88,12 +113,51 @@ void main() {
     expect(plate.food.nutrition.sodiumMg, 1850);
   });
 
-  test('POST /plates/{id}/simulate — 60 → 68', () {
-    final simulation = PlateSimulationDto.fromJson(data('plate_simulate')).toEntity();
+  test('POST /plates/records — 저장되면 plateId·createdAt·foodAnalysisId 가 생긴다', () {
+    final json = data('plate_record');
 
+    // analyze 응답과 갈리는 지점이 이 세 키다. 여기가 곧 "저장됐다"는 뜻이다.
+    expect(json.containsKey('plateId'), isTrue);
+    expect(json.containsKey('createdAt'), isTrue);
+    expect((json['food'] as Map<String, dynamic>).containsKey('foodAnalysisId'),
+        isTrue);
+
+    final plate = SkinPlateDto.fromJson(json).toEntity();
+
+    expect(plate.id, greaterThan(0));
+    expect(plate.food.id, isNotNull);
+    // 저장은 AI 를 다시 부르지 않는다. analyze 가 보여준 점수가 그대로 확정된다.
+    expect(plate.plateScore, 60);
+  });
+
+  test('POST /plates/simulate — 저장 전 60 → 72, 응답에 plateId 가 없다', () {
+    final json = data('plate_simulate');
+    expect(json.containsKey('plateId'), isFalse);
+
+    final simulation = PlateSimulationDto.fromJson(json).toEntity();
+
+    // analyze 가 보여준 60 과 같아야 한다. 두 경로가 같은 계산을 타는지 보는 값이다.
+    expect(simulation.beforeScore, 60);
+    expect(simulation.afterScore, 72);
+    expect(simulation.gain, 12);
+    expect(simulation.appliedActions,
+        [PlateActionCode.removeBatter, PlateActionCode.lessSpicy]);
+    // afterScore 는 expectedGain 의 합이 아니다. 매운맛 감점이 -12 라 R02 가 빠지며
+    // 12 가 돌아온다 — 안내 문구의 "+6" 과 다르다. 합산으로 만들면 안 되는 이유다.
+    expect(simulation.removedRules, ['R02']);
+  });
+
+  test('POST /plates/{id}/simulate — plateId 가 있어도 같은 DTO 로 읽는다', () {
+    // 저장된 기록용 응답에는 plateId 가 있다. 두 엔드포인트에 DTO 를 하나만 두었으니
+    // 남는 키를 무시하고 파싱된다는 것이 그 결정의 전제다 — 여기서 그걸 고정한다.
+    final json = data('plate_simulate_saved');
+    expect(json.containsKey('plateId'), isTrue);
+
+    final simulation = PlateSimulationDto.fromJson(json).toEntity();
+
+    // 설계서 예시 A — 국물만 절반 남기면 68 이다(둘 다 실행하면 80).
     expect(simulation.beforeScore, 60);
     expect(simulation.afterScore, 68);
-    expect(simulation.gain, 8);
     expect(simulation.appliedActions, [PlateActionCode.halveSoup]);
     expect(simulation.removedRules, ['R04']); // 나트륨 카드가 사라진다
   });

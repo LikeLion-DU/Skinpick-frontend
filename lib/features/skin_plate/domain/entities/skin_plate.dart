@@ -2,7 +2,28 @@ import '../../../../shared/enums/cooking_method.dart';
 import '../../../../shared/enums/ingredient_tag.dart';
 import '../../../../shared/enums/plate_action_code.dart';
 
-class SkinPlate {
+/// 결과 화면이 실제로 그리는 면(面)만 모은 것.
+///
+/// 저장 전 임시 분석([PlateAnalysis])과 저장된 기록([SkinPlate])은 **다른 것**이지만
+/// 화면에 그려지는 내용은 같다. 위젯을 두 벌 만들지 않으려고 이 인터페이스를 공유한다.
+///
+/// 여기에 `id` 나 `createdAt` 을 넣지 마라. 그 둘이 있으면 "저장됨"이라는 뜻이고,
+/// 임시 분석은 그걸 가질 수 없다. 화면이 저장 여부를 알아야 한다면 이 타입이 아니라
+/// PlateState 의 recordStatus 를 봐야 한다.
+abstract interface class PlateView {
+  int get skinAnalysisId;
+  int get plateScore;
+  int get baseScore;
+  String get summary;
+  FoodAnalysis get food;
+  List<PlateFeedback> get good;
+  List<PlateFeedback> get caution;
+  List<PlateAction> get actions;
+  List<String> get appliedRules;
+}
+
+/// 저장이 확정된 기록. `id` 와 `createdAt` 이 있다는 것이 곧 "서버에 남았다"는 뜻이다.
+class SkinPlate implements PlateView {
   const SkinPlate({
     required this.id,
     required this.skinAnalysisId,
@@ -20,23 +41,33 @@ class SkinPlate {
   final int id;
 
   /// 이 Plate 가 어떤 피부 분석을 기준으로 계산됐는지. S08 추천 조회에 쓴다.
+  @override
   final int skinAnalysisId;
 
+  @override
   final int plateScore;
 
   /// 계산 내역 카드의 첫 줄("기본 70"). 앱이 하드코딩하면 클램프된 점수에서 역산이 틀린다.
+  @override
   final int baseScore;
 
+  @override
   final String summary;
+  @override
   final FoodAnalysis food;
 
+  @override
   final List<PlateFeedback> good;
+  @override
   final List<PlateFeedback> caution;
 
   /// 화면에서 가장 강조되는 카드. 이 제품의 존재 이유다.
+  @override
   final List<PlateAction> actions;
 
+  @override
   final List<String> appliedRules;
+
   final DateTime createdAt;
 
   /// 여기에 potentialScore(= plateScore + expectedGain 합산) 같은 게터를 만들지 마라.
@@ -75,7 +106,7 @@ class PlateAction {
 
 class FoodAnalysis {
   const FoodAnalysis({
-    required this.id,
+    this.id,
     required this.foodName,
     required this.foodCategory,
     required this.cookingMethod,
@@ -84,7 +115,9 @@ class FoodAnalysis {
     required this.nutrition,
   });
 
-  final int id;
+  /// 저장 전에는 없다 — 행이 아직 없으므로 서버가 키 자체를 뺀다.
+  /// 기록(`POST /plates/records` 201) 이후 응답에만 들어 있다.
+  final int? id;
   final String foodName;
   final String? foodCategory;
   final CookingMethod cookingMethod;
@@ -118,10 +151,13 @@ class Nutrition {
   final double sugarG;
 }
 
-/// 추천 행동 실행 시뮬레이션 결과. POST /plates/{id}/simulate 응답.
+/// 추천 행동 실행 시뮬레이션 결과.
+///
+/// 저장 전에는 `POST /plates/simulate`(analysisToken), 저장 후에는
+/// `POST /plates/{id}/simulate`(plateId) 가 같은 모양으로 준다.
+/// 어느 쪽으로 물었는지는 결과에 남지 않는다 — 화면이 알 필요가 없다.
 class PlateSimulation {
   const PlateSimulation({
-    required this.plateId,
     required this.beforeScore,
     required this.afterScore,
     required this.appliedActions,
@@ -129,7 +165,6 @@ class PlateSimulation {
     required this.summary,
   });
 
-  final int plateId;
   final int beforeScore;
   final int afterScore;
   final List<PlateActionCode> appliedActions;
