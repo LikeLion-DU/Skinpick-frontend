@@ -27,6 +27,9 @@ dependencies:
   # 저장소
   flutter_secure_storage: ^9.2.2
 
+  # 기록 사진을 앱 documents 에 남긴다. 캐시 디렉터리는 OS 가 임의로 비운다.
+  path_provider: ^2.1.5
+
   # 카메라 · 이미지
   image_picker: ^1.1.2
   camera: ^0.11.0                       # 얼굴 게이트(§9.5) 실시간 프리뷰

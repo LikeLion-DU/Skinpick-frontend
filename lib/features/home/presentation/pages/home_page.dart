@@ -166,6 +166,12 @@ class _Actions extends ConsumerWidget {
             child: const Text('오늘의 추천 음식 보기'),
           ),
         ],
+
+        // 피부 기록과 무관하게 항상 열려 있다. 저장한 식단만 들어 있다.
+        TextButton(
+          onPressed: () => context.push(Routes.plateHistory),
+          child: const Text('내 기록 보기'),
+        ),
       ],
     );
   }

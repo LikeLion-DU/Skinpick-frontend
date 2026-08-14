@@ -1,13 +1,15 @@
 import 'dart:async';
-import 'dart:typed_data';
+import 'dart:io';
 
+import 'package:flutter/services.dart';
+import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:skinplate/core/di/providers.dart';
 import 'package:skinplate/core/error/failure.dart';
 import 'package:skinplate/core/result/result.dart';
 import 'package:skinplate/features/skin_plate/domain/entities/plate_analysis.dart';
+import 'package:skinplate/features/skin_plate/domain/entities/plate_history.dart';
 import 'package:skinplate/features/skin_plate/domain/entities/skin_plate.dart';
 import 'package:skinplate/features/skin_plate/domain/repositories/plate_repository.dart';
 import 'package:skinplate/features/skin_plate/presentation/providers/plate_notifier.dart';
@@ -20,6 +22,30 @@ import 'package:skinplate/shared/enums/plate_action_code.dart';
 /// 두 번 먹혀 같은 끼니가 두 줄이 되거나.
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+
+  // saveRecord() 는 어느 테스트에서 불리든 로컬 이미지 저장을 탄다. 목킹을
+  // '로컬 이미지' 그룹 안에만 두면, 그룹 밖 테스트들은 압축기가 먼저 던져서
+  // 디렉터리를 물어보지 않는다는 우연에 기대게 된다.
+  late Directory documents;
+
+  setUp(() {
+    documents = Directory.systemTemp.createTempSync('skinplate_documents');
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(
+      const MethodChannel('plugins.flutter.io/path_provider'),
+      (call) async => call.method == 'getApplicationDocumentsDirectory'
+          ? documents.path
+          : null,
+    );
+  });
+
+  tearDown(() {
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(
+            const MethodChannel('plugins.flutter.io/path_provider'), null);
+    FlutterImageCompressPlatform.instance = UnsupportedFlutterImageCompress();
+    documents.deleteSync(recursive: true);
+  });
 
   const token = 'eyJhbGciOiJIUzI1NiJ9.analysis-token';
 
@@ -229,6 +255,52 @@ void main() {
     }
   });
 
+  group('로컬 이미지', () {
+    File savedImage(int plateId) => File('${documents.path}/plates/$plateId.jpg');
+
+    Future<PlateState> saveWith(_FakeCompressor compressor) async {
+      FlutterImageCompressPlatform.instance = compressor;
+      final app = boot(_FakeRepository(
+        analysis: Success(analysisOf(token)),
+        save: Success(savedOf(7)),
+      ));
+
+      await app.notifier.analyze(image);
+      await app.notifier.saveRecord();
+      return app.container.read(plateNotifierProvider);
+    }
+
+    test('저장에 성공하면 documents/plates 에 JPEG 로 남는다', () async {
+      final jpeg = Uint8List.fromList([0xFF, 0xD8, 0xFF, 0xE0, 0x00]);
+      final state = await saveWith(_FakeCompressor((_) async => jpeg));
+
+      expect(state.status, PlateRecordStatus.saved);
+      // 파일명이 plateId 다. 히스토리가 이 규칙으로 찾아 읽는다.
+      expect(savedImage(7).readAsBytesSync(), jpeg);
+    });
+
+    test('압축기가 빈 결과를 주면 실패로 보고 기록은 유지한다', () async {
+      // 이 플러그인은 실패를 예외가 아니라 빈 리스트로 돌려줄 때가 있다.
+      // 그대로 쓰면 0바이트 .jpg 가 남아 히스토리에 깨진 이미지가 뜬다.
+      final state = await saveWith(_FakeCompressor((_) async => Uint8List(0)));
+
+      expect(state.status, PlateRecordStatus.saved);
+      expect(state.failure, isNull); // "저장 실패"라고 하지 않는다
+      expect(savedImage(7).existsSync(), isFalse); // 히스토리는 음식 아이콘으로 떨어진다
+    });
+
+    test('압축기가 던져도 기록은 유지한다', () async {
+      final state = await saveWith(
+        _FakeCompressor((_) async => throw StateError('디스크 부족')),
+      );
+
+      expect(state.status, PlateRecordStatus.saved);
+      expect(state.savedPlate?.id, 7);
+      expect(state.failure, isNull);
+      expect(savedImage(7).existsSync(), isFalse);
+    });
+  });
+
   test('저장 응답이 늦게 와도 그 사이 찍은 새 결과를 덮지 않는다', () async {
     final gate = Completer<Result<SkinPlate>>();
     final app = boot(_FakeRepository(
@@ -250,6 +322,29 @@ void main() {
     expect(state.status, PlateRecordStatus.ready);
     // 이전 끼니가 "저장됐어요"로 새 화면을 차지하면 안 된다.
     expect(state.isSaved, isFalse);
+  });
+
+  test('이탈해도 201 이 온 기록의 사진은 남긴다', () async {
+    final gate = Completer<Result<SkinPlate>>();
+    final jpeg = Uint8List.fromList([0xFF, 0xD8, 0xFF, 0xE0, 0x00]);
+    FlutterImageCompressPlatform.instance = _FakeCompressor((_) async => jpeg);
+
+    final app = boot(_FakeRepository(
+      analysisQueue: [Success(analysisOf(token)), Success(analysisOf('두-번째-토큰'))],
+      saveGate: gate,
+    ));
+
+    await app.notifier.analyze(image);
+    final pending = app.notifier.saveRecord();
+    await app.notifier.analyze(image); // 기다리다 나가서 새로 촬영
+
+    gate.complete(Success(savedOf(7)));
+    await pending;
+
+    // 상태는 새 끼니 것이지만, 서버에 생긴 기록(7)의 사진은 디스크에 있어야 한다.
+    // 여기서 건너뛰면 그 기록은 히스토리에서 영영 음식 아이콘이다.
+    expect(app.container.read(plateNotifierProvider).isSaved, isFalse);
+    expect(File('${documents.path}/plates/7.jpg').readAsBytesSync(), jpeg);
   });
 
   test('새 분석이 이전 임시 결과와 저장 상태를 덮어쓴다', () async {
@@ -423,6 +518,32 @@ void main() {
   });
 }
 
+/// 네이티브 압축기는 유닛 테스트에서 돌지 않는다. 프로덕션 코드에 주입 구멍을
+/// 내는 대신 플러그인이 이미 갖고 있는 플랫폼 인터페이스를 갈아끼운다 —
+/// 유닛 테스트에서는 어차피 `UnsupportedFlutterImageCompress` 가 기본값이라
+/// 채널을 목킹해도 거기까지 가지 않는다.
+class _FakeCompressor extends UnsupportedFlutterImageCompress {
+  _FakeCompressor(this._compress);
+
+  final Future<Uint8List> Function(Uint8List) _compress;
+
+  @override
+  Future<Uint8List> compressWithList(
+    Uint8List image, {
+    int minWidth = 1920,
+    int minHeight = 1080,
+    int quality = 95,
+    int rotate = 0,
+    int inSampleSize = 1,
+    bool autoCorrectionAngle = true,
+    CompressFormat format = CompressFormat.jpeg,
+    bool keepExif = false,
+  }) {
+    expect(format, CompressFormat.jpeg); // .jpg 라는 이름과 내용이 어긋나면 안 된다
+    return _compress(image);
+  }
+}
+
 /// 호출된 것만 기록한다. 이 파일이 검증하려는 것은 "몇 번, 무엇을 보냈나"다.
 class _FakeRepository implements PlateRepository {
   _FakeRepository({
@@ -485,4 +606,8 @@ class _FakeRepository implements PlateRepository {
 
   @override
   Future<Result<SkinPlate>> getById(int id) => throw UnimplementedError();
+
+  @override
+  Future<Result<List<PlateHistoryDay>>> history(DateTime from, DateTime to) =>
+      throw UnimplementedError();
 }
