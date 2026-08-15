@@ -2,6 +2,7 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 
 import '../../../../shared/enums/cooking_method.dart';
 import '../../../../shared/enums/ingredient_tag.dart';
+import '../../../../shared/enums/meal_type.dart';
 import '../../../../shared/enums/plate_action_code.dart';
 import '../../domain/entities/plate_analysis.dart' as domain;
 import '../../domain/entities/plate_history.dart' as domain;
@@ -131,6 +132,9 @@ class SkinPlateDto with _$SkinPlateDto {
     required FoodAnalysisDto food,
     required FeedbackGroupDto feedbacks,
     @Default(<String>[]) List<String> appliedRules,
+
+    /// "AI 맞춤 TIP". 생성 실패 시 서버가 키를 뺀다 — 그때는 룰 요약으로 대신한다.
+    String? aiTip,
     required DateTime createdAt,
   }) = _SkinPlateDto;
 
@@ -167,6 +171,7 @@ extension SkinPlateDtoX on SkinPlateDto {
         caution: feedbacks.caution.map((f) => f.toEntity()).toList(),
         actions: feedbacks.action.map((a) => a.toEntity()).toList(),
         appliedRules: appliedRules,
+        aiTip: aiTip,
         createdAt: createdAt,
       );
 }
@@ -219,6 +224,9 @@ class PlateHistoryItemDto with _$PlateHistoryItemDto {
     required int plateId,
     required String foodName,
     @Default(0) int plateScore,
+
+    /// 서버가 시각에서 파생해 보낸다. 모르는 값이면 화면이 배지를 비운다.
+    String? mealType,
     required DateTime recordedAt,
   }) = _PlateHistoryItemDto;
 
@@ -233,6 +241,15 @@ class PlateHistoryDayDto with _$PlateHistoryDayDto {
 
     /// 그날 피부 분석이 없으면 서버가 키를 뺀다. required 로 두면 파싱이 죽는다.
     int? skinScore,
+
+    /// 그날 기록들의 평균. 서버가 계산해서 준다.
+    @Default(0) int plateScore,
+
+    /// 시안의 "목표 80점". 서버가 못 보내도 화면이 0 을 그리지 않도록 기본값을 둔다.
+    @Default(80) int targetScore,
+
+    /// "오늘의 AI 코멘트". 없으면 서버가 키를 빼고, 앱은 카드를 그리지 않는다.
+    String? aiComment,
     @Default(<PlateHistoryItemDto>[]) List<PlateHistoryItemDto> plates,
   }) = _PlateHistoryDayDto;
 
@@ -255,11 +272,15 @@ extension PlateHistoryDtoX on PlateHistoryDto {
       .map((day) => domain.PlateHistoryDay(
             date: day.date,
             skinScore: day.skinScore,
+            plateScore: day.plateScore,
+            targetScore: day.targetScore,
+            aiComment: day.aiComment,
             plates: day.plates
                 .map((item) => domain.PlateHistoryItem(
                       plateId: item.plateId,
                       foodName: item.foodName,
                       plateScore: item.plateScore,
+                      mealType: MealType.fromJson(item.mealType),
                       recordedAt: item.recordedAt,
                     ))
                 .toList(),

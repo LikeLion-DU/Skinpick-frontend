@@ -10,6 +10,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../app/router/app_router.dart';
+import '../../../../app/theme/app_colors.dart';
+import '../../../../app/theme/app_theme.dart';
 import '../../../../core/utils/photo_picker.dart';
 import '../../../../core/widgets/camera_preview_box.dart';
 import '../../data/datasources/face_gate.dart';
@@ -452,15 +454,53 @@ class _SkinCapturePageState extends ConsumerState<SkinCapturePage>
     _runCamera(_resumeStream);
   }
 
+  /// 카메라를 열기 전에 무엇을 왜 찍는지 먼저 말한다(시안의 촬영 안내 화면).
+  bool _intro = true;
+
   @override
   Widget build(BuildContext context) {
+    if (_intro) return _introView();
+
     _ensureStreaming();
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text('피부 촬영  ${_stageIndex + 1}/${_stages.length}'),
-      ),
+      backgroundColor: Colors.black,
       body: _controller == null ? _noPreview() : _preview(),
+    );
+  }
+
+  /// 촬영 안내. 시안 그대로 — 제목·부제·[촬영하기]·[넘어가기].
+  Widget _introView() {
+    return Scaffold(
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(AppTheme.pagePadding),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SizedBox(height: 40),
+              Text('피부 진단을 위해\n얼굴 촬영을 도와드릴게요',
+                  style: Theme.of(context).textTheme.titleLarge),
+              const SizedBox(height: 12),
+              Text('정확한 분석을 위해 정면, 좌측, 우측 사진을\n촬영해주세요.',
+                  style: Theme.of(context).textTheme.bodyMedium),
+              const Spacer(),
+              ElevatedButton(
+                onPressed: () => setState(() => _intro = false),
+                child: const Text('촬영하기'),
+              ),
+              const SizedBox(height: 12),
+              // 시안은 두 버튼이 같은 오렌지다. 그대로 두면 어느 쪽이 주 동작인지
+              // 안 보이지만, 디자이너의 선택이라 따른다.
+              ElevatedButton(
+                onPressed: () => context.pop(),
+                child: const Text('넘어가기'),
+              ),
+              const Spacer(),
+            ],
+          ),
+        ),
+      ),
     );
   }
 
@@ -513,77 +553,103 @@ class _SkinCapturePageState extends ConsumerState<SkinCapturePage>
       _ => _blockedGuide,
     };
 
-    return Column(
+    return Stack(
+      fit: StackFit.expand,
       children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(vertical: 12),
-          child: _StepIndicator(
-            current: _stageIndex,
-            labels: [for (final s in _stages) _label(s)],
-          ),
-        ),
-        Expanded(
+        CameraPreviewBox(_controller!),
+        // 어디에 얼굴을 두어야 하는지 형태로 보여준다. 문장만으로는
+        // "조금 더 가까이" 가 얼마나 가까이인지 알 수 없다.
+        _FaceGuide(passing: canCapture),
+        if (kDebugMode && result?.debug != null)
+          Positioned(top: 100, left: 8, child: _DebugOverlay(result!)),
+        SafeArea(
           child: Stack(
-            fit: StackFit.expand,
             children: [
-              CameraPreviewBox(_controller!),
-              // 어디에 얼굴을 두어야 하는지 형태로 보여준다. 문장만으로는
-              // "조금 더 가까이" 가 얼마나 가까이인지 알 수 없다.
-              _FaceGuide(passing: canCapture),
-              if (kDebugMode && result?.debug != null)
-                Positioned(top: 8, left: 8, child: _DebugOverlay(result!)),
-              Positioned(
-                top: 8,
-                right: 8,
-                child: _StageBadge(
-                  label: _label(_stage),
-                  instruction: _instruction(_stage),
+              // 시안의 상단 제목. 방향 안내는 타원 안 문구가 맡는다.
+              Padding(
+                padding: const EdgeInsets.fromLTRB(32, 44, 32, 0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      '피부 진단을 위해\n얼굴 촬영을 도와드릴게요',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 20,
+                        fontWeight: FontWeight.w600,
+                        height: 1.4,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      '정확한 분석을 위해 정면, 좌측, 우측 사진을 촬영해주세요.  '
+                      '(${_stageIndex + 1}/${_stages.length})',
+                      style: const TextStyle(
+                          color: Colors.white70, fontSize: 11, height: 1.4),
+                    ),
+                  ],
                 ),
               ),
               Positioned(
-                left: 16,
-                right: 16,
-                bottom: 16,
-                child: _Checklist(result),
+                top: 0,
+                left: 0,
+                child: IconButton(
+                  onPressed: () => context.pop(),
+                  icon: const Icon(Icons.arrow_back_ios_new,
+                      color: Colors.white, size: 20),
+                ),
               ),
-            ],
-          ),
-        ),
-        Padding(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              if (guide != null)
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 12),
-                  child: Text(
-                    guide,
-                    textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.bodyMedium,
+
+              // 타원 중앙의 방향 안내 — "정면을 바라봐주세요".
+              Align(
+                alignment: const Alignment(0, -0.12),
+                child: Text(
+                  _instruction(_stage),
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
                   ),
                 ),
-              FilledButton.icon(
-                onPressed: (canCapture && !_busy) ? _capture : null,
-                icon: _busy
-                    ? const SizedBox(
-                        width: 18,
-                        height: 18,
-                        child: CircularProgressIndicator(strokeWidth: 2))
-                    : const Icon(Icons.camera_alt),
-                label: Text(_busy
-                    ? '처리 중…'
-                    : canCapture
-                        // 조건이 맞으면 곧 자동으로 찍힌다. 버튼은 기다리기 싫은
-                        // 사용자를 위한 수동 경로다.
-                        ? '곧 자동으로 촬영됩니다 · 탭하면 바로 촬영'
-                        : '조건을 맞추면 자동으로 촬영됩니다'),
               ),
-              const SizedBox(height: 4),
-              TextButton.icon(
-                onPressed: _busy ? null : _pickFromGallery,
-                icon: const Icon(Icons.photo_library),
-                label: const Text('갤러리에서 선택'),
+
+              Align(
+                alignment: Alignment.bottomCenter,
+                child: Padding(
+                  padding: const EdgeInsets.only(bottom: 18),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // 왜 안 찍히는지 말해 준다. 이유 없이 잠긴 셔터는 고장으로 읽힌다.
+                      if (guide != null)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 10),
+                          child: Text(guide,
+                              textAlign: TextAlign.center,
+                              style: const TextStyle(
+                                  color: Colors.white, fontSize: 12)),
+                        )
+                      else if (canCapture && !_busy)
+                        const Padding(
+                          padding: EdgeInsets.only(bottom: 10),
+                          child: Text('곧 자동으로 촬영됩니다 · 탭하면 바로 촬영',
+                              style: TextStyle(
+                                  color: Colors.white70, fontSize: 12)),
+                        ),
+                      _CaptureShutter(
+                        enabled: canCapture && !_busy,
+                        busy: _busy,
+                        onTap: _capture,
+                      ),
+                      TextButton(
+                        onPressed: _busy ? null : _pickFromGallery,
+                        child: const Text('갤러리에서 선택',
+                            style: TextStyle(
+                                color: Colors.white70, fontSize: 12)),
+                      ),
+                    ],
+                  ),
+                ),
               ),
             ],
           ),
@@ -593,109 +659,53 @@ class _SkinCapturePageState extends ConsumerState<SkinCapturePage>
   }
 }
 
-/// 지금 어느 방향을 찍어야 하는지. 3단계라 이게 없으면 사용자가 길을 잃는다.
-class _StageBadge extends StatelessWidget {
-  const _StageBadge({required this.label, required this.instruction});
+/// 시안의 셔터 — 흰 원 + 오렌지 링. 게이트를 통과해야 켜진다.
+class _CaptureShutter extends StatelessWidget {
+  const _CaptureShutter({
+    required this.enabled,
+    required this.busy,
+    required this.onTap,
+  });
 
-  final String label;
-  final String instruction;
+  final bool enabled;
+  final bool busy;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: Colors.black54,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.end,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(label,
-                style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600)),
-            Text(instruction,
-                style: const TextStyle(color: Colors.white70, fontSize: 12)),
-          ],
+    return GestureDetector(
+      onTap: enabled ? onTap : null,
+      child: Container(
+        width: 78,
+        height: 78,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          border: Border.all(
+            color: enabled ? AppColors.primary : Colors.white38,
+            width: 5,
+          ),
+        ),
+        padding: const EdgeInsets.all(6),
+        child: Container(
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: enabled ? Colors.white : Colors.white54,
+          ),
+          child: busy
+              ? const Padding(
+                  padding: EdgeInsets.all(18),
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : null,
         ),
       ),
     );
   }
 }
 
-/// 조건 4개를 순서대로 보여준다. 판정이 첫 실패에서 멈추므로, 실패한 조건까지만
-/// 확정으로 표시하고 그 뒤는 아직 모르는 상태로 남긴다.
-class _Checklist extends StatelessWidget {
-  const _Checklist(this.result);
 
-  final FaceGateResult? result;
 
-  static const _labels = ['얼굴 1명', '충분한 크기', '방향', '밝기 적절'];
 
-  static int _failedAt(FaceGateReason reason) => switch (reason) {
-        FaceGateReason.noFace || FaceGateReason.multipleFaces => 0,
-        FaceGateReason.tooSmall => 1,
-        FaceGateReason.wrongOrientation => 2,
-        FaceGateReason.tooDark => 3,
-      };
-
-  @override
-  Widget build(BuildContext context) {
-    final current = result;
-    if (current is FaceGateUnavailable || current == null) {
-      return const SizedBox.shrink();
-    }
-
-    final failedAt = current is FaceGateBlocked ? _failedAt(current.reason) : null;
-
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: Colors.black54,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            for (var i = 0; i < _labels.length; i++)
-              _row(
-                _labels[i],
-                failedAt == null
-                    ? true
-                    : (i < failedAt ? true : (i == failedAt ? false : null)),
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _row(String label, bool? passed) {
-    final (icon, color) = switch (passed) {
-      true => (Icons.check, Colors.greenAccent),
-      false => (Icons.close, Colors.redAccent),
-      null => (Icons.remove, Colors.white38),
-    };
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 1),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 16, color: color),
-          const SizedBox(width: 6),
-          Text(label, style: TextStyle(color: color, fontSize: 13)),
-        ],
-      ),
-    );
-  }
-}
 
 /// 실기기에서 yaw 부호와 임계값을 맞출 때 쓴다. 릴리즈 빌드에는 나오지 않는다.
 class _DebugOverlay extends StatelessWidget {
@@ -756,10 +766,11 @@ class _FaceGuidePainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
+    // 시안 비율 — 프레임 402 에 타원 306×390, 세로 중심은 위쪽 47%.
     final oval = Rect.fromCenter(
-      center: Offset(size.width / 2, size.height * 0.46),
-      width: size.width * 0.68,
-      height: size.height * 0.56,
+      center: Offset(size.width / 2, size.height * 0.47),
+      width: size.width * 0.76,
+      height: size.height * 0.45,
     );
 
     // 타원 바깥만 어둡게 깔면 "안"이 어디인지 설명 없이 보인다.
@@ -768,16 +779,27 @@ class _FaceGuidePainter extends CustomPainter {
         ..addRect(Offset.zero & size)
         ..addOval(oval)
         ..fillType = PathFillType.evenOdd,
-      Paint()..color = Colors.black.withValues(alpha: 0.35),
+      Paint()..color = Colors.black.withValues(alpha: 0.45),
     );
 
     canvas.drawOval(
       oval,
       Paint()
         ..style = PaintingStyle.stroke
-        ..strokeWidth = passing ? 5 : 3
-        ..color = passing ? Colors.greenAccent : Colors.white70,
+        ..strokeWidth = passing ? 3 : 1.5
+        ..color = passing ? Colors.greenAccent : Colors.white,
     );
+
+    // 시안의 방위점 4개 — 상·하·좌·우.
+    final dot = Paint()..color = passing ? Colors.greenAccent : Colors.white;
+    for (final point in [
+      oval.topCenter,
+      oval.bottomCenter,
+      oval.centerLeft,
+      oval.centerRight,
+    ]) {
+      canvas.drawCircle(point, 5.5, dot);
+    }
   }
 
   @override
@@ -785,75 +807,4 @@ class _FaceGuidePainter extends CustomPainter {
       oldDelegate.passing != passing;
 }
 
-/// 정면 → 왼쪽 → 오른쪽 진행 상태. 3단계라 지금 몇 번째인지가 보여야 한다.
-class _StepIndicator extends StatelessWidget {
-  const _StepIndicator({required this.current, required this.labels});
 
-  final int current;
-  final List<String> labels;
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        for (var i = 0; i < labels.length; i++) ...[
-          if (i > 0)
-            Container(
-              width: 28,
-              height: 2,
-              margin: const EdgeInsets.only(bottom: 18),
-              color: i <= current ? scheme.primary : scheme.outlineVariant,
-            ),
-          Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              _dot(scheme, i),
-              const SizedBox(height: 4),
-              Text(
-                labels[i],
-                style: TextStyle(
-                  fontSize: 12,
-                  color: i == current ? scheme.primary : scheme.outline,
-                  fontWeight: i == current ? FontWeight.w600 : FontWeight.w400,
-                ),
-              ),
-            ],
-          ),
-        ],
-      ],
-    );
-  }
-
-  Widget _dot(ColorScheme scheme, int i) {
-    final done = i < current;
-    final active = i == current;
-    final filled = done || active;
-
-    return Container(
-      width: 28,
-      height: 28,
-      alignment: Alignment.center,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: filled ? scheme.primary : Colors.transparent,
-        border: Border.all(
-          color: filled ? scheme.primary : scheme.outlineVariant,
-          width: 2,
-        ),
-      ),
-      child: done
-          ? Icon(Icons.check, size: 16, color: scheme.onPrimary)
-          : Text(
-              '${i + 1}',
-              style: TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-                color: active ? scheme.onPrimary : scheme.outline,
-              ),
-            ),
-    );
-  }
-}

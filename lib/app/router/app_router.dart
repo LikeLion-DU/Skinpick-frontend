@@ -9,6 +9,7 @@ import '../../features/auth/presentation/pages/splash_page.dart';
 import '../../features/auth/presentation/providers/auth_notifier.dart';
 import '../../features/home/presentation/pages/home_page.dart';
 import '../../features/recommendation/presentation/pages/recommendation_page.dart';
+import '../../features/skin_plate/presentation/pages/plate_detail_page.dart';
 import '../../features/skin_analysis/presentation/pages/skin_capture_page.dart';
 import '../../features/skin_analysis/presentation/pages/skin_loading_page.dart';
 import '../../features/skin_analysis/presentation/pages/skin_result_page.dart';
@@ -70,6 +71,14 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: Routes.skinResult, builder: (_, __) => const SkinResultPage()),
       GoRoute(path: Routes.foodCapture, builder: (_, __) => const FoodCapturePage()),
       GoRoute(path: Routes.plateResult, builder: (_, __) => const PlateResultPage()),
+      // 저장된 기록 열람. 분석 직후 화면과 경로 접두어를 공유하지만 페이지는
+      // 다르다 — S07 은 저장 생명주기를 쥔 Notifier 위에 있고 여기는 id 조회다.
+      GoRoute(
+        path: '${Routes.plateResult}/:plateId',
+        builder: (_, state) => PlateDetailPage(
+          plateId: int.parse(state.pathParameters['plateId']!),
+        ),
+      ),
       GoRoute(path: Routes.plateHistory, builder: (_, __) => const PlateHistoryPage()),
       GoRoute(
         path: '${Routes.recommendations}/:skinAnalysisId',

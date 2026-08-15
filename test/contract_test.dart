@@ -10,6 +10,7 @@ import 'package:skinplate/features/skin_plate/domain/entities/skin_plate.dart';
 import 'package:skinplate/shared/enums/cooking_method.dart';
 import 'package:skinplate/shared/enums/highlight_status.dart';
 import 'package:skinplate/shared/enums/ingredient_tag.dart';
+import 'package:skinplate/shared/enums/meal_type.dart';
 import 'package:skinplate/shared/enums/plate_action_code.dart';
 import 'package:skinplate/shared/enums/skin_type.dart';
 
@@ -128,6 +129,20 @@ void main() {
     // 채운다(설계서 §5). DTO 를 nullable 로 둔 건 방어일 뿐 정상 응답에는 항상 있다.
     expect(days.every((day) => day.skinScore != null), isTrue);
 
+    // 홈이 크게 보여주는 값이다. (60 + 82) / 2 = 71 — 서버가 반올림해서 준다.
+    // 앱이 여기서 평균을 다시 내면 반올림이 갈리는 날 두 화면에 다른 숫자가 뜬다.
+    expect(days.first.plateScore, 71);
+    expect(days.first.targetScore, 80); // 앱에 하드코딩하지 않는다
+
+    // 끼니도 서버가 시각에서 파생해 준다. 19:45 는 저녁, 12:10 은 점심이다.
+    expect(days.first.plates.map((p) => p.mealType).toList(),
+        [MealType.dinner, MealType.lunch]);
+
+    // 오늘의 AI 코멘트 — 그날 최신 기록이 쥔 문장이다. 없는 날은 키 자체가 없고
+    // 앱은 카드를 그리지 않는다(8/13 이 그 경우다).
+    expect(days.first.aiComment, isNotEmpty);
+    expect(days.last.aiComment, isNull);
+
     // plateId 가 곧 로컬 사진 파일명이다 — <documents>/plates/{plateId}.jpg
     expect(days.last.plates.single.plateId, 3);
   });
@@ -147,6 +162,10 @@ void main() {
     expect(plate.food.id, isNotNull);
     // 저장은 AI 를 다시 부르지 않는다. analyze 가 보여준 점수가 그대로 확정된다.
     expect(plate.plateScore, 60);
+
+    // 저장 시 1회 생성된 AI 문장. 생성이 실패한 기록은 키가 없고 앱은
+    // 룰 요약(summary)으로 대신한다 — nullable 인 이유가 그것이다.
+    expect(plate.aiTip, isNotEmpty);
   });
 
   test('POST /plates/simulate — 저장 전 60 → 72, 응답에 plateId 가 없다', () {

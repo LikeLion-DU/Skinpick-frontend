@@ -9,6 +9,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../app/router/app_router.dart';
+import '../../../../app/theme/app_colors.dart';
 import '../../../../core/utils/photo_picker.dart';
 import '../../../../core/widgets/camera_preview_box.dart';
 import '../../data/datasources/food_gate.dart';
@@ -305,87 +306,129 @@ class _FoodCapturePageState extends ConsumerState<FoodCapturePage>
     _runCamera(_resumeStream);
   }
 
+  /// 시안의 0.5x / 1x / 2x. 기기가 지원하는 범위로 잘라서 적용한다.
+  double _zoom = 1.0;
+
+  Future<void> _setZoom(double factor) async {
+    final controller = _controller;
+    if (controller == null) return;
+    try {
+      final min = await controller.getMinZoomLevel();
+      final max = await controller.getMaxZoomLevel();
+      final clamped = factor.clamp(min, max);
+      await controller.setZoomLevel(clamped);
+      _set(() => _zoom = factor);
+    } on Object catch (_) {
+      // 줌이 안 되는 기기면 그냥 둔다. 촬영이 먼저다.
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     _ensureStreaming();
 
+    // 시안은 상태바까지 검은 전체 화면 카메라다. AppBar 대신 뒤로가기만 띄운다.
     return Scaffold(
-      appBar: AppBar(title: const Text('음식 촬영')),
+      backgroundColor: Colors.black,
       body: _controller == null ? _noPreview() : _preview(),
     );
   }
 
   /// 프리뷰가 없어도 촬영은 된다 — 이 게이트는 차단 장치가 아니다.
   Widget _noPreview() {
-    return Padding(
-      padding: const EdgeInsets.all(24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        mainAxisAlignment: MainAxisAlignment.center,
+    return SafeArea(
+      child: Stack(
         children: [
-          Text(
-            _cameraError == null || _cameraError!.isEmpty
-                ? '음식이 잘 보이도록 촬영해 주세요.'
-                : _cameraError!,
-            textAlign: TextAlign.center,
+          Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  _cameraError == null || _cameraError!.isEmpty
+                      ? '음식이 잘 보이도록 촬영해 주세요'
+                      : _cameraError!,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(color: Colors.white, fontSize: 16),
+                ),
+                const SizedBox(height: 32),
+                Center(
+                  child: _ShutterButton(
+                    busy: _busy,
+                    onTap: () => _pick(PhotoPicker.fromCamera),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextButton.icon(
+                  onPressed: _busy ? null : () => _pick(PhotoPicker.fromGallery),
+                  icon: const Icon(Icons.photo_library, color: Colors.white70),
+                  label: const Text('갤러리에서 선택',
+                      style: TextStyle(color: Colors.white70)),
+                ),
+              ],
+            ),
           ),
-          const SizedBox(height: 32),
-          FilledButton.icon(
-            onPressed: _busy ? null : () => _pick(PhotoPicker.fromCamera),
-            icon: const Icon(Icons.camera_alt),
-            label: const Text('촬영하기'),
-          ),
-          const SizedBox(height: 12),
-          OutlinedButton.icon(
-            onPressed: _busy ? null : () => _pick(PhotoPicker.fromGallery),
-            icon: const Icon(Icons.photo_library),
-            label: const Text('갤러리에서 선택'),
-          ),
+          _BackButton(onTap: () => context.pop()),
         ],
       ),
     );
   }
 
   Widget _preview() {
-    return Column(
+    return Stack(
+      fit: StackFit.expand,
       children: [
-        Expanded(
+        CameraPreviewBox(_controller!),
+
+        // 시안의 코너 브래킷 프레임. 촬영 영역을 안내만 하고 자르지는 않는다.
+        const Center(child: _BracketFrame()),
+
+        if (kDebugMode)
+          Positioned(top: 48, left: 8, child: _DebugOverlay(_lastObservation)),
+
+        SafeArea(
           child: Stack(
-            fit: StackFit.expand,
             children: [
-              CameraPreviewBox(_controller!),
-              if (kDebugMode)
-                Positioned(top: 8, left: 8, child: _DebugOverlay(_lastObservation)),
-              Positioned(
-                left: 16,
-                right: 16,
-                bottom: 16,
-                child: _StateBanner(_state),
+              _BackButton(onTap: () => context.pop()),
+
+              // 안내 문구. 게이트 상태에 따라 문장이 바뀌지만 촬영은 항상 열려 있다.
+              Align(
+                alignment: const Alignment(0, -0.1),
+                child: Padding(
+                  padding: const EdgeInsets.only(top: 120),
+                  child: Text(
+                    switch (_state) {
+                      FoodDetectionState.notFood => _state.guide,
+                      _ => '음식이 잘 보이도록 촬영해 주세요',
+                    },
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
               ),
-            ],
-          ),
-        ),
-        Padding(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              // 상태와 무관하게 항상 누를 수 있다. 오탐 때문에 촬영을 막지 않는다.
-              FilledButton.icon(
-                onPressed: _busy ? null : _capture,
-                icon: _busy
-                    ? const SizedBox(
-                        width: 18,
-                        height: 18,
-                        child: CircularProgressIndicator(strokeWidth: 2))
-                    : const Icon(Icons.camera_alt),
-                label: Text(_busy ? '처리 중…' : '촬영'),
-              ),
-              const SizedBox(height: 4),
-              TextButton.icon(
-                onPressed: _busy ? null : () => _pick(PhotoPicker.fromGallery),
-                icon: const Icon(Icons.photo_library),
-                label: const Text('갤러리에서 선택'),
+
+              Align(
+                alignment: Alignment.bottomCenter,
+                child: Padding(
+                  padding: const EdgeInsets.only(bottom: 18),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      _ZoomChips(current: _zoom, onSelect: _setZoom),
+                      const SizedBox(height: 26),
+                      _ShutterButton(busy: _busy, onTap: _capture),
+                      const SizedBox(height: 14),
+                      const Text(
+                        '분석은 AI가 자동으로 진행해요!',
+                        style: TextStyle(color: Colors.white70, fontSize: 12),
+                      ),
+                    ],
+                  ),
+                ),
               ),
             ],
           ),
@@ -395,41 +438,163 @@ class _FoodCapturePageState extends ConsumerState<FoodCapturePage>
   }
 }
 
-/// 상태를 색과 문장으로 보여준다. 촬영을 막지 않으므로 경고 톤은 약하게 둔다.
-class _StateBanner extends StatelessWidget {
-  const _StateBanner(this.state);
+/// 전체 화면 카메라 위의 뒤로가기. AppBar 를 두면 시안의 몰입 프레임이 깨진다.
+class _BackButton extends StatelessWidget {
+  const _BackButton({required this.onTap});
 
-  final FoodDetectionState state;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    final (icon, color) = switch (state) {
-      FoodDetectionState.foodDetected => (Icons.check_circle, Colors.greenAccent),
-      FoodDetectionState.notFood => (Icons.info_outline, Colors.orangeAccent),
-      FoodDetectionState.checking => (Icons.search, Colors.white70),
-    };
-
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: Colors.black54,
-        borderRadius: BorderRadius.circular(12),
+    return Positioned(
+      top: 8,
+      left: 8,
+      child: IconButton(
+        onPressed: onTap,
+        icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white),
       ),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, size: 18, color: color),
-            const SizedBox(width: 8),
-            Flexible(
-              child: Text(
-                state.guide,
-                style: TextStyle(color: color, fontSize: 14),
-              ),
-            ),
-          ],
+    );
+  }
+}
+
+/// 시안의 촬영 영역 브래킷 — 308px 사각의 네 모서리에 44px L 자.
+class _BracketFrame extends StatelessWidget {
+  const _BracketFrame();
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 308,
+      height: 308,
+      child: CustomPaint(painter: _BracketPainter()),
+    );
+  }
+}
+
+class _BracketPainter extends CustomPainter {
+  static const _arm = 44.0;
+  static const _stroke = 5.0;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = Colors.white
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = _stroke
+      ..strokeCap = StrokeCap.round;
+
+    final w = size.width;
+    final h = size.height;
+
+    // 좌상 → 시계 방향. 각 모서리에서 가로·세로 한 획씩.
+    canvas.drawPath(
+        Path()
+          ..moveTo(0, _arm)
+          ..lineTo(0, 0)
+          ..lineTo(_arm, 0),
+        paint);
+    canvas.drawPath(
+        Path()
+          ..moveTo(w - _arm, 0)
+          ..lineTo(w, 0)
+          ..lineTo(w, _arm),
+        paint);
+    canvas.drawPath(
+        Path()
+          ..moveTo(w, h - _arm)
+          ..lineTo(w, h)
+          ..lineTo(w - _arm, h),
+        paint);
+    canvas.drawPath(
+        Path()
+          ..moveTo(_arm, h)
+          ..lineTo(0, h)
+          ..lineTo(0, h - _arm),
+        paint);
+  }
+
+  @override
+  bool shouldRepaint(_BracketPainter oldDelegate) => false;
+}
+
+/// 시안의 셔터 — 흰 원 위에 오렌지 링.
+class _ShutterButton extends StatelessWidget {
+  const _ShutterButton({required this.busy, required this.onTap});
+
+  final bool busy;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: busy ? null : onTap,
+      child: Container(
+        width: 78,
+        height: 78,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          border: Border.all(color: AppColors.primary, width: 5),
+        ),
+        padding: const EdgeInsets.all(6),
+        child: Container(
+          decoration: const BoxDecoration(
+            shape: BoxShape.circle,
+            color: Colors.white,
+          ),
+          child: busy
+              ? const Padding(
+                  padding: EdgeInsets.all(18),
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : null,
         ),
       ),
+    );
+  }
+}
+
+/// 0.5x / 1x / 2x. 현재 배율만 크고 밝게 — 시안 그대로다.
+class _ZoomChips extends StatelessWidget {
+  const _ZoomChips({required this.current, required this.onSelect});
+
+  final double current;
+  final ValueChanged<double> onSelect;
+
+  @override
+  Widget build(BuildContext context) {
+    const factors = [0.5, 1.0, 2.0];
+
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        for (final factor in factors)
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 9),
+            child: GestureDetector(
+              onTap: () => onSelect(factor),
+              child: Container(
+                width: factor == current ? 45 : 32,
+                height: factor == current ? 45 : 32,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.black.withValues(alpha: 0.45),
+                ),
+                child: Center(
+                  child: Text(
+                    factor == 1.0 || factor == 2.0
+                        ? '${factor.toInt()}x'
+                        : '${factor}x',
+                    style: TextStyle(
+                      color: factor == current ? Colors.white : Colors.white70,
+                      fontSize: factor == current ? 15 : 11,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+      ],
     );
   }
 }
