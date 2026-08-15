@@ -1,5 +1,6 @@
 import '../../../../core/result/result.dart';
 import '../entities/skin_analysis.dart';
+import '../entities/skin_insight.dart';
 import '../entities/skin_photo_set.dart';
 
 abstract interface class SkinRepository {
@@ -10,4 +11,8 @@ abstract interface class SkinRepository {
   Future<Result<SkinAnalysis?>> getLatest();
 
   Future<Result<SkinAnalysis>> getById(int id);
+
+  /// 개인화 인사이트(S10). 없으면 서버가 그 자리에서 만들어 준다(get-or-create).
+  /// 첫 호출은 AI 를 기다리므로 오래 걸린다.
+  Future<Result<SkinInsight>> getInsight(int skinAnalysisId);
 }

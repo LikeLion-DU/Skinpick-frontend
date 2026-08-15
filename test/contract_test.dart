@@ -6,11 +6,13 @@ import 'package:skinplate/features/auth/data/models/auth_dtos.dart';
 import 'package:skinplate/features/auth/domain/entities/skin_profile.dart';
 import 'package:skinplate/features/recommendation/data/models/recommendation_dtos.dart';
 import 'package:skinplate/features/skin_analysis/data/models/skin_dtos.dart';
+import 'package:skinplate/features/skin_analysis/data/models/skin_insight_dtos.dart';
 import 'package:skinplate/features/skin_plate/data/models/plate_dtos.dart';
 import 'package:skinplate/features/skin_plate/domain/entities/skin_plate.dart';
 import 'package:skinplate/shared/enums/cooking_method.dart';
 import 'package:skinplate/shared/enums/highlight_status.dart';
 import 'package:skinplate/shared/enums/ingredient_tag.dart';
+import 'package:skinplate/shared/enums/insight_category.dart';
 import 'package:skinplate/shared/enums/meal_type.dart';
 import 'package:skinplate/shared/enums/plate_action_code.dart';
 import 'package:skinplate/shared/enums/skin_type.dart';
@@ -71,6 +73,47 @@ void main() {
     expect(user.waterIntake, isNull);
     expect(user.declaredSkinType, isNull);
     expect(user.hasIncompleteLifestyle, isTrue);
+  });
+
+  test('GET /skin-insights — 요약·변화량·주제', () {
+    final insight = SkinInsightDto.fromJson(data('skin_insight')).toEntity();
+
+    expect(insight.summary, isNotEmpty);
+    expect(insight.changes!.trouble, -7);
+    expect(insight.changes!.skinScore, 2);
+    expect(insight.changes!.byKey('hydration'), 5);
+
+    // 배열 순서가 곧 우선순위다. 앱이 정렬하지 않는다.
+    expect(insight.insights.map((item) => item.category).toList(),
+        [InsightCategory.sleep, InsightCategory.trouble]);
+
+    // 두 배열은 같은 주제를 두 각도로 본 것이다 — 길이도 순서도 항상 같다.
+    expect(insight.todayActions.length, insight.insights.length);
+    expect(insight.todayActions.first.category, InsightCategory.sleep);
+  });
+
+  test('GET /skin-insights — 첫 분석이면 changes 키가 없다', () {
+    // 0 으로 채우면 "변화 없음"과 구분이 사라진다. null 이어야 한다.
+    final insight =
+        SkinInsightDto.fromJson(data('skin_insight_first')).toEntity();
+
+    expect(insight.changes, isNull);
+    expect(insight.insights, hasLength(1));
+  });
+
+  test('GET /skin-insights — 다룰 주제가 없으면 빈 배열이 온다', () {
+    // 서버가 이 응답을 저장하지 않는다. 습관을 채우고 다시 오면 새로 만들어진다.
+    final insight =
+        SkinInsightDto.fromJson(data('skin_insight_healthy')).toEntity();
+
+    expect(insight.insights, isEmpty);
+    expect(insight.todayActions, isEmpty);
+    expect(insight.summary, isNotEmpty); // 빈 배열이어도 할 말은 있다
+  });
+
+  test('모르는 category 는 null 로 떨어진다 — 엉뚱한 아이콘을 붙이지 않는다', () {
+    expect(InsightCategory.fromJson('TELEPORTATION'), isNull);
+    expect(InsightCategory.fromJson('WATER'), InsightCategory.water);
   });
 
   test('GET /skin/analyses/latest — 점수·하이라이트·갭', () {

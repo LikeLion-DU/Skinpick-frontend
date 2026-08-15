@@ -1,0 +1,34 @@
+{
+  "success": true,
+  "data": {
+    "skinAnalysisId": 12,
+    "summary": "지금은 트러블과 수분을 함께 살펴보면 좋아요.",
+    "changes": {
+      "hydration": 5,
+      "oil": -3,
+      "redness": 2,
+      "trouble": -7,
+      "barrier": 4,
+      "skinScore": 2
+    },
+    "insights": [
+      {
+        "category": "SLEEP",
+        "priority": "HIGH",
+        "title": "수면 관리",
+        "description": "요즘 잠이 부족한 편이라고 하셨어요. 오늘은 조금 일찍 쉬어 보는 것도 좋겠어요."
+      },
+      {
+        "category": "TROUBLE",
+        "priority": "MEDIUM",
+        "title": "트러블 관리",
+        "description": "오늘 트러블 지표가 높게 나왔어요. 자극을 줄이는 쪽으로 살펴보면 좋겠어요."
+      }
+    ],
+    "todayActions": [
+      { "category": "SLEEP", "title": "오늘은 평소보다 30분 일찍 누워 보세요" },
+      { "category": "TROUBLE", "title": "자극이 적은 순한 세안제를 써 보세요" }
+    ],
+    "generatedAt": "2026-08-16T10:00:00"
+  }
+}
