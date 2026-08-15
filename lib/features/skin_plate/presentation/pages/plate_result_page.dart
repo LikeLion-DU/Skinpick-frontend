@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../app/config/feature_flags.dart';
+import '../../../../app/router/app_router.dart';
 import '../../../../app/theme/app_colors.dart';
 import '../../../../app/theme/app_theme.dart';
 import '../../../../core/error/failure.dart';
@@ -148,9 +149,10 @@ class _Content extends ConsumerWidget {
         PlateSummaryCard(good: plate.good, caution: plate.caution),
 
         const SizedBox(height: 12),
-        // TIP 문장은 지금 룰 요약(summary)이다. 서버에 AI 문장이 생기면
-        // 이 자리만 바뀐다 — 카드도 레이아웃도 그대로다.
-        if (plate.summary.isNotEmpty) PlateTipCard(tip: plate.summary),
+        // 저장 전에는 룰 요약(summary)뿐이지만, 저장되면 서버가 AI 문장을 만들어
+        // 붙인다. 여기서 안 읽으면 같은 기록이 이 화면에서는 룰 요약, 상세
+        // 화면에서는 AI 문장으로 갈린다 — 상세(plate_detail_page)와 같은 우선순위다.
+        if (_tipOf(plate).isNotEmpty) PlateTipCard(tip: _tipOf(plate)),
 
         if (FeatureFlags.actionSimulation && plate.actions.isNotEmpty) ...[
           const SizedBox(height: 20),
@@ -188,12 +190,30 @@ class _Content extends ConsumerWidget {
           fatG: plate.food.nutrition.fatG.toDouble(),
         ),
 
+        // S08 진입점. 시뮬레이션과 달리 이 화면의 피부 분석 id 가 필요해서
+        // 진입점이 여기다. "최신 피부 분석"을 대신 쓰면 과거 Plate 를 열었을 때
+        // 엉뚱한 추천이 뜬다.
+        if (FeatureFlags.recommendationScreen) ...[
+          const SizedBox(height: 20),
+          FilledButton.tonalIcon(
+            onPressed: () => context
+                .push('${Routes.recommendations}/${plate.skinAnalysisId}'),
+            icon: const Icon(Icons.restaurant_menu),
+            label: const Text('오늘의 추천 음식 보기'),
+          ),
+        ],
+
         const SizedBox(height: 28),
         _SaveSection(state: state, onSave: onSave, onRetake: onRetake),
         const SafetyNotice(),
       ],
     );
   }
+
+  /// AI 문장은 저장된 기록에만 있다(서버가 저장 때 만든다). PlateView 에
+  /// aiTip 을 올리지 않는 건 의도라([PlateView] 주석), 여기서만 내려본다.
+  static String _tipOf(PlateView plate) =>
+      plate is SkinPlate ? plate.aiTip ?? plate.summary : plate.summary;
 }
 
 /// 기록 확정 CTA. 이 버튼을 누르기 전까지 서버에는 아무것도 없다.

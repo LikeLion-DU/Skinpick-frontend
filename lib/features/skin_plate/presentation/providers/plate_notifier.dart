@@ -9,6 +9,7 @@ import '../../../../shared/enums/plate_action_code.dart';
 import '../../data/datasources/plate_image_store.dart';
 import '../../domain/entities/plate_analysis.dart';
 import '../../domain/entities/skin_plate.dart';
+import 'plate_history_provider.dart';
 
 /// 기록의 수명주기. **분석 결과가 아니라 "기록으로 확정됐는가"** 를 나타낸다.
 ///
@@ -199,8 +200,14 @@ class PlateNotifier extends Notifier<PlateState> {
     // 파일 쓰기가 실패해도 아무것도 하지 않는다. 되돌릴 방법이 없고, 히스토리는
     // 음식명·점수·시각으로 이미 완결돼 있다.
     final saved = result.dataOrNull;
-    if (saved != null && bytes != null) {
-      await PlateImageStore.save(saved.id, bytes);
+    if (saved != null) {
+      if (bytes != null) await PlateImageStore.save(saved.id, bytes);
+
+      // 히스토리를 여기서 버린다. "화면을 나갈 때 버린다"는 홈이 오늘치를
+      // 구독하면서 더 이상 성립하지 않는다 — 홈은 스택 바닥에 계속 살아 있어서
+      // 촬영·결과를 다녀와도 dispose 가 걸리지 않는다. 이게 없으면 방금 저장한
+      // 끼니가 홈 카드에도, 기록 화면에도 안 보인다.
+      ref.invalidate(plateHistoryProvider);
     }
 
     // 기다리는 동안 사용자가 뒤로 나가 다른 음식을 찍었을 수 있다(타임아웃이 32초고,

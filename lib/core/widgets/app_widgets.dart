@@ -2,92 +2,11 @@ import 'package:flutter/material.dart';
 
 import '../error/failure.dart';
 
-/// 껍데기 단계의 공용 위젯.
+/// 화면 공용 위젯(실패 안내·안전 고지).
 ///
-/// 디자인이 확정되면 이 파일만 갈아끼우면 된다 — 화면들은 의미(점수 게이지,
-/// 지표 바, 실패 안내)로만 부르고 색·모양을 직접 그리지 않는다.
-
-/// 원형 점수 게이지. 0~100.
-class ScoreGauge extends StatelessWidget {
-  const ScoreGauge({super.key, required this.score, this.label, this.size = 140});
-
-  final int score;
-  final String? label;
-  final double size;
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      width: size,
-      height: size,
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          SizedBox.expand(
-            child: CircularProgressIndicator(
-              value: (score.clamp(0, 100)) / 100,
-              strokeWidth: 10,
-              backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
-            ),
-          ),
-          Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text('$score', style: Theme.of(context).textTheme.displaySmall),
-              if (label != null)
-                Text(label!, style: Theme.of(context).textTheme.bodySmall),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// 지표 막대 1줄.
-///
-/// [higherIsBetter] 가 반드시 필요하다 — 수분 30 은 나쁘고 홍조 30 은 좋다.
-/// 이 정보 없이 색을 칠하면 홍조가 심할수록 초록으로 표시된다.
-class MetricBar extends StatelessWidget {
-  const MetricBar({
-    super.key,
-    required this.label,
-    required this.value,
-    required this.higherIsBetter,
-  });
-
-  final String label;
-  final int value;
-  final bool higherIsBetter;
-
-  @override
-  Widget build(BuildContext context) {
-    final aligned = higherIsBetter ? value : 100 - value;
-    final color = switch (aligned) {
-      >= 60 => Colors.green,
-      >= 40 => Colors.orange,
-      _ => Colors.red,
-    };
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
-      child: Row(
-        children: [
-          SizedBox(width: 48, child: Text(label)),
-          Expanded(
-            child: LinearProgressIndicator(
-              value: value / 100,
-              minHeight: 8,
-              color: color,
-              backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
-            ),
-          ),
-          SizedBox(width: 40, child: Text('$value', textAlign: TextAlign.end)),
-        ],
-      ),
-    );
-  }
-}
+/// 껍데기 시절의 ScoreGauge·MetricBar 는 확정 시안이 들어오며 지웠다.
+/// 점수 게이지는 이제 plate_score_card.dart 의 ScoreGauge 하나다 — 같은 이름을
+/// 여기 남겨 두면 두 파일을 같이 import 하는 화면에서 ambiguous import 가 난다.
 
 /// 실패 안내 + 재시도. 화면마다 다른 문구를 짓지 않도록 통로를 하나로 둔다.
 class FailureView extends StatelessWidget {

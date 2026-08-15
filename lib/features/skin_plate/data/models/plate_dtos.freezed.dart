@@ -2368,7 +2368,12 @@ mixin _$PlateHistoryDayDto {
   int? get skinScore => throw _privateConstructorUsedError;
 
   /// 그날 기록들의 평균. 서버가 계산해서 준다.
-  int get plateScore => throw _privateConstructorUsedError;
+  ///
+  /// **기본값을 두지 않는다.** 서버는 평균을 못 낸 날 이 키를 통째로 뺀다.
+  /// 0 으로 떨어뜨리면 홈이 "0점 · 주의" 를 그리는데, 0점은 "아주 나쁘게
+  /// 먹었다"로 읽힌다 — 아직 안 먹은 것과 다른 상태다. null 이어야 카드가
+  /// 시안대로 `OO점` 으로 빠진다.
+  int? get plateScore => throw _privateConstructorUsedError;
 
   /// 시안의 "목표 80점". 서버가 못 보내도 화면이 0 을 그리지 않도록 기본값을 둔다.
   int get targetScore => throw _privateConstructorUsedError;
@@ -2396,7 +2401,7 @@ abstract class $PlateHistoryDayDtoCopyWith<$Res> {
   $Res call(
       {DateTime date,
       int? skinScore,
-      int plateScore,
+      int? plateScore,
       int targetScore,
       String? aiComment,
       List<PlateHistoryItemDto> plates});
@@ -2419,7 +2424,7 @@ class _$PlateHistoryDayDtoCopyWithImpl<$Res, $Val extends PlateHistoryDayDto>
   $Res call({
     Object? date = null,
     Object? skinScore = freezed,
-    Object? plateScore = null,
+    Object? plateScore = freezed,
     Object? targetScore = null,
     Object? aiComment = freezed,
     Object? plates = null,
@@ -2433,10 +2438,10 @@ class _$PlateHistoryDayDtoCopyWithImpl<$Res, $Val extends PlateHistoryDayDto>
           ? _value.skinScore
           : skinScore // ignore: cast_nullable_to_non_nullable
               as int?,
-      plateScore: null == plateScore
+      plateScore: freezed == plateScore
           ? _value.plateScore
           : plateScore // ignore: cast_nullable_to_non_nullable
-              as int,
+              as int?,
       targetScore: null == targetScore
           ? _value.targetScore
           : targetScore // ignore: cast_nullable_to_non_nullable
@@ -2464,7 +2469,7 @@ abstract class _$$PlateHistoryDayDtoImplCopyWith<$Res>
   $Res call(
       {DateTime date,
       int? skinScore,
-      int plateScore,
+      int? plateScore,
       int targetScore,
       String? aiComment,
       List<PlateHistoryItemDto> plates});
@@ -2485,7 +2490,7 @@ class __$$PlateHistoryDayDtoImplCopyWithImpl<$Res>
   $Res call({
     Object? date = null,
     Object? skinScore = freezed,
-    Object? plateScore = null,
+    Object? plateScore = freezed,
     Object? targetScore = null,
     Object? aiComment = freezed,
     Object? plates = null,
@@ -2499,10 +2504,10 @@ class __$$PlateHistoryDayDtoImplCopyWithImpl<$Res>
           ? _value.skinScore
           : skinScore // ignore: cast_nullable_to_non_nullable
               as int?,
-      plateScore: null == plateScore
+      plateScore: freezed == plateScore
           ? _value.plateScore
           : plateScore // ignore: cast_nullable_to_non_nullable
-              as int,
+              as int?,
       targetScore: null == targetScore
           ? _value.targetScore
           : targetScore // ignore: cast_nullable_to_non_nullable
@@ -2525,7 +2530,7 @@ class _$PlateHistoryDayDtoImpl implements _PlateHistoryDayDto {
   const _$PlateHistoryDayDtoImpl(
       {required this.date,
       this.skinScore,
-      this.plateScore = 0,
+      this.plateScore,
       this.targetScore = 80,
       this.aiComment,
       final List<PlateHistoryItemDto> plates = const <PlateHistoryItemDto>[]})
@@ -2542,9 +2547,13 @@ class _$PlateHistoryDayDtoImpl implements _PlateHistoryDayDto {
   final int? skinScore;
 
   /// 그날 기록들의 평균. 서버가 계산해서 준다.
+  ///
+  /// **기본값을 두지 않는다.** 서버는 평균을 못 낸 날 이 키를 통째로 뺀다.
+  /// 0 으로 떨어뜨리면 홈이 "0점 · 주의" 를 그리는데, 0점은 "아주 나쁘게
+  /// 먹었다"로 읽힌다 — 아직 안 먹은 것과 다른 상태다. null 이어야 카드가
+  /// 시안대로 `OO점` 으로 빠진다.
   @override
-  @JsonKey()
-  final int plateScore;
+  final int? plateScore;
 
   /// 시안의 "목표 80점". 서버가 못 보내도 화면이 0 을 그리지 않도록 기본값을 둔다.
   @override
@@ -2611,7 +2620,7 @@ abstract class _PlateHistoryDayDto implements PlateHistoryDayDto {
   const factory _PlateHistoryDayDto(
       {required final DateTime date,
       final int? skinScore,
-      final int plateScore,
+      final int? plateScore,
       final int targetScore,
       final String? aiComment,
       final List<PlateHistoryItemDto> plates}) = _$PlateHistoryDayDtoImpl;
@@ -2627,8 +2636,13 @@ abstract class _PlateHistoryDayDto implements PlateHistoryDayDto {
   int? get skinScore;
 
   /// 그날 기록들의 평균. 서버가 계산해서 준다.
+  ///
+  /// **기본값을 두지 않는다.** 서버는 평균을 못 낸 날 이 키를 통째로 뺀다.
+  /// 0 으로 떨어뜨리면 홈이 "0점 · 주의" 를 그리는데, 0점은 "아주 나쁘게
+  /// 먹었다"로 읽힌다 — 아직 안 먹은 것과 다른 상태다. null 이어야 카드가
+  /// 시안대로 `OO점` 으로 빠진다.
   @override
-  int get plateScore;
+  int? get plateScore;
 
   /// 시안의 "목표 80점". 서버가 못 보내도 화면이 0 을 그리지 않도록 기본값을 둔다.
   @override

@@ -1,5 +1,3 @@
-import 'dart:typed_data';
-
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/di/providers.dart';
@@ -15,30 +13,22 @@ final latestSkinAnalysisProvider = FutureProvider<Result<SkinAnalysis?>>(
   (ref) => ref.watch(skinRepositoryProvider).getLatest(),
 );
 
-/// 촬영한 사진과 분석 결과를 함께 들고 있는다.
+/// 분석 결과를 들고 있는다.
 ///
-/// 이미지가 상태에 있어야 하는 이유 — 결과 화면(S05)은 서버가 준 URL 이 아니라
-/// **앱이 방금 찍은 사진**을 띄운다. 서버는 사진을 저장하지 않는다. (PRD §9.6)
-///
-/// 경로가 아니라 바이트를 들고 있는다. 웹에는 파일 경로가 없어서 Image.file 이
-/// 런타임에 던진다. Image.memory 는 웹·모바일이 같은 코드로 돈다.
+/// **얼굴 사진 바이트는 들고 있지 않는다.** 확정 시안의 결과 화면(S05)에는 사진
+/// 자리가 없다. 읽는 곳 없이 들고만 있으면 분석 한 번마다 수 MB 짜리 Uint8List 가
+/// dispose 되지 않는 notifier 에 그대로 박힌다. 시안에 사진이 다시 들어오면
+/// `analyze` 에서 `photos.front.readAsBytes()` 를 되살리면 된다 — 경로가 아니라
+/// 바이트여야 한다. 웹에는 파일 경로가 없어서 Image.file 이 런타임에 던진다.
 class SkinAnalysisState {
   const SkinAnalysisState({
-    this.imageBytes,
     this.analysis = const AsyncData<SkinAnalysis?>(null),
   });
 
-  final Uint8List? imageBytes;
   final AsyncValue<SkinAnalysis?> analysis;
 
-  SkinAnalysisState copyWith({
-    Uint8List? imageBytes,
-    AsyncValue<SkinAnalysis?>? analysis,
-  }) =>
-      SkinAnalysisState(
-        imageBytes: imageBytes ?? this.imageBytes,
-        analysis: analysis ?? this.analysis,
-      );
+  SkinAnalysisState copyWith({AsyncValue<SkinAnalysis?>? analysis}) =>
+      SkinAnalysisState(analysis: analysis ?? this.analysis);
 }
 
 final skinAnalysisNotifierProvider =
@@ -50,11 +40,7 @@ class SkinAnalysisNotifier extends Notifier<SkinAnalysisState> {
   SkinAnalysisState build() => const SkinAnalysisState();
 
   Future<void> analyze(SkinPhotoSet photos) async {
-    // 결과 화면(S05)에 띄우는 건 정면 한 장이다. 세 장을 다 들고 있을 이유가 없다.
-    state = SkinAnalysisState(
-      imageBytes: await photos.front.readAsBytes(),
-      analysis: const AsyncLoading(),
-    );
+    state = const SkinAnalysisState(analysis: AsyncLoading());
 
     final result = await ref.read(skinRepositoryProvider).analyze(photos);
 

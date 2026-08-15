@@ -43,6 +43,26 @@ class _SkinTypePageState extends ConsumerState<SkinTypePage> {
 
   bool get _complete => _type != null && _concerns.isNotEmpty;
 
+  @override
+  void initState() {
+    super.initState();
+    // 홈의 "피부 프로필 수정"으로 다시 들어온 사용자다. 저장해 둔 답을 깔아
+    // 두지 않으면 빈 설문이 뜨고, 제출이 이전 답(습관 포함)을 전부 null 로
+    // 덮어쓴다 — 저장소에 쓰기만 하고 읽는 곳이 없는 상태였다.
+    _store.load().then((saved) {
+      if (!mounted) return;
+      setState(() {
+        _concerns.addAll(saved.concerns);
+        _sleep ??= saved.sleep;
+        _stress ??= saved.stress;
+        _exercise ??= saved.exercise;
+      });
+    });
+    // 타입은 서버 소유다. 로그인 상태에서 이미 들고 있다.
+    final auth = ref.read(authNotifierProvider);
+    if (auth is Authenticated) _type = auth.user.declaredSkinType;
+  }
+
   /// 진행 점 4개 중 몇 개가 찼는가. 시작(1) + 타입 + 고민 + 습관.
   int get _progress =>
       1 +
@@ -296,7 +316,11 @@ class _ProgressDots extends StatelessWidget {
   }
 }
 
-/// 피부 타입 타일 4개. 시안 크기 77×91.
+/// 피부 타입 타일 4개(시안 크기 77×91) + "잘 모르겠어요" 한 줄.
+///
+/// UNKNOWN 을 빼지 않는다 — 빼면 정말 모르는 사용자의 출구가 건너뛰기뿐이고,
+/// 그건 "아직 안 정함(NULL)"이라 두 상태가 섞인다. 시안의 4타일 줄은 그대로
+/// 두고, 다섯째 선택지는 아래 전폭 줄로 붙인다(77px 타일 5개는 폭에 안 들어간다).
 class _TypeTiles extends StatelessWidget {
   const _TypeTiles({required this.selected, required this.onSelect});
 
@@ -312,41 +336,74 @@ class _TypeTiles extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
+    return Column(
       children: [
-        for (final (index, tile) in _tiles.indexed) ...[
-          if (index > 0) const SizedBox(width: 10),
-          Expanded(
-            child: GestureDetector(
-              onTap: onSelect == null ? null : () => onSelect!(tile.$1),
-              child: _Selectable(
-                selected: selected == tile.$1,
-                height: 91,
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(tile.$2,
-                        size: 30,
-                        color: selected == tile.$1
-                            ? AppColors.primary
-                            : AppColors.textSecondary),
-                    const SizedBox(height: 8),
-                    Text(
-                      tile.$1.label,
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w500,
-                        color: selected == tile.$1
-                            ? AppColors.primary
-                            : AppColors.textPrimary,
-                      ),
+        Row(
+          children: [
+            for (final (index, tile) in _tiles.indexed) ...[
+              if (index > 0) const SizedBox(width: 10),
+              Expanded(
+                child: GestureDetector(
+                  onTap: onSelect == null ? null : () => onSelect!(tile.$1),
+                  child: _Selectable(
+                    selected: selected == tile.$1,
+                    height: 91,
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(tile.$2,
+                            size: 30,
+                            color: selected == tile.$1
+                                ? AppColors.primary
+                                : AppColors.textSecondary),
+                        const SizedBox(height: 8),
+                        Text(
+                          tile.$1.label,
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w500,
+                            color: selected == tile.$1
+                                ? AppColors.primary
+                                : AppColors.textPrimary,
+                          ),
+                        ),
+                      ],
                     ),
-                  ],
+                  ),
                 ),
               ),
+            ],
+          ],
+        ),
+        const SizedBox(height: 10),
+        GestureDetector(
+          onTap: onSelect == null ? null : () => onSelect!(SkinType.unknown),
+          child: _Selectable(
+            selected: selected == SkinType.unknown,
+            height: 40,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.help_outline,
+                    size: 18,
+                    color: selected == SkinType.unknown
+                        ? AppColors.primary
+                        : AppColors.textSecondary),
+                const SizedBox(width: 8),
+                Text(
+                  SkinType.unknown.label,
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                    color: selected == SkinType.unknown
+                        ? AppColors.primary
+                        : AppColors.textPrimary,
+                  ),
+                ),
+              ],
             ),
           ),
-        ],
+        ),
       ],
     );
   }

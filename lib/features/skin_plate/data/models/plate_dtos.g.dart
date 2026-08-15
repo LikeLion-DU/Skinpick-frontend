@@ -206,7 +206,7 @@ _$PlateHistoryDayDtoImpl _$$PlateHistoryDayDtoImplFromJson(
     _$PlateHistoryDayDtoImpl(
       date: DateTime.parse(json['date'] as String),
       skinScore: (json['skinScore'] as num?)?.toInt(),
-      plateScore: (json['plateScore'] as num?)?.toInt() ?? 0,
+      plateScore: (json['plateScore'] as num?)?.toInt(),
       targetScore: (json['targetScore'] as num?)?.toInt() ?? 80,
       aiComment: json['aiComment'] as String?,
       plates: (json['plates'] as List<dynamic>?)

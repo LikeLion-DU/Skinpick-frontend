@@ -2,20 +2,27 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../app/config/feature_flags.dart';
 import '../../../../app/router/app_router.dart';
 import '../../../../app/theme/app_colors.dart';
 import '../../../../app/theme/app_theme.dart';
 import '../../../../core/widgets/app_widgets.dart';
+import '../../../../shared/enums/highlight_status.dart';
 import '../../../../shared/enums/skin_type.dart';
 import '../../../auth/presentation/providers/auth_notifier.dart';
 import '../../domain/entities/skin_analysis.dart';
 import '../providers/skin_analysis_notifier.dart';
 
 /// S05 — 분석 완료. 확정 시안 구성이다:
-/// 체크 아이콘 · 타입 카드(지표 4종) · "앞으로 이런 기준으로" 카드 · 시작 버튼.
+/// 체크 아이콘 · 타입 카드(점수·지표 4종·요약·하이라이트) · "앞으로 이런 기준으로"
+/// 카드 · 시작 버튼.
 ///
 /// 시안이 지표를 4개만 보여주는 것은 확인받은 의도다(서버는 5개를 준다).
 /// trouble 은 화면에 안 그리지만 점수 계산에는 그대로 들어가 있다.
+///
+/// **점수와 하이라이트는 반드시 화면에 있어야 한다.** 산식이 공개돼 있어
+/// 심사위원이 직접 검산할 수 있다는 게 이 기능의 근거다(PRD §4.1). 시안이 이
+/// 자리를 그리지 않았을 뿐이라, 타입 카드 안에 넣어 화면을 새로 만들지 않는다.
 class SkinResultPage extends ConsumerWidget {
   const SkinResultPage({super.key});
 
@@ -90,6 +97,15 @@ class SkinResultPage extends ConsumerWidget {
             onPressed: () => context.push(Routes.foodCapture),
             child: const Text('음식 분석 시작하기'),
           ),
+          // S08 진입점. 방금 분석의 id 로 추천을 물어야 오늘 결과와 짝이 맞는다.
+          if (FeatureFlags.recommendationScreen) ...[
+            const SizedBox(height: 8),
+            TextButton(
+              onPressed: () =>
+                  context.push('${Routes.recommendations}/${analysis.id}'),
+              child: const Text('오늘의 추천 음식 보기'),
+            ),
+          ],
           const SafetyNotice(),
         ],
       ),
@@ -144,13 +160,16 @@ class _TypeCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Text(
-                headlineType == null ? '오늘의 피부' : '${headlineType!.label} 피부',
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: Color(0xFF1A1A1A),
+              Flexible(
+                child: Text(
+                  headlineType == null ? '오늘의 피부' : '${headlineType!.label} 피부',
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF1A1A1A),
+                  ),
                 ),
               ),
               const SizedBox(width: 10),
@@ -168,6 +187,32 @@ class _TypeCard extends StatelessWidget {
                       style:
                           TextStyle(fontSize: 10, color: AppColors.primary)),
                 ),
+              const Spacer(),
+              // 서버가 준 총점. 앱에서 다시 계산하지 않는다.
+              Text.rich(
+                TextSpan(
+                  children: [
+                    TextSpan(
+                      text: '${analysis.skinScore}',
+                      style: const TextStyle(
+                        fontSize: 26,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.textPrimary,
+                        height: 1,
+                      ),
+                    ),
+                    const TextSpan(
+                      text: '점',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                        color: AppColors.textPrimary,
+                        height: 1,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 22),
@@ -202,6 +247,61 @@ class _TypeCard extends StatelessWidget {
                 background: AppColors.textureBg,
               ),
             ],
+          ),
+
+          // 서버가 만든 한 줄 요약. 앱이 문장을 짓지 않는다.
+          if (analysis.summary.isNotEmpty) ...[
+            const SizedBox(height: 20),
+            Text(
+              analysis.summary,
+              style: const TextStyle(
+                  fontSize: 12, color: Color(0xFF494949), height: 1.5),
+            ),
+          ],
+
+          if (analysis.highlights.isNotEmpty) ...[
+            const SizedBox(height: 16),
+            const Divider(height: 1, color: AppColors.borderOnWhite),
+            const SizedBox(height: 14),
+            for (final highlight in analysis.highlights)
+              _HighlightRow(highlight: highlight),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+/// 요약 하이라이트 한 줄.
+///
+/// 모르는 상태값은 파서가 [HighlightStatus.warn] 으로 떨어뜨린다. 여기서 색을
+/// 초록으로 주면 그 낙하가 "괜찮다"로 뒤집힌다 — 주의색을 유지한다.
+class _HighlightRow extends StatelessWidget {
+  const _HighlightRow({required this.highlight});
+
+  final Highlight highlight;
+
+  @override
+  Widget build(BuildContext context) {
+    final (color, icon) = switch (highlight.status) {
+      HighlightStatus.good => (AppColors.good, Icons.check_circle),
+      HighlightStatus.warn => (AppColors.caution, Icons.info),
+      HighlightStatus.caution => (AppColors.bad, Icons.warning),
+    };
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, color: color, size: 16),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              highlight.label,
+              style: const TextStyle(
+                  fontSize: 12, color: Color(0xFF494949), height: 1.4),
+            ),
           ),
         ],
       ),
