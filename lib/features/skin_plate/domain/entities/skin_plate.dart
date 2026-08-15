@@ -35,6 +35,7 @@ class SkinPlate implements PlateView {
     required this.caution,
     required this.actions,
     required this.appliedRules,
+    this.aiTip,
     required this.createdAt,
   });
 
@@ -53,6 +54,10 @@ class SkinPlate implements PlateView {
 
   @override
   final String summary;
+
+  /// "AI 맞춤 TIP". 서버 생성이 실패한 기록은 null 이고, 화면은 룰 요약으로 대신한다.
+  final String? aiTip;
+
   @override
   final FoodAnalysis food;
 

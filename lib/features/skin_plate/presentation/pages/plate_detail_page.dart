@@ -92,7 +92,9 @@ class _Body extends ConsumerWidget {
         const SizedBox(height: 10),
         PlateSummaryCard(good: plate.good, caution: plate.caution),
         const SizedBox(height: 12),
-        if (plate.summary.isNotEmpty) PlateTipCard(tip: plate.summary),
+        // AI 문장이 있으면 그걸, 없으면(생성 실패) 룰 요약으로 대신한다.
+        if ((plate.aiTip ?? plate.summary).isNotEmpty)
+          PlateTipCard(tip: plate.aiTip ?? plate.summary),
         const SizedBox(height: 26),
         Text.rich(
           TextSpan(

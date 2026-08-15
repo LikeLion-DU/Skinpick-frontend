@@ -102,6 +102,12 @@ class HomePage extends ConsumerWidget {
                 score: today?.plateScore,
                 targetScore: today?.targetScore ?? 80,
               ),
+              // 문장은 기록 저장 때 서버가 만들어 둔 것이다. 없으면 카드째 숨긴다 —
+              // 빈 카드를 그리면 "뭔가 로딩 중인가"로 읽힌다.
+              if (today?.aiComment != null) ...[
+                const SizedBox(height: 14),
+                _DailyCommentCard(comment: today!.aiComment!),
+              ],
               const SizedBox(height: 21),
               Text('오늘의 기록',
                   style: Theme.of(context).textTheme.titleMedium),
@@ -123,6 +129,47 @@ class HomePage extends ConsumerWidget {
         onTabSelected: (tab) {
           if (tab == AppTab.records) context.push(Routes.plateHistory);
         },
+      ),
+    );
+  }
+}
+
+/// "오늘의 한 줄 코멘트" — 시안의 크림 카드. 잎사귀 아이콘이 오른쪽에 붙는다.
+class _DailyCommentCard extends StatelessWidget {
+  const _DailyCommentCard({required this.comment});
+
+  final String comment;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(18, 14, 14, 14),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceCard,
+        border: Border.all(color: AppColors.borderOnCream),
+        borderRadius: BorderRadius.circular(AppTheme.cardRadius),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('오늘의 한 줄 코멘트',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textPrimary,
+                    )),
+                const SizedBox(height: 6),
+                Text(comment,
+                    style: Theme.of(context).textTheme.bodySmall),
+              ],
+            ),
+          ),
+          const SizedBox(width: 10),
+          const Icon(Icons.eco_outlined, size: 22, color: AppColors.primary),
+        ],
       ),
     );
   }

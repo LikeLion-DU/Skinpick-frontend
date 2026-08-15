@@ -11,6 +11,7 @@ class PlateHistoryDay {
     required this.skinScore,
     required this.plateScore,
     required this.targetScore,
+    this.aiComment,
     required this.plates,
   });
 
@@ -25,6 +26,9 @@ class PlateHistoryDay {
 
   /// 시안의 "목표 80점". 서버가 매 응답에 실어 보낸다.
   final int targetScore;
+
+  /// "오늘의 AI 코멘트". 그날 최신 기록이 쥔 문장. 없으면 카드를 그리지 않는다.
+  final String? aiComment;
 
   final List<PlateHistoryItem> plates;
 }

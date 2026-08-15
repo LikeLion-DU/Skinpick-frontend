@@ -132,6 +132,9 @@ class SkinPlateDto with _$SkinPlateDto {
     required FoodAnalysisDto food,
     required FeedbackGroupDto feedbacks,
     @Default(<String>[]) List<String> appliedRules,
+
+    /// "AI 맞춤 TIP". 생성 실패 시 서버가 키를 뺀다 — 그때는 룰 요약으로 대신한다.
+    String? aiTip,
     required DateTime createdAt,
   }) = _SkinPlateDto;
 
@@ -168,6 +171,7 @@ extension SkinPlateDtoX on SkinPlateDto {
         caution: feedbacks.caution.map((f) => f.toEntity()).toList(),
         actions: feedbacks.action.map((a) => a.toEntity()).toList(),
         appliedRules: appliedRules,
+        aiTip: aiTip,
         createdAt: createdAt,
       );
 }
@@ -243,6 +247,9 @@ class PlateHistoryDayDto with _$PlateHistoryDayDto {
 
     /// 시안의 "목표 80점". 서버가 못 보내도 화면이 0 을 그리지 않도록 기본값을 둔다.
     @Default(80) int targetScore,
+
+    /// "오늘의 AI 코멘트". 없으면 서버가 키를 빼고, 앱은 카드를 그리지 않는다.
+    String? aiComment,
     @Default(<PlateHistoryItemDto>[]) List<PlateHistoryItemDto> plates,
   }) = _PlateHistoryDayDto;
 
@@ -267,6 +274,7 @@ extension PlateHistoryDtoX on PlateHistoryDto {
             skinScore: day.skinScore,
             plateScore: day.plateScore,
             targetScore: day.targetScore,
+            aiComment: day.aiComment,
             plates: day.plates
                 .map((item) => domain.PlateHistoryItem(
                       plateId: item.plateId,

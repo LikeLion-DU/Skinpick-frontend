@@ -194,6 +194,7 @@ class _DayView extends StatelessWidget {
             padding: const EdgeInsets.only(bottom: 20),
             child: _MealCard(item: item),
           ),
+        if (day!.aiComment != null) _AiCommentCard(comment: day!.aiComment!),
         const SafetyNotice(),
       ],
     );
@@ -325,6 +326,49 @@ class _MealCard extends ConsumerWidget {
               ),
             ],
           ),
+        ],
+      ),
+    );
+  }
+}
+
+/// "오늘의 AI 코멘트" — 시안의 그라디언트 크림 카드.
+/// 문장은 기록을 저장할 때 서버가 만들어 둔 것이다. 여기서 생성하지 않는다.
+class _AiCommentCard extends StatelessWidget {
+  const _AiCommentCard({required this.comment});
+
+  final String comment;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(20, 18, 20, 20),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [Color(0xFFFEF7F0), Color(0xFFFFF2E4)],
+        ),
+        border: Border.all(color: const Color(0xFFE8E8E8), width: 0.8),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text('오늘의 AI 코멘트',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: AppColors.primary,
+              )),
+          const SizedBox(height: 12),
+          Text(comment,
+              style: const TextStyle(
+                fontSize: 12,
+                color: Color(0xFF411B09),
+                height: 1.32,
+              )),
         ],
       ),
     );

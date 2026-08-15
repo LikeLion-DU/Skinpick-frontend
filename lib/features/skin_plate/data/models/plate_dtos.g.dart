@@ -163,6 +163,7 @@ _$SkinPlateDtoImpl _$$SkinPlateDtoImplFromJson(Map<String, dynamic> json) =>
               ?.map((e) => e as String)
               .toList() ??
           const <String>[],
+      aiTip: json['aiTip'] as String?,
       createdAt: DateTime.parse(json['createdAt'] as String),
     );
 
@@ -176,6 +177,7 @@ Map<String, dynamic> _$$SkinPlateDtoImplToJson(_$SkinPlateDtoImpl instance) =>
       'food': instance.food,
       'feedbacks': instance.feedbacks,
       'appliedRules': instance.appliedRules,
+      'aiTip': instance.aiTip,
       'createdAt': instance.createdAt.toIso8601String(),
     };
 
@@ -206,6 +208,7 @@ _$PlateHistoryDayDtoImpl _$$PlateHistoryDayDtoImplFromJson(
       skinScore: (json['skinScore'] as num?)?.toInt(),
       plateScore: (json['plateScore'] as num?)?.toInt() ?? 0,
       targetScore: (json['targetScore'] as num?)?.toInt() ?? 80,
+      aiComment: json['aiComment'] as String?,
       plates: (json['plates'] as List<dynamic>?)
               ?.map((e) =>
                   PlateHistoryItemDto.fromJson(e as Map<String, dynamic>))
@@ -220,6 +223,7 @@ Map<String, dynamic> _$$PlateHistoryDayDtoImplToJson(
       'skinScore': instance.skinScore,
       'plateScore': instance.plateScore,
       'targetScore': instance.targetScore,
+      'aiComment': instance.aiComment,
       'plates': instance.plates,
     };
 

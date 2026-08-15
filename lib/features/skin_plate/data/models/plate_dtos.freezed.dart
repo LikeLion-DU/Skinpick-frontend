@@ -1723,6 +1723,9 @@ mixin _$SkinPlateDto {
   FoodAnalysisDto get food => throw _privateConstructorUsedError;
   FeedbackGroupDto get feedbacks => throw _privateConstructorUsedError;
   List<String> get appliedRules => throw _privateConstructorUsedError;
+
+  /// "AI 맞춤 TIP". 생성 실패 시 서버가 키를 뺀다 — 그때는 룰 요약으로 대신한다.
+  String? get aiTip => throw _privateConstructorUsedError;
   DateTime get createdAt => throw _privateConstructorUsedError;
 
   /// Serializes this SkinPlateDto to a JSON map.
@@ -1750,6 +1753,7 @@ abstract class $SkinPlateDtoCopyWith<$Res> {
       FoodAnalysisDto food,
       FeedbackGroupDto feedbacks,
       List<String> appliedRules,
+      String? aiTip,
       DateTime createdAt});
 
   $FoodAnalysisDtoCopyWith<$Res> get food;
@@ -1779,6 +1783,7 @@ class _$SkinPlateDtoCopyWithImpl<$Res, $Val extends SkinPlateDto>
     Object? food = null,
     Object? feedbacks = null,
     Object? appliedRules = null,
+    Object? aiTip = freezed,
     Object? createdAt = null,
   }) {
     return _then(_value.copyWith(
@@ -1814,6 +1819,10 @@ class _$SkinPlateDtoCopyWithImpl<$Res, $Val extends SkinPlateDto>
           ? _value.appliedRules
           : appliedRules // ignore: cast_nullable_to_non_nullable
               as List<String>,
+      aiTip: freezed == aiTip
+          ? _value.aiTip
+          : aiTip // ignore: cast_nullable_to_non_nullable
+              as String?,
       createdAt: null == createdAt
           ? _value.createdAt
           : createdAt // ignore: cast_nullable_to_non_nullable
@@ -1859,6 +1868,7 @@ abstract class _$$SkinPlateDtoImplCopyWith<$Res>
       FoodAnalysisDto food,
       FeedbackGroupDto feedbacks,
       List<String> appliedRules,
+      String? aiTip,
       DateTime createdAt});
 
   @override
@@ -1888,6 +1898,7 @@ class __$$SkinPlateDtoImplCopyWithImpl<$Res>
     Object? food = null,
     Object? feedbacks = null,
     Object? appliedRules = null,
+    Object? aiTip = freezed,
     Object? createdAt = null,
   }) {
     return _then(_$SkinPlateDtoImpl(
@@ -1923,6 +1934,10 @@ class __$$SkinPlateDtoImplCopyWithImpl<$Res>
           ? _value._appliedRules
           : appliedRules // ignore: cast_nullable_to_non_nullable
               as List<String>,
+      aiTip: freezed == aiTip
+          ? _value.aiTip
+          : aiTip // ignore: cast_nullable_to_non_nullable
+              as String?,
       createdAt: null == createdAt
           ? _value.createdAt
           : createdAt // ignore: cast_nullable_to_non_nullable
@@ -1943,6 +1958,7 @@ class _$SkinPlateDtoImpl implements _SkinPlateDto {
       required this.food,
       required this.feedbacks,
       final List<String> appliedRules = const <String>[],
+      this.aiTip,
       required this.createdAt})
       : _appliedRules = appliedRules;
 
@@ -1978,12 +1994,15 @@ class _$SkinPlateDtoImpl implements _SkinPlateDto {
     return EqualUnmodifiableListView(_appliedRules);
   }
 
+  /// "AI 맞춤 TIP". 생성 실패 시 서버가 키를 뺀다 — 그때는 룰 요약으로 대신한다.
+  @override
+  final String? aiTip;
   @override
   final DateTime createdAt;
 
   @override
   String toString() {
-    return 'SkinPlateDto(plateId: $plateId, skinAnalysisId: $skinAnalysisId, plateScore: $plateScore, baseScore: $baseScore, summary: $summary, food: $food, feedbacks: $feedbacks, appliedRules: $appliedRules, createdAt: $createdAt)';
+    return 'SkinPlateDto(plateId: $plateId, skinAnalysisId: $skinAnalysisId, plateScore: $plateScore, baseScore: $baseScore, summary: $summary, food: $food, feedbacks: $feedbacks, appliedRules: $appliedRules, aiTip: $aiTip, createdAt: $createdAt)';
   }
 
   @override
@@ -2004,6 +2023,7 @@ class _$SkinPlateDtoImpl implements _SkinPlateDto {
                 other.feedbacks == feedbacks) &&
             const DeepCollectionEquality()
                 .equals(other._appliedRules, _appliedRules) &&
+            (identical(other.aiTip, aiTip) || other.aiTip == aiTip) &&
             (identical(other.createdAt, createdAt) ||
                 other.createdAt == createdAt));
   }
@@ -2020,6 +2040,7 @@ class _$SkinPlateDtoImpl implements _SkinPlateDto {
       food,
       feedbacks,
       const DeepCollectionEquality().hash(_appliedRules),
+      aiTip,
       createdAt);
 
   /// Create a copy of SkinPlateDto
@@ -2048,6 +2069,7 @@ abstract class _SkinPlateDto implements SkinPlateDto {
       required final FoodAnalysisDto food,
       required final FeedbackGroupDto feedbacks,
       final List<String> appliedRules,
+      final String? aiTip,
       required final DateTime createdAt}) = _$SkinPlateDtoImpl;
 
   factory _SkinPlateDto.fromJson(Map<String, dynamic> json) =
@@ -2073,6 +2095,10 @@ abstract class _SkinPlateDto implements SkinPlateDto {
   FeedbackGroupDto get feedbacks;
   @override
   List<String> get appliedRules;
+
+  /// "AI 맞춤 TIP". 생성 실패 시 서버가 키를 뺀다 — 그때는 룰 요약으로 대신한다.
+  @override
+  String? get aiTip;
   @override
   DateTime get createdAt;
 
@@ -2346,6 +2372,9 @@ mixin _$PlateHistoryDayDto {
 
   /// 시안의 "목표 80점". 서버가 못 보내도 화면이 0 을 그리지 않도록 기본값을 둔다.
   int get targetScore => throw _privateConstructorUsedError;
+
+  /// "오늘의 AI 코멘트". 없으면 서버가 키를 빼고, 앱은 카드를 그리지 않는다.
+  String? get aiComment => throw _privateConstructorUsedError;
   List<PlateHistoryItemDto> get plates => throw _privateConstructorUsedError;
 
   /// Serializes this PlateHistoryDayDto to a JSON map.
@@ -2369,6 +2398,7 @@ abstract class $PlateHistoryDayDtoCopyWith<$Res> {
       int? skinScore,
       int plateScore,
       int targetScore,
+      String? aiComment,
       List<PlateHistoryItemDto> plates});
 }
 
@@ -2391,6 +2421,7 @@ class _$PlateHistoryDayDtoCopyWithImpl<$Res, $Val extends PlateHistoryDayDto>
     Object? skinScore = freezed,
     Object? plateScore = null,
     Object? targetScore = null,
+    Object? aiComment = freezed,
     Object? plates = null,
   }) {
     return _then(_value.copyWith(
@@ -2410,6 +2441,10 @@ class _$PlateHistoryDayDtoCopyWithImpl<$Res, $Val extends PlateHistoryDayDto>
           ? _value.targetScore
           : targetScore // ignore: cast_nullable_to_non_nullable
               as int,
+      aiComment: freezed == aiComment
+          ? _value.aiComment
+          : aiComment // ignore: cast_nullable_to_non_nullable
+              as String?,
       plates: null == plates
           ? _value.plates
           : plates // ignore: cast_nullable_to_non_nullable
@@ -2431,6 +2466,7 @@ abstract class _$$PlateHistoryDayDtoImplCopyWith<$Res>
       int? skinScore,
       int plateScore,
       int targetScore,
+      String? aiComment,
       List<PlateHistoryItemDto> plates});
 }
 
@@ -2451,6 +2487,7 @@ class __$$PlateHistoryDayDtoImplCopyWithImpl<$Res>
     Object? skinScore = freezed,
     Object? plateScore = null,
     Object? targetScore = null,
+    Object? aiComment = freezed,
     Object? plates = null,
   }) {
     return _then(_$PlateHistoryDayDtoImpl(
@@ -2470,6 +2507,10 @@ class __$$PlateHistoryDayDtoImplCopyWithImpl<$Res>
           ? _value.targetScore
           : targetScore // ignore: cast_nullable_to_non_nullable
               as int,
+      aiComment: freezed == aiComment
+          ? _value.aiComment
+          : aiComment // ignore: cast_nullable_to_non_nullable
+              as String?,
       plates: null == plates
           ? _value._plates
           : plates // ignore: cast_nullable_to_non_nullable
@@ -2486,6 +2527,7 @@ class _$PlateHistoryDayDtoImpl implements _PlateHistoryDayDto {
       this.skinScore,
       this.plateScore = 0,
       this.targetScore = 80,
+      this.aiComment,
       final List<PlateHistoryItemDto> plates = const <PlateHistoryItemDto>[]})
       : _plates = plates;
 
@@ -2508,6 +2550,10 @@ class _$PlateHistoryDayDtoImpl implements _PlateHistoryDayDto {
   @override
   @JsonKey()
   final int targetScore;
+
+  /// "오늘의 AI 코멘트". 없으면 서버가 키를 빼고, 앱은 카드를 그리지 않는다.
+  @override
+  final String? aiComment;
   final List<PlateHistoryItemDto> _plates;
   @override
   @JsonKey()
@@ -2519,7 +2565,7 @@ class _$PlateHistoryDayDtoImpl implements _PlateHistoryDayDto {
 
   @override
   String toString() {
-    return 'PlateHistoryDayDto(date: $date, skinScore: $skinScore, plateScore: $plateScore, targetScore: $targetScore, plates: $plates)';
+    return 'PlateHistoryDayDto(date: $date, skinScore: $skinScore, plateScore: $plateScore, targetScore: $targetScore, aiComment: $aiComment, plates: $plates)';
   }
 
   @override
@@ -2534,13 +2580,15 @@ class _$PlateHistoryDayDtoImpl implements _PlateHistoryDayDto {
                 other.plateScore == plateScore) &&
             (identical(other.targetScore, targetScore) ||
                 other.targetScore == targetScore) &&
+            (identical(other.aiComment, aiComment) ||
+                other.aiComment == aiComment) &&
             const DeepCollectionEquality().equals(other._plates, _plates));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
   int get hashCode => Object.hash(runtimeType, date, skinScore, plateScore,
-      targetScore, const DeepCollectionEquality().hash(_plates));
+      targetScore, aiComment, const DeepCollectionEquality().hash(_plates));
 
   /// Create a copy of PlateHistoryDayDto
   /// with the given fields replaced by the non-null parameter values.
@@ -2565,6 +2613,7 @@ abstract class _PlateHistoryDayDto implements PlateHistoryDayDto {
       final int? skinScore,
       final int plateScore,
       final int targetScore,
+      final String? aiComment,
       final List<PlateHistoryItemDto> plates}) = _$PlateHistoryDayDtoImpl;
 
   factory _PlateHistoryDayDto.fromJson(Map<String, dynamic> json) =
@@ -2584,6 +2633,10 @@ abstract class _PlateHistoryDayDto implements PlateHistoryDayDto {
   /// 시안의 "목표 80점". 서버가 못 보내도 화면이 0 을 그리지 않도록 기본값을 둔다.
   @override
   int get targetScore;
+
+  /// "오늘의 AI 코멘트". 없으면 서버가 키를 빼고, 앱은 카드를 그리지 않는다.
+  @override
+  String? get aiComment;
   @override
   List<PlateHistoryItemDto> get plates;
 
