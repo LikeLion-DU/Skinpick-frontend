@@ -8,6 +8,7 @@ import '../../../../app/theme/app_colors.dart';
 import '../../../../app/theme/app_theme.dart';
 import '../../../../core/widgets/app_widgets.dart';
 import '../../../../shared/enums/highlight_status.dart';
+import '../../../../shared/enums/metric_band.dart';
 import '../../../../shared/enums/skin_type.dart';
 import '../../../auth/presentation/providers/auth_notifier.dart';
 import '../../domain/entities/skin_analysis.dart';
@@ -122,30 +123,9 @@ class SkinResultPage extends ConsumerWidget {
   }
 }
 
-/// 지표 하나의 화면 표기 — 상태 어휘와 색은 시안 값이다.
-class _MetricBand {
-  const _MetricBand(this.label, this.color);
-
-  final String label;
-  final Color color;
-
-  static const _blue = Color(0xFF3A85E2);
-  static const _red = Color(0xFFFA6154);
-
-  /// 높을수록 좋은 지표(수분·피부결). 낮으면 "부족"이다.
-  static _MetricBand higherIsBetter(int value) {
-    if (value < 40) return const _MetricBand('부족', _blue);
-    if (value < 60) return const _MetricBand('보통', AppColors.primary);
-    return const _MetricBand('좋음', AppColors.good);
-  }
-
-  /// 높을수록 나쁜 지표(유분·홍조). 높으면 "주의"다.
-  static _MetricBand higherIsWorse(int value) {
-    if (value >= 60) return const _MetricBand('주의', _red);
-    if (value >= 40) return const _MetricBand('보통', AppColors.primary);
-    return const _MetricBand('좋음', AppColors.good);
-  }
-}
+// 지표 밴드는 shared/enums/metric_band.dart 로 옮겼다. 인사이트 화면(S10)이 같은
+// 지표를 같은 색으로 칠해야 하는데, 여기 private 으로 두면 그쪽이 다른 기준을
+// 쓰게 되고 두 화면에서 같은 값이 다른 색으로 나온다.
 
 /// "복합성 피부" 카드 — 민감도 배지와 지표 4종 원.
 class _TypeCard extends StatelessWidget {
@@ -229,28 +209,28 @@ class _TypeCard extends StatelessWidget {
             children: [
               _Metric(
                 label: '수분',
-                band: _MetricBand.higherIsBetter(metrics.hydration),
+                band: MetricBand.higherIsBetter(metrics.hydration),
                 icon: Icons.water_drop,
                 foreground: AppColors.hydrationFg,
                 background: AppColors.hydrationBg,
               ),
               _Metric(
                 label: '유분',
-                band: _MetricBand.higherIsWorse(metrics.oil),
+                band: MetricBand.higherIsWorse(metrics.oil),
                 icon: Icons.opacity,
                 foreground: AppColors.oilFg,
                 background: AppColors.oilBg,
               ),
               _Metric(
                 label: '홍조',
-                band: _MetricBand.higherIsWorse(metrics.redness),
+                band: MetricBand.higherIsWorse(metrics.redness),
                 icon: Icons.waves,
                 foreground: AppColors.rednessFg,
                 background: AppColors.rednessBg,
               ),
               _Metric(
                 label: '피부결',
-                band: _MetricBand.higherIsBetter(metrics.barrier),
+                band: MetricBand.higherIsBetter(metrics.barrier),
                 icon: Icons.auto_awesome,
                 foreground: AppColors.textureFg,
                 background: AppColors.textureBg,
@@ -328,7 +308,7 @@ class _Metric extends StatelessWidget {
   });
 
   final String label;
-  final _MetricBand band;
+  final MetricBand band;
   final IconData icon;
   final Color foreground;
   final Color background;

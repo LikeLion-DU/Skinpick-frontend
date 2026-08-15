@@ -7,7 +7,7 @@ import '../../../../app/theme/app_colors.dart';
 import '../../../../app/theme/app_theme.dart';
 import '../../../../core/di/providers.dart';
 import '../../../../core/widgets/app_widgets.dart';
-import '../../../../shared/enums/score_grade.dart';
+import '../../../../shared/enums/metric_band.dart';
 import '../../../auth/domain/entities/auth_user.dart';
 import '../../../auth/presentation/providers/auth_notifier.dart';
 import '../../domain/entities/skin_analysis.dart';
@@ -92,7 +92,14 @@ class _Body extends ConsumerWidget {
 
           const _SectionTitle('현재 설정된 생활 상태'),
           const SizedBox(height: 10),
-          _LifestyleCard(user: user, insightsAreEmpty: insight.insights.isEmpty),
+          _LifestyleCard(
+            user: user,
+            insightsAreEmpty: insight.insights.isEmpty,
+            // 설정하고 돌아오면 다시 물어본다. 이 화면은 아래 깔린 채로 살아 있어서
+            // autoDispose 가 안 걸리고, 그냥 두면 방금 채운 습관이 반영되지 않는다.
+            onProfileChanged: () =>
+                ref.invalidate(skinInsightProvider(insight.skinAnalysisId)),
+          ),
           const SizedBox(height: 22),
 
           const _SectionTitle('AI 인사이트'),
@@ -167,10 +174,11 @@ class _MetricsCard extends StatelessWidget {
             _MetricRow(
               label: bar.label,
               value: bar.value,
-              // higherIsBetter 가 false 면 뒤집어서 등급을 매긴다. 안 뒤집으면
-              // 홍조가 심할수록 초록으로 칠해진다.
-              grade: ScoreGrade.fromScore(
-                  bar.higherIsBetter ? bar.value : 100 - bar.value),
+              // 결과 화면(S05)과 같은 밴드를 쓴다. ScoreGrade 로 매기면 경계가
+              // 75/60 이라 홍조 50 같은 평범한 값이 빨강이 되고, 한 탭 전에 본
+              // 같은 지표가 다른 색이 된다.
+              band: MetricBand.of(bar.value,
+                  higherIsBetterMetric: bar.higherIsBetter),
               delta: changes?.byKey(bar.key),
             ),
             if (bar.key != 'barrier') const SizedBox(height: 12),
@@ -193,13 +201,13 @@ class _MetricRow extends StatelessWidget {
   const _MetricRow({
     required this.label,
     required this.value,
-    required this.grade,
+    required this.band,
     this.delta,
   });
 
   final String label;
   final int value;
-  final ScoreGrade grade;
+  final MetricBand band;
 
   /// null = 첫 분석이라 비교 대상이 없다.
   final int? delta;
@@ -223,7 +231,7 @@ class _MetricRow extends StatelessWidget {
               value: value / 100,
               minHeight: 6,
               backgroundColor: AppColors.background,
-              valueColor: AlwaysStoppedAnimation<Color>(grade.accentColor),
+              valueColor: AlwaysStoppedAnimation<Color>(band.color),
             ),
           ),
         ),
@@ -237,7 +245,7 @@ class _MetricRow extends StatelessWidget {
                 style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
-                    color: grade.accentColor,
+                    color: band.color,
                     height: 1)),
           ),
         ),
@@ -265,13 +273,37 @@ class _MetricRow extends StatelessWidget {
 }
 
 class _LifestyleCard extends StatelessWidget {
-  const _LifestyleCard({required this.user, required this.insightsAreEmpty});
+  const _LifestyleCard({
+    required this.user,
+    required this.insightsAreEmpty,
+    required this.onProfileChanged,
+  });
 
   final AuthUser? user;
 
   /// 저장 여부가 안내 문구를 가른다. 서버는 빈 인사이트를 저장하지 않으므로
   /// 그 경우엔 지금 설정하면 이 분석의 인사이트가 새로 만들어진다.
   final bool insightsAreEmpty;
+
+  final VoidCallback onProfileChanged;
+
+  /// 인사이트가 비어 있는 이유가 둘이라 문구가 갈린다.
+  ///
+  /// 서버는 나쁜 값에만 습관 주제를 만든다(수면 부족·스트레스 높음·운동 안 함·수분
+  /// 부족). 그러니 프로필을 이미 다 채운 사람에게 "설정하고 다시 보라"고 하면
+  /// 설정할 것도 없고 다시 봐도 안 채워진다 — 화면이 못 지킬 약속을 하는 셈이다.
+  String get _notice {
+    if (!insightsAreEmpty) {
+      // 저장된 인사이트다. 스냅샷은 분석 시점이 아니라 이 인사이트를 처음 조회한
+      // 시점의 프로필이다(서버가 GET 안에서 만든다).
+      return '이 인사이트는 처음 확인한 시점의 생활 상태를 기준으로 만들어졌어요.'
+          ' 바꾼 내용은 다음 피부 분석부터 반영돼요.';
+    }
+    if (user?.hasIncompleteLifestyle ?? true) {
+      return '생활 상태를 설정하고 다시 보면 인사이트가 채워져요';
+    }
+    return '지금은 따로 챙길 주제가 없어요. 지금처럼 유지해 보세요.';
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -302,10 +334,7 @@ class _LifestyleCard extends StatelessWidget {
               value: profile?.waterIntake?.label),
           const SizedBox(height: 14),
           Text(
-            insightsAreEmpty
-                ? '생활 상태를 설정하고 다시 보면 인사이트가 채워져요'
-                : '이 인사이트는 피부 분석 당시 설정한 생활 상태를 기준으로 생성되었어요.'
-                    ' 바꾼 내용은 다음 피부 분석부터 반영돼요.',
+            _notice,
             style: const TextStyle(
                 fontSize: 10, color: AppColors.textSecondary, height: 1.35),
           ),
@@ -313,7 +342,10 @@ class _LifestyleCard extends StatelessWidget {
             Align(
               alignment: Alignment.centerLeft,
               child: TextButton(
-                onPressed: () => context.push(Routes.skinType),
+                onPressed: () async {
+                  await context.push(Routes.skinType);
+                  onProfileChanged();
+                },
                 child: const Text('생활 상태 설정'),
               ),
             ),

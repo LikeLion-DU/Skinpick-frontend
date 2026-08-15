@@ -144,6 +144,31 @@ void main() {
     // 이쪽은 반대다. 지금 바꿔도 이 인사이트는 안 바뀐다.
     expect(find.textContaining('다음 피부 분석부터 반영돼요'), findsOneWidget);
     expect(find.textContaining('다시 보면 인사이트가 채워져요'), findsNothing);
+    // 스냅샷은 분석 시점이 아니라 인사이트를 처음 조회한 시점이다.
+    expect(find.textContaining('피부 분석 당시'), findsNothing);
+  });
+
+  testWidgets('프로필을 다 채웠는데 비면 설정하라고 하지 않는다', (tester) async {
+    await tester.binding.setSurfaceSize(designSize);
+    // 서버는 나쁜 값에만 습관 주제를 만든다. 습관을 전부 좋은 값으로 채운
+    // 사용자에게 "설정하고 다시 보라"고 하면 설정할 것도 없고 다시 봐도 안 채워진다.
+    await tester.pumpWidget(host(
+      'skin_insight_healthy',
+      user: const AuthUser(
+        userId: 3,
+        email: 'healthy@skinplate.app',
+        nickname: '건강한사용자',
+        sleepPattern: SleepPattern.enough,
+        stressLevel: StressLevel.low,
+        exerciseHabit: ExerciseHabit.frequent,
+        waterIntake: WaterIntake.enough,
+      ),
+    ));
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('다시 보면 인사이트가 채워져요'), findsNothing);
+    expect(find.text('생활 상태 설정'), findsNothing);
+    expect(find.textContaining('따로 챙길 주제가 없어요'), findsOneWidget);
   });
 }
 

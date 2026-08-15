@@ -37,7 +37,9 @@ void main() {
 
     expect(dto.tokenType, 'Bearer');
     expect(dto.expiresIn, 604800); // 7일. 시연 기간 전체를 덮는다
-    expect(dto.toEntity().user.nickname, '테스트유저');
+    // 로그인 응답은 요약 사용자만 싣는다. 프로필(고민·습관)은 /auth/me 가 준다 —
+    // Repository 가 두 응답을 합쳐 세션을 만든다.
+    expect(dto.user.nickname, '테스트유저');
   });
 
   test('GET /auth/me — isTestAccount 키가 흔들리지 않는다', () {
