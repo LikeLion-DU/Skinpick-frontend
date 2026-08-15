@@ -221,13 +221,13 @@ class _SkinTypePageState extends ConsumerState<SkinTypePage> {
               descriptionOf: (option) => option.description,
               iconOf: (option) => switch (option) {
                 StressLevel.low => Icons.sentiment_satisfied_alt,
-                StressLevel.medium => Icons.sentiment_neutral,
+                StressLevel.normal => Icons.sentiment_neutral,
                 StressLevel.high => Icons.sentiment_very_dissatisfied,
               },
               // 스트레스는 시안이 신호등 색을 쓴다 — 선택 여부와 무관하게 항상.
               iconColorOf: (option, _) => switch (option) {
                 StressLevel.low => AppColors.good,
-                StressLevel.medium => const Color(0xFFFFC107),
+                StressLevel.normal => const Color(0xFFFFC107),
                 StressLevel.high => AppColors.bad,
               },
               onSelect: (option) => setState(() {

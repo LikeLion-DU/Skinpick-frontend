@@ -1,9 +1,8 @@
 /// 피부 프로필 설문의 나머지 절반 — 고민·생활 습관.
 ///
-/// 피부 타입은 서버(`PATCH /auth/me`)로 가지만 이 값들은 **아직 서버에 컬럼이
-/// 없다.** 그래서 기기에 저장한다. wire 이름을 지금부터 서버 enum 규칙(대문자
-/// 스네이크)으로 맞춰 두는 이유는, 백엔드가 생기는 날 저장 포맷을 그대로 옮겨
-/// 보내기 위해서다 — 그때 매핑표를 새로 만들면 반드시 한 군데 어긋난다.
+/// 전부 서버가 소유한다(`GET`·`PATCH /auth/me`). wire 이름은 서버 enum 과 1:1 이다 —
+/// 사이에 매핑표를 두면 언젠가 한 칸 어긋나고, 그때 증상은 400 이 아니라 "저장은
+/// 됐는데 다시 들어가면 미선택으로 뜬다" 쪽이라 원인이 안 보인다.
 library;
 
 /// 주요 피부 고민. 시안의 9종 그대로다.
@@ -12,7 +11,7 @@ enum SkinConcern {
   rednessSensitive('REDNESS', '민감/홍조'),
   darkCircle('DARK_CIRCLE', '다크서클'),
   drynessFlaking('DRYNESS', '건조/각질'),
-  sebumOil('SEBUM', '피지/유분'),
+  sebumOil('OILINESS', '피지/유분'),
   texture('TEXTURE', '피부결'),
   pigmentation('PIGMENTATION', '색조침착'),
   elasticity('ELASTICITY', '탄력 저하'),
@@ -53,7 +52,7 @@ enum SleepPattern {
 
 enum StressLevel {
   low('LOW', '낮음', '대체로 여유롭고\n스트레스가 적어요'),
-  medium('MEDIUM', '보통', '보통 수준의\n스트레스를 느껴요'),
+  normal('NORMAL', '보통', '보통 수준의\n스트레스를 느껴요'),
   high('HIGH', '높음', '스트레스를 많이\n느끼는 편이에요');
 
   const StressLevel(this.wire, this.label, this.description);
@@ -71,9 +70,9 @@ enum StressLevel {
 }
 
 enum ExerciseHabit {
-  rarely('RARELY', '거의 안 해요', '운동을 거의 하지 않아요'),
+  none('NONE', '거의 안 해요', '운동을 거의 하지 않아요'),
   light('LIGHT', '주 1-2회', '가벼운 운동을 주 1-2회 해요'),
-  steady('STEADY', '주 3-4회', '꾸준한 운동을 주 3-4회 해요'),
+  regular('REGULAR', '주 3-4회', '꾸준한 운동을 주 3-4회 해요'),
   frequent('FREQUENT', '주 5회 이상', '주 5회 이상 규칙적으로 해요');
 
   const ExerciseHabit(this.wire, this.label, this.description);
@@ -85,6 +84,26 @@ enum ExerciseHabit {
   static ExerciseHabit? fromWire(String value) {
     for (final habit in values) {
       if (habit.wire == value) return habit;
+    }
+    return null;
+  }
+}
+
+/// 수분 섭취. 수면과 같은 3단계 척도다.
+enum WaterIntake {
+  lacking('LACKING', '부족해요', '하루 4잔 미만\n자주 잊는 편이에요'),
+  normal('NORMAL', '보통이에요', '하루 5~7잔 정도\n적당히 마셔요'),
+  enough('ENOUGH', '충분해요', '하루 8잔 이상\n꾸준히 마셔요');
+
+  const WaterIntake(this.wire, this.label, this.description);
+
+  final String wire;
+  final String label;
+  final String description;
+
+  static WaterIntake? fromWire(String value) {
+    for (final intake in values) {
+      if (intake.wire == value) return intake;
     }
     return null;
   }
