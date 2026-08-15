@@ -22,7 +22,9 @@ class PlateHistoryDay {
 
   /// 그날 기록들의 평균 식단 점수. 홈이 크게 보여주는 값이다.
   /// 앱에서 평균을 내지 않는다 — 반올림이 서버와 조금만 달라도 두 숫자가 생긴다.
-  final int plateScore;
+  ///
+  /// 서버가 평균을 못 낸 날은 null 이다. 0 이 아니다 — 0 은 나쁘게 먹은 날이다.
+  final int? plateScore;
 
   /// 시안의 "목표 80점". 서버가 매 응답에 실어 보낸다.
   final int targetScore;

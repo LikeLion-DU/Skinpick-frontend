@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../../../../app/theme/app_colors.dart';
 import '../../../../app/theme/app_theme.dart';
 import '../../../../shared/enums/score_grade.dart';
+import '../../../skin_plate/data/datasources/plate_image_store.dart';
 import '../../../skin_plate/domain/entities/plate_history.dart';
 
 /// 홈의 "오늘의 기록" 카드.
@@ -246,31 +247,52 @@ class _Row extends StatelessWidget {
 }
 
 /// 저장 직후 앱이 남긴 로컬 사진. 서버에는 이미지가 없다(PRD §9.6).
+///
+/// `existsSync()` 를 미리 부르지 않는다 — build 마다 UI 스레드에서 stat() 을
+/// 막는 데다, 파일이 없는 경우와 읽기 실패를 따로 다룰 이유가 없다.
+/// `errorBuilder` 가 두 경우를 다 받아낸다(기록 화면 썸네일과 같은 규칙).
 class _Thumbnail extends StatelessWidget {
   const _Thumbnail({required this.plateId, required this.directory});
 
   final int plateId;
   final Directory? directory;
 
+  static const double _size = 32;
+
   @override
   Widget build(BuildContext context) {
-    final file =
-        directory == null ? null : File('${directory!.path}/$plateId.jpg');
+    final directory = this.directory;
+    if (directory == null) return const _ThumbnailFallback();
 
     return ClipRRect(
       borderRadius: BorderRadius.circular(5),
-      child: SizedBox(
-        width: 32,
-        height: 32,
-        // 파일이 없을 수 있다 — 앱을 지웠다 깔거나 저장 직후 실패한 경우다.
-        // 그때도 줄이 깨지지 않게 같은 크기의 회색 자리를 남긴다.
-        child: file != null && file.existsSync()
-            ? Image.file(file, fit: BoxFit.cover)
-            : Container(
-                color: AppColors.surfaceCard,
-                child: const Icon(Icons.restaurant,
-                    size: 16, color: AppColors.textSecondary),
-              ),
+      child: Image.file(
+        PlateImageStore.fileFor(directory, plateId),
+        width: _size,
+        height: _size,
+        fit: BoxFit.cover,
+        // 원본을 그대로 디코드하면 32px 칸에 수 MB 를 쓴다. 배율만큼만 디코드한다.
+        cacheWidth: (_size * MediaQuery.devicePixelRatioOf(context)).round(),
+        errorBuilder: (_, __, ___) => const _ThumbnailFallback(),
+      ),
+    );
+  }
+}
+
+/// 파일이 없어도 줄이 깨지지 않게 같은 크기의 회색 자리를 남긴다.
+class _ThumbnailFallback extends StatelessWidget {
+  const _ThumbnailFallback();
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(5),
+      child: Container(
+        width: _Thumbnail._size,
+        height: _Thumbnail._size,
+        color: AppColors.surfaceCard,
+        child: const Icon(Icons.restaurant,
+            size: 16, color: AppColors.textSecondary),
       ),
     );
   }

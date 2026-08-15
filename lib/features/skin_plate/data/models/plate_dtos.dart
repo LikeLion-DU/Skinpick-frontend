@@ -243,7 +243,12 @@ class PlateHistoryDayDto with _$PlateHistoryDayDto {
     int? skinScore,
 
     /// 그날 기록들의 평균. 서버가 계산해서 준다.
-    @Default(0) int plateScore,
+    ///
+    /// **기본값을 두지 않는다.** 서버는 평균을 못 낸 날 이 키를 통째로 뺀다.
+    /// 0 으로 떨어뜨리면 홈이 "0점 · 주의" 를 그리는데, 0점은 "아주 나쁘게
+    /// 먹었다"로 읽힌다 — 아직 안 먹은 것과 다른 상태다. null 이어야 카드가
+    /// 시안대로 `OO점` 으로 빠진다.
+    int? plateScore,
 
     /// 시안의 "목표 80점". 서버가 못 보내도 화면이 0 을 그리지 않도록 기본값을 둔다.
     @Default(80) int targetScore,
@@ -268,6 +273,9 @@ class PlateHistoryDto with _$PlateHistoryDto {
 }
 
 extension PlateHistoryDtoX on PlateHistoryDto {
+  /// 끼니 순서를 **여기서** 정한다. 화면마다 뒤집으면 한 곳을 빠뜨리고,
+  /// 실제로 홈은 저녁→아침, 기록은 아침→저녁으로 같은 날을 반대로 그렸다.
+  /// 서버가 최신순으로 준다는 전제에 기대지 않고 기록 시각으로 세운다.
   List<domain.PlateHistoryDay> toEntity() => days
       .map((day) => domain.PlateHistoryDay(
             date: day.date,
@@ -283,7 +291,8 @@ extension PlateHistoryDtoX on PlateHistoryDto {
                       mealType: MealType.fromJson(item.mealType),
                       recordedAt: item.recordedAt,
                     ))
-                .toList(),
+                .toList()
+              ..sort((a, b) => a.recordedAt.compareTo(b.recordedAt)),
           ))
       .toList();
 }

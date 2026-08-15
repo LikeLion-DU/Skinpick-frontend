@@ -38,14 +38,18 @@ class _PlateHistoryPageState extends ConsumerState<PlateHistoryPage> {
   @override
   void initState() {
     super.initState();
-    _today = DateTime.now().toUtc().add(const Duration(hours: 9));
-    _selected = DateTime(_today.year, _today.month, _today.day);
+    // **달력일로 잘라서 들고 있는다.** KST 로 민 값을 그대로 두면 그건 실제보다
+    // 9시간 앞선 순간이고, 로컬 자정인 _selected 와 절대 시각으로 비교되면서
+    // 조회 범위(7일)보다 1~2일 먼저 화살표가 잠긴다. 잠기는 지점이 시각에 따라
+    // 흔들리기까지 한다 — 받아 놓은 날에 못 가는 게 눈에 띄지도 않는다.
+    final nowKst = DateTime.now().toUtc().add(const Duration(hours: 9));
+    _today = DateTime(nowKst.year, nowKst.month, nowKst.day);
+    _selected = _today;
   }
 
   bool get _canGoBack =>
       _selected.isAfter(_today.subtract(const Duration(days: 6)));
-  bool get _canGoForward => _selected
-      .isBefore(DateTime(_today.year, _today.month, _today.day));
+  bool get _canGoForward => _selected.isBefore(_today);
 
   void _shift(int days) =>
       setState(() => _selected = _selected.add(Duration(days: days)));
@@ -180,16 +184,15 @@ class _DayView extends StatelessWidget {
       );
     }
 
-    // 시안은 아침→점심→저녁 순서로 그린다. 서버는 최신순으로 주므로 뒤집는다.
-    final ordered = day!.plates.reversed.toList();
-
+    // 순서는 DTO 매퍼가 기록 시각으로 세워 놨다(아침→점심→저녁).
+    // 여기서 또 뒤집으면 홈과 다시 어긋난다.
     return ListView(
       physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.fromLTRB(
           AppTheme.pagePadding, 8, AppTheme.pagePadding,
           AppBottomNav.totalHeight + 16),
       children: [
-        for (final item in ordered)
+        for (final item in day!.plates)
           Padding(
             padding: const EdgeInsets.only(bottom: 20),
             child: _MealCard(item: item),

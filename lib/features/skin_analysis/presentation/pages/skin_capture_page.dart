@@ -106,7 +106,11 @@ class _SkinCapturePageState extends ConsumerState<SkinCapturePage>
 
     // 카메라 열거가 실패해도 갤러리 경로는 살아 있어야 한다.
     if (!kIsWeb) _gate = faceGate(_stillOnlyCamera);
-    _runCamera(_openCamera);
+
+    // **여기서 카메라를 열지 않는다.** 안내 화면은 build 만 가로막을 뿐이라,
+    // 스트림이 돌고 있으면 사용자가 문구를 읽는 동안 _onFrame 이 자동 촬영을
+    // 눌러 세 장이 조용히 찍히고 로딩 화면으로 넘어간다. [촬영하기] 를 누른
+    // 뒤에 연다.
   }
 
   @override
@@ -138,7 +142,9 @@ class _SkinCapturePageState extends ConsumerState<SkinCapturePage>
       _runCamera(_closeCamera);
     } else if (state == AppLifecycleState.resumed) {
       _runCamera(() async {
-        if (_controller == null) await _openCamera();
+        // 안내 화면에서 앱을 다녀오면 여기로 온다. _intro 를 안 보면 그 경로로
+        // 카메라가 열려 initState 에서 막은 자동 촬영이 되살아난다.
+        if (!_intro && _controller == null) await _openCamera();
       });
     }
   }
@@ -486,7 +492,10 @@ class _SkinCapturePageState extends ConsumerState<SkinCapturePage>
                   style: Theme.of(context).textTheme.bodyMedium),
               const Spacer(),
               ElevatedButton(
-                onPressed: () => setState(() => _intro = false),
+                onPressed: () {
+                  setState(() => _intro = false);
+                  _runCamera(_openCamera);
+                },
                 child: const Text('촬영하기'),
               ),
               const SizedBox(height: 12),

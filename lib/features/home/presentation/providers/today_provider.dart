@@ -10,7 +10,11 @@ import '../../../skin_plate/presentation/providers/plate_history_provider.dart';
 ///
 /// 기록이 없는 날이면 null 이다. 0 점짜리 빈 날을 만들어 돌려주면 화면이
 /// "오늘 0점"과 "아직 안 먹음"을 구분할 수 없게 된다.
-final todayRecordProvider = Provider<PlateHistoryDay?>((ref) {
+///
+/// **autoDispose 여야 한다.** 그냥 Provider 로 두면 autoDispose 인
+/// [plateHistoryProvider] 를 영구 구독해 붙잡아 두고, 히스토리가 기대는
+/// "화면을 나갈 때 버린다"가 영영 발동하지 않는다.
+final todayRecordProvider = Provider.autoDispose<PlateHistoryDay?>((ref) {
   final history = ref.watch(plateHistoryProvider).value?.dataOrNull;
   if (history == null) return null;
 

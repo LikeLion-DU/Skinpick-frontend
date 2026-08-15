@@ -121,9 +121,10 @@ void main() {
     expect(days.length, 2);
     expect(days.first.date, DateTime(2026, 8, 14));
 
-    // 서버가 createdAt 내림차순으로 준다(PlateHistoryService). 앱은 다시 정렬하지
-    // 않고 받은 순서대로 그린다 — 여기가 그 계약이다.
-    expect(days.first.plates.map((p) => p.recordedAt.hour), [19, 12]);
+    // 서버는 createdAt 내림차순으로 주지만, 엔티티는 **시각 오름차순**이다.
+    // 시안이 아침→저녁으로 그리고, 홈과 기록 화면이 같은 순서를 봐야 하므로
+    // DTO 매퍼가 한 곳에서 세운다 — 여기가 그 계약이다.
+    expect(days.first.plates.map((p) => p.recordedAt.hour), [12, 19]);
 
     // 그날 얼굴을 안 찍었어도 비지 않는다. 서버가 그날 첫 Plate 의 기준 분석 점수로
     // 채운다(설계서 §5). DTO 를 nullable 로 둔 건 방어일 뿐 정상 응답에는 항상 있다.
@@ -134,9 +135,9 @@ void main() {
     expect(days.first.plateScore, 71);
     expect(days.first.targetScore, 80); // 앱에 하드코딩하지 않는다
 
-    // 끼니도 서버가 시각에서 파생해 준다. 19:45 는 저녁, 12:10 은 점심이다.
+    // 끼니도 서버가 시각에서 파생해 준다. 12:10 은 점심, 19:45 는 저녁이다.
     expect(days.first.plates.map((p) => p.mealType).toList(),
-        [MealType.dinner, MealType.lunch]);
+        [MealType.lunch, MealType.dinner]);
 
     // 오늘의 AI 코멘트 — 그날 최신 기록이 쥔 문장이다. 없는 날은 키 자체가 없고
     // 앱은 카드를 그리지 않는다(8/13 이 그 경우다).

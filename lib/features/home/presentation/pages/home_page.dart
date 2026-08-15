@@ -73,10 +73,12 @@ class HomePage extends ConsumerWidget {
       body: SafeArea(
         bottom: false,
         child: RefreshIndicator(
-          onRefresh: () async {
-            ref.invalidate(latestSkinAnalysisProvider);
-            ref.invalidate(plateHistoryProvider);
-          },
+          // invalidate 는 void 라 당기자마자 스피너가 접힌다. 새 값을 기다려야
+          // 요청이 끝날 때까지 스피너가 붙어 있다(기록 화면과 같은 이유).
+          onRefresh: () => Future.wait([
+            ref.refresh(latestSkinAnalysisProvider.future),
+            ref.refresh(plateHistoryProvider.future),
+          ]),
           child: ListView(
             padding: const EdgeInsets.fromLTRB(
               AppTheme.pagePadding,
