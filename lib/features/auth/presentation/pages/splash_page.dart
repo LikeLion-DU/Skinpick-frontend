@@ -16,11 +16,11 @@ class SplashPage extends StatelessWidget {
     return Scaffold(
       backgroundColor: AppColors.background,
       body: Center(
+        // 로고는 검정+오렌지 2색이다. srcIn 필터를 씌우면 오렌지 포인트까지
+        // 단색이 되므로 SVG 원본 색을 그대로 쓴다.
         child: SvgPicture.asset(
           'assets/icons/logo_skinpick.svg',
           width: 247,
-          colorFilter:
-              const ColorFilter.mode(AppColors.textPrimary, BlendMode.srcIn),
         ),
       ),
     );

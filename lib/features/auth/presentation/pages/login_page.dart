@@ -96,11 +96,10 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                 behavior: HitTestBehavior.opaque,
                 child: Align(
                   alignment: Alignment.centerLeft,
+                  // 로고는 검정+오렌지 2색이라 단색 필터를 씌우지 않는다.
                   child: SvgPicture.asset(
                     'assets/icons/logo_skinpick.svg',
                     width: 176,
-                    colorFilter: const ColorFilter.mode(
-                        AppColors.textPrimary, BlendMode.srcIn),
                   ),
                 ),
               ),
