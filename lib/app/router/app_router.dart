@@ -11,6 +11,7 @@ import '../../features/home/presentation/pages/home_page.dart';
 import '../../features/recommendation/presentation/pages/recommendation_page.dart';
 import '../../features/skin_plate/presentation/pages/plate_detail_page.dart';
 import '../../features/skin_analysis/presentation/pages/skin_capture_page.dart';
+import '../../features/skin_analysis/presentation/pages/skin_insight_page.dart';
 import '../../features/skin_analysis/presentation/pages/skin_loading_page.dart';
 import '../../features/skin_analysis/presentation/pages/skin_result_page.dart';
 import '../../features/skin_plate/presentation/pages/food_capture_page.dart';
@@ -33,6 +34,7 @@ class Routes {
   static const plateResult = '/plate/result';  // S07
   static const recommendations = '/recommendations'; // S08
   static const plateHistory = '/plate/history'; // S09
+  static const skinInsight = '/skin/insight'; // S10
 }
 
 final routerProvider = Provider<GoRouter>((ref) {
@@ -83,6 +85,12 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '${Routes.recommendations}/:skinAnalysisId',
         builder: (_, state) => RecommendationPage(
+          skinAnalysisId: int.parse(state.pathParameters['skinAnalysisId']!),
+        ),
+      ),
+      GoRoute(
+        path: '${Routes.skinInsight}/:skinAnalysisId',
+        builder: (_, state) => SkinInsightPage(
           skinAnalysisId: int.parse(state.pathParameters['skinAnalysisId']!),
         ),
       ),

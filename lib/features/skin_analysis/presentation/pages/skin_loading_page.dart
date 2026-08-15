@@ -1,4 +1,3 @@
-import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -34,7 +33,7 @@ class SkinLoadingPage extends ConsumerWidget {
             onRetry: () => context.pop(),
           ),
         AsyncError(:final error) => Center(child: Text('$error')),
-        _ => const _LoadingSteps(
+        _ => const LoadingSteps(
             steps: [
               '사진을 준비하고 있어요',
               '피부 특징을 추출하는 중이에요',
@@ -43,59 +42,6 @@ class SkinLoadingPage extends ConsumerWidget {
             ],
           ),
       },
-    );
-  }
-}
-
-class _LoadingSteps extends StatefulWidget {
-  const _LoadingSteps({required this.steps});
-
-  final List<String> steps;
-
-  @override
-  State<_LoadingSteps> createState() => _LoadingStepsState();
-}
-
-class _LoadingStepsState extends State<_LoadingSteps> {
-  static const _interval = Duration(milliseconds: 1800);
-
-  late final Timer _timer;
-  int _index = 0;
-
-  @override
-  void initState() {
-    super.initState();
-    _timer = Timer.periodic(_interval, (_) {
-      // 마지막 단계에서 멈춘다. 순환시키면 8초가 넘어갔을 때
-      // "사진을 준비하고 있어요"로 되돌아가 진행이 없어 보인다.
-      if (_index < widget.steps.length - 1) setState(() => _index++);
-    });
-  }
-
-  @override
-  void dispose() {
-    _timer.cancel();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const CircularProgressIndicator(),
-          const SizedBox(height: 32),
-          AnimatedSwitcher(
-            duration: const Duration(milliseconds: 300),
-            child: Text(
-              widget.steps[_index],
-              key: ValueKey<int>(_index),
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-          ),
-        ],
-      ),
     );
   }
 }

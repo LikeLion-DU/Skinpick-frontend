@@ -97,6 +97,15 @@ class SkinResultPage extends ConsumerWidget {
             onPressed: () => context.push(Routes.foodCapture),
             child: const Text('음식 분석 시작하기'),
           ),
+          // S10 진입점. 방금 분석의 id 로 물어야 오늘 결과와 짝이 맞는다.
+          // FeatureFlags 로 감싸지 않는다 — 켜 놓을 화면이라 항상 true 인 플래그는
+          // 스위치가 아니라 "여기 스위치가 있다"는 착각만 남긴다.
+          const SizedBox(height: 8),
+          TextButton(
+            onPressed: () =>
+                context.push('${Routes.skinInsight}/${analysis.id}'),
+            child: const Text('내 생활 상태와 함께 분석하기'),
+          ),
           // S08 진입점. 방금 분석의 id 로 추천을 물어야 오늘 결과와 짝이 맞는다.
           if (FeatureFlags.recommendationScreen) ...[
             const SizedBox(height: 8),

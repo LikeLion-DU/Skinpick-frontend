@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../error/failure.dart';
@@ -53,6 +55,63 @@ class SafetyNotice extends StatelessWidget {
         '식품 정보는 참고용입니다. 피부 질환이 의심되는 경우 전문의와 상담하시기 바랍니다.',
         style: Theme.of(context).textTheme.bodySmall,
         textAlign: TextAlign.center,
+      ),
+    );
+  }
+}
+
+/// 단계 문구가 넘어가는 로딩 화면.
+///
+/// 오래 걸리는 호출에서 스피너만 돌면 화면이 멈춘 것처럼 보인다. 피부 분석(S04)과
+/// 인사이트 첫 조회(S10, 최대 ~27초)가 둘 다 그 부류라 위젯을 공유한다.
+class LoadingSteps extends StatefulWidget {
+  const LoadingSteps({super.key, required this.steps});
+
+  final List<String> steps;
+
+  @override
+  State<LoadingSteps> createState() => _LoadingStepsState();
+}
+
+class _LoadingStepsState extends State<LoadingSteps> {
+  static const _interval = Duration(milliseconds: 1800);
+
+  late final Timer _timer;
+  int _index = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _timer = Timer.periodic(_interval, (_) {
+      // 마지막 단계에서 멈춘다. 순환시키면 8초가 넘어갔을 때
+      // "사진을 준비하고 있어요"로 되돌아가 진행이 없어 보인다.
+      if (_index < widget.steps.length - 1) setState(() => _index++);
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const CircularProgressIndicator(),
+          const SizedBox(height: 32),
+          AnimatedSwitcher(
+            duration: const Duration(milliseconds: 300),
+            child: Text(
+              widget.steps[_index],
+              key: ValueKey<int>(_index),
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+          ),
+        ],
       ),
     );
   }

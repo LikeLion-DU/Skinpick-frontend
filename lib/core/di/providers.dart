@@ -9,12 +9,14 @@ import '../../features/recommendation/data/repositories/recommendation_repositor
 import '../../features/recommendation/domain/repositories/recommendation_repository.dart';
 import '../../features/skin_analysis/data/datasources/skin_remote_datasource.dart';
 import '../../features/skin_analysis/data/repositories/skin_repository_impl.dart';
+import '../../features/skin_analysis/domain/entities/skin_insight.dart';
 import '../../features/skin_analysis/domain/repositories/skin_repository.dart';
 import '../../features/skin_plate/data/datasources/plate_remote_datasource.dart';
 import '../../features/skin_plate/data/repositories/plate_repository_impl.dart';
 import '../../features/skin_plate/domain/repositories/plate_repository.dart';
 import '../network/dio_client.dart';
 import '../network/unauthorized_signal.dart';
+import '../result/result.dart';
 import '../storage/token_storage.dart';
 
 /// 전역 배선. 화면은 Repository 인터페이스만 알고 구현체는 여기서만 등장한다.
@@ -45,6 +47,20 @@ final authRepositoryProvider = Provider<AuthRepository>((ref) => AuthRepositoryI
 
 final skinRepositoryProvider = Provider<SkinRepository>(
   (ref) => SkinRepositoryImpl(SkinRemoteDataSource(ref.watch(dioProvider))),
+);
+
+/// S10 개인화 인사이트. 화면 rebuild 로 다시 부르지 않는다.
+///
+/// autoDispose 라도 안전하다 — 두 번째 조회는 서버가 저장해 둔 인사이트를 그대로
+/// 돌려주므로 AI 를 다시 부르지 않는다. 다룰 주제가 없어 저장되지 않은 경우만
+/// 매번 만들어지는데, 그 경로는 AI 호출 자체가 없어서 빠르다.
+///
+/// 재시도는 `ref.invalidate(skinInsightProvider(id))` 다. 서버가 실패한 인사이트를
+/// 저장하지 않으므로 같은 GET 이 그대로 재시도가 된다.
+final skinInsightProvider =
+    FutureProvider.autoDispose.family<Result<SkinInsight>, int>(
+  (ref, skinAnalysisId) =>
+      ref.watch(skinRepositoryProvider).getInsight(skinAnalysisId),
 );
 
 // ---------- skin_plate ----------

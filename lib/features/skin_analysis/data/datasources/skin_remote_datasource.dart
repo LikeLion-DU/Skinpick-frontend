@@ -4,6 +4,7 @@ import 'package:image_picker/image_picker.dart';
 import '../../../../core/network/api_call.dart';
 import '../../domain/entities/skin_photo_set.dart';
 import '../models/skin_dtos.dart';
+import '../models/skin_insight_dtos.dart';
 
 class SkinRemoteDataSource {
   const SkinRemoteDataSource(this._dio);
@@ -46,5 +47,18 @@ class SkinRemoteDataSource {
   Future<SkinAnalysisDto> getById(int id) async {
     final response = await _dio.get<dynamic>('/skin/analyses/$id');
     return SkinAnalysisDto.fromJson(requireEnvelopeData(response));
+  }
+
+  /// get-or-create 다. 처음 부르면 서버가 AI 로 만들어 저장하고 돌려주므로
+  /// 최대 ~27초 걸린다(AI 25초 타임아웃 + 429 1회 재시도). 두 번째부터는 DB 읽기다.
+  ///
+  /// 동시 호출은 서버가 락과 UNIQUE 제약으로 직렬화한다 — 느린 첫 응답에
+  /// 재시도를 겹쳐도 인사이트가 두 개 생기지 않는다.
+  Future<SkinInsightDto> getInsight(int skinAnalysisId) async {
+    final response = await _dio.get<dynamic>(
+      '/skin-insights',
+      queryParameters: <String, dynamic>{'skinAnalysisId': skinAnalysisId},
+    );
+    return SkinInsightDto.fromJson(requireEnvelopeData(response));
   }
 }
