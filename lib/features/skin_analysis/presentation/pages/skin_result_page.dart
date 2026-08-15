@@ -139,7 +139,7 @@ class _MetricBand {
     return const _MetricBand('좋음', AppColors.good);
   }
 
-  /// 높을수록 나쁜 지표(유분·붉어짐). 높으면 "주의"다.
+  /// 높을수록 나쁜 지표(유분·홍조). 높으면 "주의"다.
   static _MetricBand higherIsWorse(int value) {
     if (value >= 60) return const _MetricBand('주의', _red);
     if (value >= 40) return const _MetricBand('보통', AppColors.primary);
@@ -182,7 +182,7 @@ class _TypeCard extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 10),
-              // 민감도 배지. 붉어짐이 높을 때만 단다 — 근거 없이 달면
+              // 민감도 배지. 홍조가 높을 때만 단다 — 근거 없이 달면
               // "높음"이 안 뜨는 날 이 배지의 신뢰가 같이 사라진다.
               if (metrics.redness >= 60)
                 Container(
@@ -235,14 +235,14 @@ class _TypeCard extends StatelessWidget {
                 background: AppColors.hydrationBg,
               ),
               _Metric(
-                label: '유분 밸런스',
+                label: '유분',
                 band: _MetricBand.higherIsWorse(metrics.oil),
                 icon: Icons.opacity,
                 foreground: AppColors.oilFg,
                 background: AppColors.oilBg,
               ),
               _Metric(
-                label: '붉어짐',
+                label: '홍조',
                 band: _MetricBand.higherIsWorse(metrics.redness),
                 icon: Icons.waves,
                 foreground: AppColors.rednessFg,
