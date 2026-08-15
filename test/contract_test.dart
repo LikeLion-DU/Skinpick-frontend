@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:skinplate/features/auth/data/models/auth_dtos.dart';
+import 'package:skinplate/features/auth/domain/entities/skin_profile.dart';
 import 'package:skinplate/features/recommendation/data/models/recommendation_dtos.dart';
 import 'package:skinplate/features/skin_analysis/data/models/skin_dtos.dart';
 import 'package:skinplate/features/skin_plate/data/models/plate_dtos.dart';
@@ -44,6 +45,30 @@ void main() {
     // @JsonProperty 로 고정해 뒀다. 키가 어긋나도 앱은 안 죽고 조용히 false 가 된다.
     expect(dto.isTestAccount, isTrue);
     expect(dto.toEntity().declaredSkinType, SkinType.oily);
+  });
+
+  test('GET /auth/me — 고민·습관 4종을 읽는다', () {
+    final user = MeResponseDto.fromJson(data('auth_me')).toEntity();
+
+    expect(user.skinConcerns, {SkinConcern.acne, SkinConcern.sebumOil});
+    expect(user.sleepPattern, SleepPattern.lacking);
+    expect(user.stressLevel, StressLevel.high);
+    expect(user.exerciseHabit, ExerciseHabit.none);
+    expect(user.waterIntake, WaterIntake.lacking);
+    expect(user.hasIncompleteLifestyle, isFalse);
+  });
+
+  test('GET /auth/me — 미선택이면 서버가 키를 지운다', () {
+    // non_null 직렬화라 null 필드는 키 자체가 없다. required 를 쓰면 여기서 죽는다.
+    final user = MeResponseDto.fromJson(data('auth_me_no_profile')).toEntity();
+
+    expect(user.skinConcerns, isEmpty);
+    expect(user.sleepPattern, isNull);
+    expect(user.stressLevel, isNull);
+    expect(user.exerciseHabit, isNull);
+    expect(user.waterIntake, isNull);
+    expect(user.declaredSkinType, isNull);
+    expect(user.hasIncompleteLifestyle, isTrue);
   });
 
   test('GET /skin/analyses/latest — 점수·하이라이트·갭', () {
