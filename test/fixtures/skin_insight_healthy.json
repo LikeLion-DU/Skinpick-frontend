@@ -1,0 +1,18 @@
+{
+  "success": true,
+  "data": {
+    "skinAnalysisId": 7,
+    "summary": "지금은 주요 지표가 모두 안정적이에요. 지금의 관리 습관을 그대로 이어가 보세요.",
+    "changes": {
+      "hydration": 0,
+      "oil": 1,
+      "redness": -1,
+      "trouble": 0,
+      "barrier": 2,
+      "skinScore": 1
+    },
+    "insights": [],
+    "todayActions": [],
+    "generatedAt": "2026-08-16T10:00:00"
+  }
+}

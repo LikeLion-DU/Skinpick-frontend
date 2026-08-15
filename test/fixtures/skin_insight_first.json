@@ -1,0 +1,19 @@
+{
+  "success": true,
+  "data": {
+    "skinAnalysisId": 1,
+    "summary": "오늘 측정한 결과를 기준으로 살펴봤어요.",
+    "insights": [
+      {
+        "category": "DRY",
+        "priority": "HIGH",
+        "title": "수분 관리",
+        "description": "수분 지표가 낮게 나왔어요. 보습을 조금 더 신경 써 보면 좋겠어요."
+      }
+    ],
+    "todayActions": [
+      { "category": "DRY", "title": "보습제를 한 겹 더 발라 보세요" }
+    ],
+    "generatedAt": "2026-08-16T10:00:00"
+  }
+}
