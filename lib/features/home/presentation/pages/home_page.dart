@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../app/config/feature_flags.dart';
 import '../../../../app/router/app_router.dart';
 import '../../../../core/widgets/app_widgets.dart';
 import '../../../auth/presentation/providers/auth_notifier.dart';
@@ -159,7 +160,7 @@ class _Actions extends ConsumerWidget {
           label: Text(hasSkinRecord ? '피부 다시 분석하기' : '피부 분석하기'),
         ),
 
-        if (hasSkinRecord) ...[
+        if (FeatureFlags.recommendationScreen && hasSkinRecord) ...[
           const SizedBox(height: 8),
           TextButton(
             onPressed: () => context.push('${Routes.recommendations}/${analysis.id}'),

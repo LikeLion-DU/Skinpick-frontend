@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../app/config/feature_flags.dart';
 import '../../../../app/router/app_router.dart';
 import '../../../../core/widgets/app_widgets.dart';
 import '../../../../shared/enums/highlight_status.dart';
@@ -82,11 +83,14 @@ class SkinResultPage extends ConsumerWidget {
             icon: const Icon(Icons.restaurant),
             label: const Text('음식 분석하기'),
           ),
-          const SizedBox(height: 8),
-          TextButton(
-            onPressed: () => context.push('${Routes.recommendations}/${analysis.id}'),
-            child: const Text('오늘의 추천 음식 보기'),
-          ),
+          if (FeatureFlags.recommendationScreen) ...[
+            const SizedBox(height: 8),
+            TextButton(
+              onPressed: () =>
+                  context.push('${Routes.recommendations}/${analysis.id}'),
+              child: const Text('오늘의 추천 음식 보기'),
+            ),
+          ],
           const SafetyNotice(),
         ],
       ),

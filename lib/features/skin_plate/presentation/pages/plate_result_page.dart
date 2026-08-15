@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../app/config/feature_flags.dart';
 import '../../../../app/router/app_router.dart';
 import '../../../../core/error/failure.dart';
 import '../../../../core/widgets/app_widgets.dart';
@@ -113,12 +114,12 @@ class _Content extends StatelessWidget {
                 ScoreGauge(score: value.round(), label: 'Skin Plate'),
           ),
         ),
-        if (state.simulating)
+        if (FeatureFlags.actionSimulation && state.simulating)
           const Padding(
             padding: EdgeInsets.only(top: 12),
             child: Center(child: LinearProgressIndicator()),
           ),
-        if (state.simulation != null) ...[
+        if (FeatureFlags.actionSimulation && state.simulation != null) ...[
           const SizedBox(height: 12),
           Text(
             '${state.simulation!.beforeScore}점 → ${state.simulation!.afterScore}점',
@@ -137,7 +138,7 @@ class _Content extends StatelessWidget {
         _FeedbackSection(title: '좋은 점', items: plate.good, positive: true),
         _FeedbackSection(title: '주의사항', items: plate.caution, positive: false),
 
-        if (plate.actions.isNotEmpty) ...[
+        if (FeatureFlags.actionSimulation && plate.actions.isNotEmpty) ...[
           const SizedBox(height: 8),
           Text('추천 행동', style: Theme.of(context).textTheme.titleMedium),
           for (final action in plate.actions)
@@ -154,12 +155,13 @@ class _Content extends StatelessWidget {
         const SizedBox(height: 16),
         // 서버가 이 Plate 의 기준이 된 skinAnalysisId 를 실어 준다.
         // "최신 피부 분석"을 대신 쓰면 과거 Plate 를 열었을 때 엉뚱한 추천이 뜬다.
-        FilledButton.tonalIcon(
-          onPressed: () =>
-              context.push('${Routes.recommendations}/${plate.skinAnalysisId}'),
-          icon: const Icon(Icons.restaurant_menu),
-          label: const Text('오늘의 추천 음식 보기'),
-        ),
+        if (FeatureFlags.recommendationScreen)
+          FilledButton.tonalIcon(
+            onPressed: () =>
+                context.push('${Routes.recommendations}/${plate.skinAnalysisId}'),
+            icon: const Icon(Icons.restaurant_menu),
+            label: const Text('오늘의 추천 음식 보기'),
+          ),
         const SafetyNotice(),
       ],
     );
