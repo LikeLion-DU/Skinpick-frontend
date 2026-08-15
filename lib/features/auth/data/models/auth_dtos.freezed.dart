@@ -954,6 +954,11 @@ mixin _$MeResponseDto {
   String get nickname => throw _privateConstructorUsedError;
   String? get declaredSkinType =>
       throw _privateConstructorUsedError; // 미선택이면 서버가 키를 생략한다
+  List<String> get skinConcerns => throw _privateConstructorUsedError;
+  String? get sleepPattern => throw _privateConstructorUsedError;
+  String? get stressLevel => throw _privateConstructorUsedError;
+  String? get exerciseHabit => throw _privateConstructorUsedError;
+  String? get waterIntake => throw _privateConstructorUsedError;
   @JsonKey(name: 'isTestAccount')
   bool get isTestAccount => throw _privateConstructorUsedError;
   DateTime? get joinedAt => throw _privateConstructorUsedError;
@@ -979,6 +984,11 @@ abstract class $MeResponseDtoCopyWith<$Res> {
       String email,
       String nickname,
       String? declaredSkinType,
+      List<String> skinConcerns,
+      String? sleepPattern,
+      String? stressLevel,
+      String? exerciseHabit,
+      String? waterIntake,
       @JsonKey(name: 'isTestAccount') bool isTestAccount,
       DateTime? joinedAt});
 }
@@ -1002,6 +1012,11 @@ class _$MeResponseDtoCopyWithImpl<$Res, $Val extends MeResponseDto>
     Object? email = null,
     Object? nickname = null,
     Object? declaredSkinType = freezed,
+    Object? skinConcerns = null,
+    Object? sleepPattern = freezed,
+    Object? stressLevel = freezed,
+    Object? exerciseHabit = freezed,
+    Object? waterIntake = freezed,
     Object? isTestAccount = null,
     Object? joinedAt = freezed,
   }) {
@@ -1021,6 +1036,26 @@ class _$MeResponseDtoCopyWithImpl<$Res, $Val extends MeResponseDto>
       declaredSkinType: freezed == declaredSkinType
           ? _value.declaredSkinType
           : declaredSkinType // ignore: cast_nullable_to_non_nullable
+              as String?,
+      skinConcerns: null == skinConcerns
+          ? _value.skinConcerns
+          : skinConcerns // ignore: cast_nullable_to_non_nullable
+              as List<String>,
+      sleepPattern: freezed == sleepPattern
+          ? _value.sleepPattern
+          : sleepPattern // ignore: cast_nullable_to_non_nullable
+              as String?,
+      stressLevel: freezed == stressLevel
+          ? _value.stressLevel
+          : stressLevel // ignore: cast_nullable_to_non_nullable
+              as String?,
+      exerciseHabit: freezed == exerciseHabit
+          ? _value.exerciseHabit
+          : exerciseHabit // ignore: cast_nullable_to_non_nullable
+              as String?,
+      waterIntake: freezed == waterIntake
+          ? _value.waterIntake
+          : waterIntake // ignore: cast_nullable_to_non_nullable
               as String?,
       isTestAccount: null == isTestAccount
           ? _value.isTestAccount
@@ -1047,6 +1082,11 @@ abstract class _$$MeResponseDtoImplCopyWith<$Res>
       String email,
       String nickname,
       String? declaredSkinType,
+      List<String> skinConcerns,
+      String? sleepPattern,
+      String? stressLevel,
+      String? exerciseHabit,
+      String? waterIntake,
       @JsonKey(name: 'isTestAccount') bool isTestAccount,
       DateTime? joinedAt});
 }
@@ -1068,6 +1108,11 @@ class __$$MeResponseDtoImplCopyWithImpl<$Res>
     Object? email = null,
     Object? nickname = null,
     Object? declaredSkinType = freezed,
+    Object? skinConcerns = null,
+    Object? sleepPattern = freezed,
+    Object? stressLevel = freezed,
+    Object? exerciseHabit = freezed,
+    Object? waterIntake = freezed,
     Object? isTestAccount = null,
     Object? joinedAt = freezed,
   }) {
@@ -1087,6 +1132,26 @@ class __$$MeResponseDtoImplCopyWithImpl<$Res>
       declaredSkinType: freezed == declaredSkinType
           ? _value.declaredSkinType
           : declaredSkinType // ignore: cast_nullable_to_non_nullable
+              as String?,
+      skinConcerns: null == skinConcerns
+          ? _value._skinConcerns
+          : skinConcerns // ignore: cast_nullable_to_non_nullable
+              as List<String>,
+      sleepPattern: freezed == sleepPattern
+          ? _value.sleepPattern
+          : sleepPattern // ignore: cast_nullable_to_non_nullable
+              as String?,
+      stressLevel: freezed == stressLevel
+          ? _value.stressLevel
+          : stressLevel // ignore: cast_nullable_to_non_nullable
+              as String?,
+      exerciseHabit: freezed == exerciseHabit
+          ? _value.exerciseHabit
+          : exerciseHabit // ignore: cast_nullable_to_non_nullable
+              as String?,
+      waterIntake: freezed == waterIntake
+          ? _value.waterIntake
+          : waterIntake // ignore: cast_nullable_to_non_nullable
               as String?,
       isTestAccount: null == isTestAccount
           ? _value.isTestAccount
@@ -1108,8 +1173,14 @@ class _$MeResponseDtoImpl implements _MeResponseDto {
       required this.email,
       required this.nickname,
       this.declaredSkinType,
+      final List<String> skinConcerns = const <String>[],
+      this.sleepPattern,
+      this.stressLevel,
+      this.exerciseHabit,
+      this.waterIntake,
       @JsonKey(name: 'isTestAccount') this.isTestAccount = false,
-      this.joinedAt});
+      this.joinedAt})
+      : _skinConcerns = skinConcerns;
 
   factory _$MeResponseDtoImpl.fromJson(Map<String, dynamic> json) =>
       _$$MeResponseDtoImplFromJson(json);
@@ -1123,6 +1194,24 @@ class _$MeResponseDtoImpl implements _MeResponseDto {
   @override
   final String? declaredSkinType;
 // 미선택이면 서버가 키를 생략한다
+  final List<String> _skinConcerns;
+// 미선택이면 서버가 키를 생략한다
+  @override
+  @JsonKey()
+  List<String> get skinConcerns {
+    if (_skinConcerns is EqualUnmodifiableListView) return _skinConcerns;
+    // ignore: implicit_dynamic_type
+    return EqualUnmodifiableListView(_skinConcerns);
+  }
+
+  @override
+  final String? sleepPattern;
+  @override
+  final String? stressLevel;
+  @override
+  final String? exerciseHabit;
+  @override
+  final String? waterIntake;
   @override
   @JsonKey(name: 'isTestAccount')
   final bool isTestAccount;
@@ -1131,7 +1220,7 @@ class _$MeResponseDtoImpl implements _MeResponseDto {
 
   @override
   String toString() {
-    return 'MeResponseDto(userId: $userId, email: $email, nickname: $nickname, declaredSkinType: $declaredSkinType, isTestAccount: $isTestAccount, joinedAt: $joinedAt)';
+    return 'MeResponseDto(userId: $userId, email: $email, nickname: $nickname, declaredSkinType: $declaredSkinType, skinConcerns: $skinConcerns, sleepPattern: $sleepPattern, stressLevel: $stressLevel, exerciseHabit: $exerciseHabit, waterIntake: $waterIntake, isTestAccount: $isTestAccount, joinedAt: $joinedAt)';
   }
 
   @override
@@ -1145,6 +1234,16 @@ class _$MeResponseDtoImpl implements _MeResponseDto {
                 other.nickname == nickname) &&
             (identical(other.declaredSkinType, declaredSkinType) ||
                 other.declaredSkinType == declaredSkinType) &&
+            const DeepCollectionEquality()
+                .equals(other._skinConcerns, _skinConcerns) &&
+            (identical(other.sleepPattern, sleepPattern) ||
+                other.sleepPattern == sleepPattern) &&
+            (identical(other.stressLevel, stressLevel) ||
+                other.stressLevel == stressLevel) &&
+            (identical(other.exerciseHabit, exerciseHabit) ||
+                other.exerciseHabit == exerciseHabit) &&
+            (identical(other.waterIntake, waterIntake) ||
+                other.waterIntake == waterIntake) &&
             (identical(other.isTestAccount, isTestAccount) ||
                 other.isTestAccount == isTestAccount) &&
             (identical(other.joinedAt, joinedAt) ||
@@ -1153,8 +1252,19 @@ class _$MeResponseDtoImpl implements _MeResponseDto {
 
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
-  int get hashCode => Object.hash(runtimeType, userId, email, nickname,
-      declaredSkinType, isTestAccount, joinedAt);
+  int get hashCode => Object.hash(
+      runtimeType,
+      userId,
+      email,
+      nickname,
+      declaredSkinType,
+      const DeepCollectionEquality().hash(_skinConcerns),
+      sleepPattern,
+      stressLevel,
+      exerciseHabit,
+      waterIntake,
+      isTestAccount,
+      joinedAt);
 
   /// Create a copy of MeResponseDto
   /// with the given fields replaced by the non-null parameter values.
@@ -1178,6 +1288,11 @@ abstract class _MeResponseDto implements MeResponseDto {
       required final String email,
       required final String nickname,
       final String? declaredSkinType,
+      final List<String> skinConcerns,
+      final String? sleepPattern,
+      final String? stressLevel,
+      final String? exerciseHabit,
+      final String? waterIntake,
       @JsonKey(name: 'isTestAccount') final bool isTestAccount,
       final DateTime? joinedAt}) = _$MeResponseDtoImpl;
 
@@ -1192,6 +1307,16 @@ abstract class _MeResponseDto implements MeResponseDto {
   String get nickname;
   @override
   String? get declaredSkinType; // 미선택이면 서버가 키를 생략한다
+  @override
+  List<String> get skinConcerns;
+  @override
+  String? get sleepPattern;
+  @override
+  String? get stressLevel;
+  @override
+  String? get exerciseHabit;
+  @override
+  String? get waterIntake;
   @override
   @JsonKey(name: 'isTestAccount')
   bool get isTestAccount;

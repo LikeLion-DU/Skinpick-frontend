@@ -87,6 +87,14 @@ _$MeResponseDtoImpl _$$MeResponseDtoImplFromJson(Map<String, dynamic> json) =>
       email: json['email'] as String,
       nickname: json['nickname'] as String,
       declaredSkinType: json['declaredSkinType'] as String?,
+      skinConcerns: (json['skinConcerns'] as List<dynamic>?)
+              ?.map((e) => e as String)
+              .toList() ??
+          const <String>[],
+      sleepPattern: json['sleepPattern'] as String?,
+      stressLevel: json['stressLevel'] as String?,
+      exerciseHabit: json['exerciseHabit'] as String?,
+      waterIntake: json['waterIntake'] as String?,
       isTestAccount: json['isTestAccount'] as bool? ?? false,
       joinedAt: json['joinedAt'] == null
           ? null
@@ -99,6 +107,11 @@ Map<String, dynamic> _$$MeResponseDtoImplToJson(_$MeResponseDtoImpl instance) =>
       'email': instance.email,
       'nickname': instance.nickname,
       'declaredSkinType': instance.declaredSkinType,
+      'skinConcerns': instance.skinConcerns,
+      'sleepPattern': instance.sleepPattern,
+      'stressLevel': instance.stressLevel,
+      'exerciseHabit': instance.exerciseHabit,
+      'waterIntake': instance.waterIntake,
       'isTestAccount': instance.isTestAccount,
       'joinedAt': instance.joinedAt?.toIso8601String(),
     };

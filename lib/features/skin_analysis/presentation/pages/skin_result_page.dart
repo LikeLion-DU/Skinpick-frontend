@@ -469,7 +469,8 @@ class _SkinTypePromptState extends ConsumerState<_SkinTypePrompt> {
     setState(() => _busy = true);
 
     final failure =
-        await ref.read(authNotifierProvider.notifier).updateSkinType(type);
+        await ref.read(authNotifierProvider.notifier)
+            .updateProfile(declaredSkinType: type);
 
     if (failure == null) {
       // 갭 문장은 서버가 만든다. 다시 받아야 카드가 뜬다.

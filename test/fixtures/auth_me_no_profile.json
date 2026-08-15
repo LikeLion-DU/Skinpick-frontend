@@ -1,0 +1,11 @@
+{
+  "success": true,
+  "data": {
+    "userId": 2,
+    "email": "fresh@skinplate.app",
+    "nickname": "새사용자",
+    "skinConcerns": [],
+    "isTestAccount": false,
+    "joinedAt": "2026-08-16T09:00:00"
+  }
+}

@@ -2,6 +2,7 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 
 import '../../../../shared/enums/skin_type.dart';
 import '../../domain/entities/auth_user.dart';
+import '../../domain/entities/skin_profile.dart';
 
 part 'auth_dtos.freezed.dart';
 part 'auth_dtos.g.dart';
@@ -74,6 +75,11 @@ class MeResponseDto with _$MeResponseDto {
     required String email,
     required String nickname,
     String? declaredSkinType,          // 미선택이면 서버가 키를 생략한다
+    @Default(<String>[]) List<String> skinConcerns,
+    String? sleepPattern,
+    String? stressLevel,
+    String? exerciseHabit,
+    String? waterIntake,
     @JsonKey(name: 'isTestAccount') @Default(false) bool isTestAccount,
     DateTime? joinedAt,
   }) = _MeResponseDto;
@@ -84,17 +90,9 @@ class MeResponseDto with _$MeResponseDto {
 
 // ---------- DTO → Entity ----------
 
-extension AuthResponseDtoX on AuthResponseDto {
-  AuthSession toEntity() => AuthSession(
-        accessToken: accessToken,
-        expiresIn: expiresIn,
-        user: AuthUser(
-          userId: user.userId,
-          email: user.email,
-          nickname: user.nickname,
-        ),
-      );
-}
+// AuthResponse → AuthSession 변환은 여기 두지 않는다. 로그인 응답에는 프로필이
+// 없어서 그것만으로 AuthUser 를 만들면 고민·습관이 빈 사용자가 나온다. 세션 조립은
+// `/auth/me` 를 함께 부르는 AuthRepositoryImpl._sessionWithProfile 이 맡는다.
 
 extension MeResponseDtoX on MeResponseDto {
   AuthUser toEntity() => AuthUser(
@@ -102,7 +100,20 @@ extension MeResponseDtoX on MeResponseDto {
         email: email,
         nickname: nickname,
         declaredSkinType: SkinType.fromJson(declaredSkinType),
+        skinConcerns: skinConcerns
+            .map(SkinConcern.fromWire)
+            .whereType<SkinConcern>()
+            .toSet(),
+        sleepPattern: _parseWire(sleepPattern, SleepPattern.fromWire),
+        stressLevel: _parseWire(stressLevel, StressLevel.fromWire),
+        exerciseHabit: _parseWire(exerciseHabit, ExerciseHabit.fromWire),
+        waterIntake: _parseWire(waterIntake, WaterIntake.fromWire),
         isTestAccount: isTestAccount,
         joinedAt: joinedAt,
       );
 }
+
+/// 키가 없으면 null, 있으면 파서에 넘긴다. 모르는 값도 null 이다 —
+/// 습관은 "미선택"이 정상 상태라 억지 기본값을 두면 안 고른 사람과 섞인다.
+T? _parseWire<T>(String? value, T? Function(String) fromWire) =>
+    value == null ? null : fromWire(value);
