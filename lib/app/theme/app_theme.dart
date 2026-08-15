@@ -7,6 +7,10 @@ import 'app_colors.dart';
 class AppTheme {
   const AppTheme._();
 
+  /// pubspec 의 family 이름과 반드시 같아야 한다. 오타가 나도 앱은 죽지 않고
+  /// 조용히 시스템 폰트로 떨어지므로, 문자열을 여기 한 번만 적는다.
+  static const fontFamily = 'Pretendard';
+
   /// 시안의 버튼·입력창 모서리가 전부 같은 곡률이다.
   static const _radius = 8.0;
 
@@ -29,6 +33,9 @@ class AppTheme {
       useMaterial3: true,
       colorScheme: scheme,
       scaffoldBackgroundColor: AppColors.background,
+      // 여기 한 줄이 앱 전체의 폰트를 정한다. 화면마다 fontFamily 를 적지 마라 —
+      // 하나라도 빠뜨리면 그 화면만 시스템 폰트로 나오고, 한글은 그 차이가 크다.
+      fontFamily: fontFamily,
       textTheme: const TextTheme(
         titleLarge: TextStyle(
           fontSize: 20,
