@@ -612,13 +612,24 @@ class _SkinCapturePageState extends ConsumerState<SkinCapturePage>
               // 타원 중앙의 방향 안내 — "정면을 바라봐주세요".
               Align(
                 alignment: const Alignment(0, -0.12),
-                child: Text(
-                  _instruction(_stage),
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                  ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // 측면 단계에서는 문장보다 움직임이 빠르다 — 통과 중에는
+                    // 숨긴다. 화살표가 계속 흐르면 이미 맞춘 자세를 더 돌린다.
+                    if (_stage != FacePhotoType.front && !canCapture) ...[
+                      _TurnHint(toLeft: _stage == FacePhotoType.left),
+                      const SizedBox(height: 8),
+                    ],
+                    Text(
+                      _instruction(_stage),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
                 ),
               ),
 
@@ -715,6 +726,58 @@ class _CaptureShutter extends StatelessWidget {
 
 
 
+
+/// 측면 단계에서 고개를 어느 쪽으로 돌릴지 움직임으로 보여준다.
+///
+/// 거울 프리뷰 앞에서 "왼쪽으로" 라는 문장은 한 박자 늦게 읽힌다 —
+/// 돌릴 방향으로 흘러가는 화살표는 읽지 않아도 따라 하게 된다.
+class _TurnHint extends StatefulWidget {
+  const _TurnHint({required this.toLeft});
+
+  final bool toLeft;
+
+  @override
+  State<_TurnHint> createState() => _TurnHintState();
+}
+
+class _TurnHintState extends State<_TurnHint>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _sweep = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 1100),
+  )..repeat();
+
+  @override
+  void dispose() {
+    _sweep.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final direction = widget.toLeft ? -1.0 : 1.0;
+    return AnimatedBuilder(
+      animation: _sweep,
+      builder: (context, chevrons) {
+        final progress = Curves.easeOut.transform(_sweep.value);
+        return Opacity(
+          opacity: 1.0 - progress,
+          child: Transform.translate(
+            offset: Offset(direction * 28 * progress, 0),
+            child: chevrons,
+          ),
+        );
+      },
+      child: Icon(
+        widget.toLeft
+            ? Icons.keyboard_double_arrow_left
+            : Icons.keyboard_double_arrow_right,
+        color: Colors.white,
+        size: 36,
+      ),
+    );
+  }
+}
 
 /// 실기기에서 yaw 부호와 임계값을 맞출 때 쓴다. 릴리즈 빌드에는 나오지 않는다.
 class _DebugOverlay extends StatelessWidget {
