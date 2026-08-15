@@ -178,6 +178,18 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                   for (final slot in const [1, 2, 3]) ...[
                     Expanded(
                       child: OutlinedButton(
+                        // 테마에 outlinedButtonTheme 이 없어 M3 기본값(알약)이 나온다.
+                        // 숨겨져 있을 땐 안 보였지만 이제 상시 노출이라, 화면에서 유일하게
+                        // 곡률 8을 벗어난 버튼이 로그인 화면 하단에 남는다. 여기서만 맞춘다 —
+                        // 테마에 넣으면 촬영 화면의 갤러리 버튼까지 같이 바뀐다.
+                        style: OutlinedButton.styleFrom(
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8)),
+                          side: const BorderSide(color: AppColors.borderOnWhite),
+                          foregroundColor: AppColors.primary,
+                          // 좁은 기기(360dp)에서 라벨이 두 줄로 접히지 않게 좌우를 줄인다.
+                          padding: const EdgeInsets.symmetric(horizontal: 8),
+                        ),
                         onPressed: _busy
                             ? null
                             : () => _run(() => ref
