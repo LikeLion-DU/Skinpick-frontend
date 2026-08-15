@@ -108,36 +108,3 @@ enum WaterIntake {
     return null;
   }
 }
-
-/// 설문 결과 묶음. 타입은 서버가 쥐고 있으므로 여기 없다.
-class SkinProfile {
-  const SkinProfile({
-    this.concerns = const <SkinConcern>{},
-    this.sleep,
-    this.stress,
-    this.exercise,
-  });
-
-  final Set<SkinConcern> concerns;
-  final SleepPattern? sleep;
-  final StressLevel? stress;
-  final ExerciseHabit? exercise;
-
-  Map<String, Object?> toJson() => {
-        'concerns': concerns.map((concern) => concern.wire).toList(),
-        'sleep': sleep?.wire,
-        'stress': stress?.wire,
-        'exercise': exercise?.wire,
-      };
-
-  static SkinProfile fromJson(Map<String, Object?> json) => SkinProfile(
-        concerns: ((json['concerns'] as List?) ?? const [])
-            .whereType<String>()
-            .map(SkinConcern.fromWire)
-            .whereType<SkinConcern>()
-            .toSet(),
-        sleep: SleepPattern.fromWire((json['sleep'] as String?) ?? ''),
-        stress: StressLevel.fromWire((json['stress'] as String?) ?? ''),
-        exercise: ExerciseHabit.fromWire((json['exercise'] as String?) ?? ''),
-      );
-}

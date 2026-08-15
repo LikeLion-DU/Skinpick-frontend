@@ -3,6 +3,7 @@ import '../../../../core/result/result.dart';
 import '../../../../core/storage/token_storage.dart';
 import '../../../../shared/enums/skin_type.dart';
 import '../../domain/entities/auth_user.dart';
+import '../../domain/entities/skin_profile.dart';
 import '../../domain/repositories/auth_repository.dart';
 import '../datasources/auth_remote_datasource.dart';
 import '../models/auth_dtos.dart';
@@ -58,8 +59,23 @@ class AuthRepositoryImpl implements AuthRepository {
       callApi(() async => (await _remote.me()).toEntity());
 
   @override
-  Future<Result<AuthUser>> updateSkinType(SkinType skinType) =>
-      callApi(() async => (await _remote.updateSkinType(skinType)).toEntity());
+  Future<Result<AuthUser>> updateProfile({
+    SkinType? declaredSkinType,
+    Set<SkinConcern>? skinConcerns,
+    SleepPattern? sleepPattern,
+    StressLevel? stressLevel,
+    ExerciseHabit? exerciseHabit,
+    WaterIntake? waterIntake,
+  }) =>
+      callApi(() async => (await _remote.updateProfile(
+            declaredSkinType: declaredSkinType,
+            skinConcerns: skinConcerns,
+            sleepPattern: sleepPattern,
+            stressLevel: stressLevel,
+            exerciseHabit: exerciseHabit,
+            waterIntake: waterIntake,
+          ))
+              .toEntity());
 
   /// 서버는 상태를 갖지 않으므로 로컬 토큰 삭제가 곧 로그아웃이다.
   @override

@@ -8,6 +8,7 @@ import '../../../recommendation/presentation/providers/recommendation_provider.d
 import '../../../skin_analysis/presentation/providers/skin_analysis_notifier.dart';
 import '../../../skin_plate/presentation/providers/plate_notifier.dart';
 import '../../domain/entities/auth_user.dart';
+import '../../domain/entities/skin_profile.dart';
 
 /// 전역 인증 상태. 라우터가 이 값만 보고 화면을 결정한다. (PRD §10.5)
 sealed class AuthState {
@@ -114,11 +115,25 @@ class AuthNotifier extends Notifier<AuthState> {
     );
   }
 
-  /// S01c 와 S05 인라인 칩 두 곳에서 부른다.
-  /// 건너뛰기는 이 메서드를 호출하지 않는 것이다 — UNKNOWN 을 대신 보내면
+  /// S01c 설문과 S05 인라인 칩 두 곳에서 부른다. 넘긴 필드만 바뀐다.
+  /// 건너뛰기는 값을 안 넘기는 것이다 — UNKNOWN 을 대신 보내면
   /// "잘 모르겠다고 답한 사용자"와 구분이 사라진다.
-  Future<Failure?> updateSkinType(SkinType skinType) async {
-    final result = await ref.read(authRepositoryProvider).updateSkinType(skinType);
+  Future<Failure?> updateProfile({
+    SkinType? declaredSkinType,
+    Set<SkinConcern>? skinConcerns,
+    SleepPattern? sleepPattern,
+    StressLevel? stressLevel,
+    ExerciseHabit? exerciseHabit,
+    WaterIntake? waterIntake,
+  }) async {
+    final result = await ref.read(authRepositoryProvider).updateProfile(
+          declaredSkinType: declaredSkinType,
+          skinConcerns: skinConcerns,
+          sleepPattern: sleepPattern,
+          stressLevel: stressLevel,
+          exerciseHabit: exerciseHabit,
+          waterIntake: waterIntake,
+        );
 
     return result.when<Failure?>(
       success: (user) {

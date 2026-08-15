@@ -1,24 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../app/router/app_router.dart';
 import '../../../../app/theme/app_colors.dart';
 import '../../../../app/theme/app_theme.dart';
 import '../../../../shared/enums/skin_type.dart';
-import '../../data/datasources/skin_profile_store.dart';
 import '../../domain/entities/skin_profile.dart';
 import '../providers/auth_notifier.dart';
 
 /// S01c — 피부 프로필 설문. 확정 시안의 한 페이지 설문이다:
-/// 피부 타입(필수) · 주요 피부 고민(복수, 필수) · 생활 습관 3종(선택).
+/// 피부 타입(필수) · 주요 피부 고민(복수, 필수) · 생활 습관 4종(선택).
 ///
 /// 타입은 서버로 간다(`PATCH /auth/me`). **타입은 점수 계산에 들어가지
 /// 않는다** — 자가 신고값이 점수에 개입하면 "같은 사진 두 번 찍어도 같은
 /// 점수"라는 주장이 무너진다. 쓰이는 곳은 결과 화면의 갭 카드다. (PRD §4.4.1)
 ///
-/// 고민·습관은 서버에 컬럼이 없어 기기에 저장한다([SkinProfileStore]).
+/// 고민·습관도 전부 서버가 소유한다. 인사이트(S10)가 서버 DB 의 값을 읽어
+/// 주제를 고르므로, 기기에만 저장하면 그 기능이 통째로 동작하지 않는다.
 class SkinTypePage extends ConsumerStatefulWidget {
   const SkinTypePage({super.key});
 
@@ -32,6 +31,7 @@ class _SkinTypePageState extends ConsumerState<SkinTypePage> {
   SleepPattern? _sleep;
   StressLevel? _stress;
   ExerciseHabit? _exercise;
+  WaterIntake? _water;
 
   /// 어느 습관 줄이 펼쳐져 있는지. 시안이 한 번에 하나만 펼친다.
   _HabitRow? _expanded;
@@ -39,28 +39,22 @@ class _SkinTypePageState extends ConsumerState<SkinTypePage> {
   bool _busy = false;
   String? _error;
 
-  static const _store = SkinProfileStore(FlutterSecureStorage());
-
   bool get _complete => _type != null && _concerns.isNotEmpty;
 
   @override
   void initState() {
     super.initState();
-    // 홈의 "피부 프로필 수정"으로 다시 들어온 사용자다. 저장해 둔 답을 깔아
-    // 두지 않으면 빈 설문이 뜨고, 제출이 이전 답(습관 포함)을 전부 null 로
-    // 덮어쓴다 — 저장소에 쓰기만 하고 읽는 곳이 없는 상태였다.
-    _store.load().then((saved) {
-      if (!mounted) return;
-      setState(() {
-        _concerns.addAll(saved.concerns);
-        _sleep ??= saved.sleep;
-        _stress ??= saved.stress;
-        _exercise ??= saved.exercise;
-      });
-    });
-    // 타입은 서버 소유다. 로그인 상태에서 이미 들고 있다.
+    // 홈의 "피부 프로필 수정"으로 다시 들어온 사용자다. 서버가 들고 있는 답을
+    // 깔아 두지 않으면 빈 설문이 뜨고, 제출이 이전 답을 전부 덮어쓴다.
     final auth = ref.read(authNotifierProvider);
-    if (auth is Authenticated) _type = auth.user.declaredSkinType;
+    if (auth is Authenticated) {
+      _type = auth.user.declaredSkinType;
+      _concerns.addAll(auth.user.skinConcerns);
+      _sleep = auth.user.sleepPattern;
+      _stress = auth.user.stressLevel;
+      _exercise = auth.user.exerciseHabit;
+      _water = auth.user.waterIntake;
+    }
   }
 
   /// 진행 점 4개 중 몇 개가 찼는가. 시작(1) + 타입 + 고민 + 습관.
@@ -68,7 +62,7 @@ class _SkinTypePageState extends ConsumerState<SkinTypePage> {
       1 +
       (_type != null ? 1 : 0) +
       (_concerns.isNotEmpty ? 1 : 0) +
-      ((_sleep ?? _stress ?? _exercise) != null ? 1 : 0);
+      ((_sleep ?? _stress ?? _exercise ?? _water) != null ? 1 : 0);
 
   Future<void> _submit() async {
     final type = _type;
@@ -79,15 +73,20 @@ class _SkinTypePageState extends ConsumerState<SkinTypePage> {
       _error = null;
     });
 
-    // 습관은 실패해도 흐름을 막지 않는다(store 가 삼킨다). 타입만 서버 왕복이다.
-    await _store.save(SkinProfile(
-      concerns: _concerns,
-      sleep: _sleep,
-      stress: _stress,
-      exercise: _exercise,
-    ));
+    // 타입·고민·습관이 한 요청으로 간다. 둘로 나눠 보내면 한쪽만 성공한 상태가
+    // 생기고, 그때 화면은 성공도 실패도 아닌 것을 보여주게 된다.
+    //
+    // 고민은 비어 있어도 보낸다 — 서버가 [] 를 "전부 해제"로 읽는다. 안 보내면
+    // 사용자가 방금 지운 고민이 서버에 그대로 남는다.
     final failure =
-        await ref.read(authNotifierProvider.notifier).updateSkinType(type);
+        await ref.read(authNotifierProvider.notifier).updateProfile(
+              declaredSkinType: type,
+              skinConcerns: _concerns,
+              sleepPattern: _sleep,
+              stressLevel: _stress,
+              exerciseHabit: _exercise,
+              waterIntake: _water,
+            );
 
     if (!mounted) return;
 
@@ -254,6 +253,36 @@ class _SkinTypePageState extends ConsumerState<SkinTypePage> {
               }),
             ),
           ),
+          const SizedBox(height: 8),
+
+          _HabitSection(
+            row: _HabitRow.water,
+            icon: Icons.water_drop_outlined,
+            label: '수분 섭취',
+            value: _water?.label,
+            expanded: _expanded == _HabitRow.water,
+            onToggleExpand: () => setState(() =>
+                _expanded = _expanded == _HabitRow.water ? null : _HabitRow.water),
+            // 수면과 같은 3단계 척도라 같은 카드형을 쓴다. 운동의 _RowOptions 는
+            // ExerciseHabit 이 박혀 있어 여기 쓰려면 제네릭화부터 해야 한다.
+            child: _CardOptions<WaterIntake>(
+              options: WaterIntake.values,
+              selected: _water,
+              labelOf: (option) => option.label,
+              descriptionOf: (option) => option.description,
+              iconOf: (option) => switch (option) {
+                WaterIntake.lacking => Icons.sentiment_dissatisfied,
+                WaterIntake.normal => Icons.sentiment_neutral,
+                WaterIntake.enough => Icons.sentiment_satisfied_alt,
+              },
+              iconColorOf: (option, selected) =>
+                  selected ? AppColors.primary : AppColors.textSecondary,
+              onSelect: (option) => setState(() {
+                _water = option;
+                _expanded = null;
+              }),
+            ),
+          ),
 
           if (_error != null) ...[
             const SizedBox(height: 16),
@@ -278,7 +307,7 @@ class _SkinTypePageState extends ConsumerState<SkinTypePage> {
   }
 }
 
-enum _HabitRow { sleep, stress, exercise }
+enum _HabitRow { sleep, stress, exercise, water }
 
 /// 진행 표시 — 선 위의 점 4개. 채워진 만큼 오렌지다.
 class _ProgressDots extends StatelessWidget {
