@@ -14,8 +14,12 @@ class AppTheme {
   /// 시안의 버튼·입력창 모서리가 전부 같은 곡률이다.
   static const _radius = 8.0;
 
-  /// 카드는 버튼보다 확실히 둥글다.
-  static const cardRadius = 12.0;
+  /// 시안 프레임에서 읽은 값. 카드가 버튼보다 아주 조금 더 둥글다.
+  static const cardRadius = 9.0;
+
+  /// 화면 좌우 여백. 시안은 제목이 32, 카드가 34 로 2px 어긋나 있는데
+  /// 의도로 보기 어려워 32 로 맞춘다. 지적이 나오면 이 값만 바꾸면 된다.
+  static const pagePadding = 32.0;
 
   static ThemeData get light {
     final scheme = ColorScheme.fromSeed(
@@ -36,19 +40,34 @@ class AppTheme {
       // 여기 한 줄이 앱 전체의 폰트를 정한다. 화면마다 fontFamily 를 적지 마라 —
       // 하나라도 빠뜨리면 그 화면만 시스템 폰트로 나오고, 한글은 그 차이가 크다.
       fontFamily: fontFamily,
+      // 크기·굵기는 시안 프레임에서 읽은 값이다. 시안이 Bold 보다 SemiBold 를
+      // 훨씬 자주 쓴다 — 제목까지 SemiBold 다.
       textTheme: const TextTheme(
+        // 화면 제목. "안녕하세요, 스킨픽님"
         titleLarge: TextStyle(
-          fontSize: 20,
-          fontWeight: FontWeight.w700,
+          fontSize: 24,
+          fontWeight: FontWeight.w600,
           color: AppColors.textPrimary,
         ),
+        // 구역 제목. "오늘의 기록"
         titleMedium: TextStyle(
-          fontSize: 16,
-          fontWeight: FontWeight.w700,
+          fontSize: 15,
+          fontWeight: FontWeight.w600,
           color: AppColors.textPrimary,
         ),
-        bodyMedium: TextStyle(fontSize: 14, color: AppColors.textPrimary),
-        bodySmall: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+        // 제목 아래 안내 문구
+        bodyMedium: TextStyle(
+          fontSize: 14,
+          fontWeight: FontWeight.w500,
+          color: AppColors.textSecondary,
+        ),
+        // 카드 안쪽 보조 문구
+        bodySmall: TextStyle(
+          fontSize: 10,
+          fontWeight: FontWeight.w400,
+          color: AppColors.textOnCard,
+          height: 1.35,
+        ),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(

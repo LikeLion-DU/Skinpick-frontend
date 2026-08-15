@@ -1,13 +1,15 @@
 import 'package:flutter/material.dart';
 
-/// 피그마 시안에서 뽑은 색. 값의 출처를 남겨 두는 이유가 있다.
+/// 피그마 시안에서 가져온 색.
 ///
-/// 디자이너가 아직 Figma **변수(Variables)** 로 토큰을 정의하지 않아서,
-/// 시안 렌더 이미지에서 영역별 최빈색을 읽어 옮겼다. 즉 이 값들은
-/// "디자인 원본"이 아니라 "디자인을 보고 받아적은 것"이다.
+/// 디자이너가 Figma **변수(Variables)** 를 만들지 않아서(조회하면 빈 객체가
+/// 온다) 토큰 원본이 없다. 그래서 값의 출처가 둘로 갈린다 —
+/// 프레임 사양을 직접 읽어 확인한 것과, 시안 렌더에서 색을 읽어 옮긴 것이다.
+/// 후자는 주석에 "샘플링"이라고 적어 두었으니 다른 화면 사양을 읽을 때
+/// 우선 확인할 것.
 ///
-/// 나중에 디자이너가 변수를 만들면 그때 원본을 읽어 이 파일만 교체하면 된다.
-/// 화면 코드는 전부 이 클래스만 참조하므로 교체 비용이 여기서 끝난다.
+/// 나중에 디자이너가 변수를 만들면 이 파일만 교체하면 된다. 화면 코드는
+/// 전부 이 클래스만 참조하므로 교체 비용이 여기서 끝난다.
 /// 그러라고 색 리터럴을 화면에 직접 쓰지 않는다.
 class AppColors {
   const AppColors._();
@@ -18,13 +20,32 @@ class AppColors {
   /// 카드 배경 크림. 흰 배경 위에 얹혀 영역을 구분한다.
   static const surfaceCard = Color(0xFFFEF7F0);
 
+  /// 촬영 버튼(FAB)만 단색이 아니라 위아래 그라디언트다. 화면에서 이 하나뿐이라
+  /// 시선이 여기로 간다 — 시안이 주 동작을 그렇게 지목하고 있다.
+  static const fabGradientTop = Color(0xFFFF5404);
+  static const fabGradientBottom = Color(0xFFFFD240);
+
   static const background = Color(0xFFFFFFFF);
 
   static const textPrimary = Color(0xFF000000);
-  static const textSecondary = Color(0xFF5A5A5A);
 
-  /// 테두리와 미선택 칩의 윤곽.
+  /// 제목 아래 안내 문구. 시안의 "오늘도 피부에 좋은 선택을 해봐요!" 가 이 색이다.
+  static const textSecondary = Color(0xFF6D6D6D);
+
+  /// 카드 안쪽 본문. 위 회색보다 아주 조금 진하다 — 시안이 둘을 구분해서 쓴다.
+  static const textOnCard = Color(0xFF505050);
+
+  /// 테두리와 미선택 칩의 윤곽. (샘플링)
   static const outline = Color(0xFF898888);
+
+  // ── 테두리 3종 ────────────────────────────────────────────
+  // 카드마다 테두리 색이 다르다. 하나로 합치면 크림 카드의 따뜻한 윤곽이
+  // 회색으로 죽는다.
+  static const borderOnCream = Color(0xFFFFDFD1);
+  static const borderOnWhite = Color(0xFFE6E6E6);
+
+  /// 기록이 없을 때의 빈 슬롯 테두리.
+  static const borderEmptySlot = Color(0xFFDADADA);
 
   /// 조건 미충족 버튼. 시안에서 "프로필 설정 완료"가 이 색으로 잠겨 있다.
   static const disabled = Color(0xFFD9D9D9);

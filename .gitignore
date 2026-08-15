@@ -43,3 +43,7 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# 웹은 대상 플랫폼이 아니다(PRD: Android → iOS). 빌드 확인용으로 한 번
+# 생성됐던 스캐폴딩이 다시 커밋되지 않게 막는다.
+/web/

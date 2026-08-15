@@ -1,114 +1,33 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../../app/config/feature_flags.dart';
 import '../../../../app/router/app_router.dart';
-import '../../../../core/widgets/app_widgets.dart';
+import '../../../../app/theme/app_colors.dart';
+import '../../../../app/theme/app_theme.dart';
+import '../../../../shared/widgets/app_bottom_nav.dart';
 import '../../../auth/presentation/providers/auth_notifier.dart';
 import '../../../skin_analysis/presentation/providers/skin_analysis_notifier.dart';
+import '../../../skin_plate/presentation/providers/plate_history_provider.dart';
+import '../providers/today_provider.dart';
+import '../widgets/daily_score_card.dart';
+import '../widgets/today_records_card.dart';
 
 /// S02 — 홈.
 ///
-/// 두 동작은 서로 독립이다. 피부 분석은 **사용자가 하고 싶을 때 아무 때나** 누르는
-/// 버튼이고, 음식 촬영은 찍으면 곧바로 상극 분석 결과(S07)로 이어진다.
+/// 두 동작은 서로 독립이다. 피부 분석은 **사용자가 하고 싶을 때 아무 때나** 하는
+/// 것이고, 음식 촬영은 찍으면 곧바로 상극 분석 결과(S07)로 이어진다.
 /// 순서를 강제하는 마법사가 아니다.
 ///
 /// 다만 상극 분석은 비교할 피부 기준이 있어야 성립한다. 그래서 피부 기록이 하나도
-/// 없을 때만 음식 버튼이 안내를 띄운다 — 숨기지는 않는다. 버튼이 사라지면
+/// 없을 때만 촬영 버튼이 안내를 띄운다 — 숨기지는 않는다. 버튼이 사라지면
 /// 사용자는 그 기능이 없는 줄 안다.
+///
+/// 시안에 피부 분석으로 가는 버튼이 따로 없다. 우측 상단 프로필 메뉴 안에
+/// "다시 분석"이 들어가 있어 그대로 옮겼다.
 class HomePage extends ConsumerWidget {
   const HomePage({super.key});
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final nickname = switch (ref.watch(authNotifierProvider)) {
-      Authenticated(:final user) => user.nickname,
-      _ => '',
-    };
-
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Skin Plate'),
-        actions: [
-          IconButton(
-            tooltip: '로그아웃',
-            icon: const Icon(Icons.logout),
-            onPressed: () => ref.read(authNotifierProvider.notifier).logout(),
-          ),
-        ],
-      ),
-      body: RefreshIndicator(
-        onRefresh: () async => ref.invalidate(latestSkinAnalysisProvider),
-        child: ListView(
-          padding: const EdgeInsets.all(24),
-          children: [
-            Text('안녕하세요, $nickname님',
-                style: Theme.of(context).textTheme.titleLarge),
-            const SizedBox(height: 4),
-            const Text('오늘도 피부에 좋은 선택을 해봐요'),
-            const SizedBox(height: 24),
-            const _SkinCard(),
-            const SizedBox(height: 24),
-            const _Actions(),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-/// 오늘의 Skin Score. 기록이 없어도 카드 자리는 유지한다.
-class _SkinCard extends ConsumerWidget {
-  const _SkinCard();
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final latest = ref.watch(latestSkinAnalysisProvider);
-
-    return latest.when(
-      loading: () => const Padding(
-        padding: EdgeInsets.symmetric(vertical: 48),
-        child: Center(child: CircularProgressIndicator()),
-      ),
-      // 여기의 error 는 Failure 가 아니라 예상 못 한 예외다.
-      // Repository 가 만드는 실패는 아래 Result 쪽으로 온다.
-      error: (error, _) => Text('불러오지 못했습니다: $error'),
-      data: (result) => result.when(
-        failure: (failure) => FailureView(
-          failure: failure,
-          onRetry: () => ref.invalidate(latestSkinAnalysisProvider),
-        ),
-        success: (analysis) => Card(
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: analysis == null
-                ? const Center(child: Text('아직 오늘의 피부 기록이 없어요'))
-                : Column(
-                    children: [
-                      const Text('오늘의 Skin Score'),
-                      const SizedBox(height: 16),
-                      ScoreGauge(score: analysis.skinScore),
-                      if (analysis.summary.isNotEmpty) ...[
-                        const SizedBox(height: 16),
-                        Text(analysis.summary, textAlign: TextAlign.center),
-                      ],
-                      const SizedBox(height: 8),
-                      TextButton(
-                        onPressed: () => context.push(Routes.skinResult),
-                        child: const Text('자세히 보기'),
-                      ),
-                    ],
-                  ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _Actions extends ConsumerWidget {
-  const _Actions();
 
   /// 피부 기록이 없을 때만 뜬다. 막지 않고 어디로 가면 되는지 알려준다.
   Future<void> _explainSkinFirst(BuildContext context) async {
@@ -137,42 +56,103 @@ class _Actions extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final analysis = ref.watch(latestSkinAnalysisProvider).value?.dataOrNull;
-    final hasSkinRecord = analysis != null;
+    final nickname = switch (ref.watch(authNotifierProvider)) {
+      Authenticated(:final user) => user.nickname,
+      _ => '',
+    };
+    final hasSkinRecord =
+        ref.watch(latestSkinAnalysisProvider).value?.dataOrNull != null;
+    final today = ref.watch(todayRecordProvider);
+    final imageDirectory = ref.watch(plateImageDirectoryProvider).value;
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        // 주 액션. 찍으면 곧바로 상극 분석 결과로 이어진다.
-        FilledButton.icon(
-          onPressed: () => hasSkinRecord
-              ? context.push(Routes.foodCapture)
-              : _explainSkinFirst(context),
-          icon: const Icon(Icons.camera_alt),
-          label: const Text('음식 사진 분석하기'),
-        ),
-        const SizedBox(height: 8),
+    void capture() => hasSkinRecord
+        ? context.push(Routes.foodCapture)
+        : _explainSkinFirst(context);
 
-        // 언제든 다시 잴 수 있다. 기록 유무와 상관없이 항상 자리에 있는다.
-        OutlinedButton.icon(
-          onPressed: () => context.push(Routes.skinCapture),
-          icon: const Icon(Icons.face_retouching_natural),
-          label: Text(hasSkinRecord ? '피부 다시 분석하기' : '피부 분석하기'),
-        ),
-
-        if (FeatureFlags.recommendationScreen && hasSkinRecord) ...[
-          const SizedBox(height: 8),
-          TextButton(
-            onPressed: () => context.push('${Routes.recommendations}/${analysis.id}'),
-            child: const Text('오늘의 추천 음식 보기'),
+    return Scaffold(
+      body: SafeArea(
+        bottom: false,
+        child: RefreshIndicator(
+          onRefresh: () async {
+            ref.invalidate(latestSkinAnalysisProvider);
+            ref.invalidate(plateHistoryProvider);
+          },
+          child: ListView(
+            padding: const EdgeInsets.fromLTRB(
+              AppTheme.pagePadding,
+              14,
+              AppTheme.pagePadding,
+              // 마지막 카드가 떠 있는 네비 밑으로 숨지 않게 띄운다.
+              AppBottomNav.totalHeight + 16,
+            ),
+            children: [
+              Align(
+                alignment: Alignment.centerRight,
+                child: _ProfileMenu(hasSkinRecord: hasSkinRecord),
+              ),
+              const SizedBox(height: 35),
+              Text('안녕하세요, $nickname님',
+                  style: Theme.of(context).textTheme.titleLarge),
+              const SizedBox(height: 5),
+              Text('오늘도 피부에 좋은 선택을 해봐요!',
+                  style: Theme.of(context).textTheme.bodyMedium),
+              const SizedBox(height: 28),
+              DailyScoreCard(
+                nickname: nickname,
+                score: today?.plateScore,
+                targetScore: today?.targetScore ?? 80,
+              ),
+              const SizedBox(height: 21),
+              Text('오늘의 기록',
+                  style: Theme.of(context).textTheme.titleMedium),
+              const SizedBox(height: 12),
+              TodayRecordsCard(
+                items: today?.plates ?? const [],
+                imageDirectory: imageDirectory,
+                onCapture: capture,
+                onItemTap: (item) =>
+                    context.push('${Routes.plateResult}/${item.plateId}'),
+              ),
+            ],
           ),
-        ],
-
-        // 피부 기록과 무관하게 항상 열려 있다. 저장한 식단만 들어 있다.
-        TextButton(
-          onPressed: () => context.push(Routes.plateHistory),
-          child: const Text('내 기록 보기'),
         ),
+      ),
+      bottomNavigationBar: AppBottomNav(
+        current: AppTab.home,
+        onCapture: capture,
+        onTabSelected: (tab) {
+          if (tab == AppTab.records) context.push(Routes.plateHistory);
+        },
+      ),
+    );
+  }
+}
+
+/// 우측 상단 프로필. 시안에서 피부 분석으로 가는 유일한 입구다.
+class _ProfileMenu extends ConsumerWidget {
+  const _ProfileMenu({required this.hasSkinRecord});
+
+  final bool hasSkinRecord;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return PopupMenuButton<String>(
+      tooltip: '내 정보',
+      offset: const Offset(0, 36),
+      color: AppColors.background,
+      icon: SvgPicture.asset('assets/icons/profile.svg', width: 28, height: 28),
+      onSelected: (value) => switch (value) {
+        'skin-type' => context.push(Routes.skinType),
+        'analyze' => context.push(Routes.skinCapture),
+        _ => ref.read(authNotifierProvider.notifier).logout(),
+      },
+      itemBuilder: (context) => [
+        const PopupMenuItem(value: 'skin-type', child: Text('피부 프로필 수정')),
+        PopupMenuItem(
+          value: 'analyze',
+          child: Text(hasSkinRecord ? '다시 분석' : '피부 분석하기'),
+        ),
+        const PopupMenuItem(value: 'logout', child: Text('로그아웃')),
       ],
     );
   }

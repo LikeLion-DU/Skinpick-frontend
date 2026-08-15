@@ -10,6 +10,7 @@ import 'package:skinplate/features/skin_plate/domain/entities/skin_plate.dart';
 import 'package:skinplate/shared/enums/cooking_method.dart';
 import 'package:skinplate/shared/enums/highlight_status.dart';
 import 'package:skinplate/shared/enums/ingredient_tag.dart';
+import 'package:skinplate/shared/enums/meal_type.dart';
 import 'package:skinplate/shared/enums/plate_action_code.dart';
 import 'package:skinplate/shared/enums/skin_type.dart';
 
@@ -127,6 +128,15 @@ void main() {
     // 그날 얼굴을 안 찍었어도 비지 않는다. 서버가 그날 첫 Plate 의 기준 분석 점수로
     // 채운다(설계서 §5). DTO 를 nullable 로 둔 건 방어일 뿐 정상 응답에는 항상 있다.
     expect(days.every((day) => day.skinScore != null), isTrue);
+
+    // 홈이 크게 보여주는 값이다. (60 + 82) / 2 = 71 — 서버가 반올림해서 준다.
+    // 앱이 여기서 평균을 다시 내면 반올림이 갈리는 날 두 화면에 다른 숫자가 뜬다.
+    expect(days.first.plateScore, 71);
+    expect(days.first.targetScore, 80); // 앱에 하드코딩하지 않는다
+
+    // 끼니도 서버가 시각에서 파생해 준다. 19:45 는 저녁, 12:10 은 점심이다.
+    expect(days.first.plates.map((p) => p.mealType).toList(),
+        [MealType.dinner, MealType.lunch]);
 
     // plateId 가 곧 로컬 사진 파일명이다 — <documents>/plates/{plateId}.jpg
     expect(days.last.plates.single.plateId, 3);

@@ -50,6 +50,11 @@ dependencies:
   # InputImage · InputImageMetadata 를 직접 참조한다 (두 ML Kit 패키지의 공통 타입).
   google_mlkit_commons: ^0.8.1
 
+  # 시안 아이콘을 그대로 쓴다. 디자이너가 쓴 아이콘 세트(Solar·Material Round)를
+  # Material 기본 아이콘으로 바꿔 그리면 획 굵기와 모서리가 미묘하게 달라진다.
+  # 화면당 아이콘이 4~9개라 PNG 로 받으면 해상도별로 관리해야 해서 벡터로 간다.
+  flutter_svg: ^2.3.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -62,16 +67,24 @@ dev_dependencies:
 flutter:
   uses-material-design: true
 
+  assets:
+    - assets/icons/
+
   # 시안이 쓰는 폰트. 공식 저장소 v1.3.9 의 static OTF 를 그대로 넣었다.
   # 라이선스는 SIL OFL 1.1 이라 앱 동봉이 허용된다 (assets/fonts/OFL.txt).
   #
-  # 9종 웨이트 중 시안에 실제로 쓰이는 셋만 넣는다. 한글 폰트는 한 벌이
+  # 9종 웨이트 중 시안이 실제로 쓰는 넷만 넣는다. 한글 폰트는 한 벌이
   # 1.5MB 라 전부 넣으면 APK 가 14MB 늘어난다.
+  #
+  # 넷이 다 필요하다 — 시안에서 확인한 쓰임이다. Medium 을 빠뜨리면 본문
+  # 대부분이 Regular 로 떨어지는데, 앱은 죽지 않고 글자만 얇아진다.
   fonts:
     - family: Pretendard
       fonts:
         - asset: assets/fonts/Pretendard-Regular.otf
           weight: 400
+        - asset: assets/fonts/Pretendard-Medium.otf
+          weight: 500
         - asset: assets/fonts/Pretendard-SemiBold.otf
           weight: 600
         - asset: assets/fonts/Pretendard-Bold.otf
