@@ -435,10 +435,13 @@ class _SkinCapturePageState extends ConsumerState<SkinCapturePage>
   static String _messageOf(Object error, String fallback) =>
       error is CameraException ? (error.description ?? fallback) : fallback;
 
+  // "왼쪽" 은 언제나 **고개를 돌리는 방향**이다(사용자 기준). "왼쪽 얼굴(왼쪽 뺨)"
+  // 이라고 쓰면 지시문·게이트 판정과 정반대가 된다 — 게이트는 왼쪽으로 돌린
+  // 사진(오른쪽 뺨이 보임)을 통과시킨다.
   static String _label(FacePhotoType type) => switch (type) {
         FacePhotoType.front => '정면',
-        FacePhotoType.left => '왼쪽 얼굴',
-        FacePhotoType.right => '오른쪽 얼굴',
+        FacePhotoType.left => '왼쪽으로 돌린 얼굴',
+        FacePhotoType.right => '오른쪽으로 돌린 얼굴',
       };
 
   static String _instruction(FacePhotoType type) => switch (type) {
@@ -446,6 +449,14 @@ class _SkinCapturePageState extends ConsumerState<SkinCapturePage>
         FacePhotoType.left => '고개를 왼쪽으로 돌려주세요',
         FacePhotoType.right => '고개를 오른쪽으로 돌려주세요',
       };
+
+  /// 화살표 힌트를 흘릴지. 판정 전(null)이거나 **방향이 문제일 때만** 참이다.
+  bool get _needsTurn {
+    final result = _result;
+    return result == null ||
+        (result is FaceGateBlocked &&
+            result.reason == FaceGateReason.wrongOrientation);
+  }
 
   /// 결과 화면에서 뒤로 돌아왔을 때 프리뷰를 되살린다.
   ///
@@ -615,12 +626,20 @@ class _SkinCapturePageState extends ConsumerState<SkinCapturePage>
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    // 측면 단계에서는 문장보다 움직임이 빠르다 — 통과 중에는
-                    // 숨긴다. 화살표가 계속 흐르면 이미 맞춘 자세를 더 돌린다.
-                    if (_stage != FacePhotoType.front && !canCapture) ...[
-                      _TurnHint(toLeft: _stage == FacePhotoType.left),
-                      const SizedBox(height: 8),
-                    ],
+                    // 측면 단계에서는 문장보다 움직임이 빠르다. 단, **방향이
+                    // 문제일 때만** 돌린다 — 거리·밝기로 막혔는데 화살표가 흐르면
+                    // 사용자는 더 돌고, 각도가 커질수록 검출이 나빠진다.
+                    // 자리는 항상 잡아 둔다. 임계각 근처에서 판정이 300ms 마다
+                    // 진동하면 읽고 있는 문구가 같이 튄다.
+                    if (_stage != FacePhotoType.front)
+                      SizedBox(
+                        height: 44,
+                        child: _needsTurn
+                            ? Center(
+                                child: _TurnHint(
+                                    toLeft: _stage == FacePhotoType.left))
+                            : null,
+                      ),
                     Text(
                       _instruction(_stage),
                       style: const TextStyle(
