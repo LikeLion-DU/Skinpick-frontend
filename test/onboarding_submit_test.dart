@@ -71,6 +71,23 @@ void main() {
     expect(find.text('충분해요'), findsOneWidget);
   });
 
+  testWidgets('고민을 전부 해제해도 제출할 수 있다', (tester) async {
+    await tester.binding.setSurfaceSize(designSize);
+    await tester.pumpWidget(host(filled));
+    await tester.pumpAndSettle();
+
+    // 고민 하나를 눌러 해제한다. 이 계정은 ACNE 하나뿐이라 이걸로 0개가 된다.
+    await tester.tap(find.text('여드름'));
+    await tester.pumpAndSettle();
+
+    // 제출을 막으면 "이제 고민 없어요"를 저장할 길이 없다 — 서버가 빈 배열을
+    // "전부 해제"로 읽도록 만들어 둔 경로가 통째로 사문이 된다.
+    final submit = tester.widget<ElevatedButton>(
+      find.widgetWithText(ElevatedButton, '프로필 설정 완료'),
+    );
+    expect(submit.onPressed, isNotNull);
+  });
+
   testWidgets('미선택 사용자는 설문이 비어 있다', (tester) async {
     await tester.binding.setSurfaceSize(designSize);
     await tester.pumpWidget(host(fresh));

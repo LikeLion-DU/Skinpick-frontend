@@ -10,7 +10,7 @@ import '../../domain/entities/skin_profile.dart';
 import '../providers/auth_notifier.dart';
 
 /// S01c — 피부 프로필 설문. 확정 시안의 한 페이지 설문이다:
-/// 피부 타입(필수) · 주요 피부 고민(복수, 필수) · 생활 습관 4종(선택).
+/// 피부 타입(필수) · 주요 피부 고민(복수, 선택) · 생활 습관 4종(선택).
 ///
 /// 타입은 서버로 간다(`PATCH /auth/me`). **타입은 점수 계산에 들어가지
 /// 않는다** — 자가 신고값이 점수에 개입하면 "같은 사진 두 번 찍어도 같은
@@ -39,7 +39,10 @@ class _SkinTypePageState extends ConsumerState<SkinTypePage> {
   bool _busy = false;
   String? _error;
 
-  bool get _complete => _type != null && _concerns.isNotEmpty;
+  /// 고민은 제출 조건에 넣지 않는다. 넣으면 고민을 전부 해제한 사용자가 버튼이
+  /// 왜 꺼졌는지 모른 채 갇히고, "이제 고민 없어요"를 서버에 저장할 방법이 사라진다
+  /// — 서버가 빈 배열을 "전부 해제"로 읽도록 만들어 둔 경로가 통째로 사문이 된다.
+  bool get _complete => _type != null;
 
   @override
   void initState() {
@@ -97,8 +100,15 @@ class _SkinTypePageState extends ConsumerState<SkinTypePage> {
       });
       return;
     }
-    context.go(Routes.home);
+    _leave();
   }
+
+  /// 온보딩(가입 직후)에서는 쌓인 화면이 없으니 홈으로 간다. 그 외에는 부른 화면으로
+  /// 돌아간다 — `go` 로 통일하면 스택이 통째로 날아가서, 인사이트 화면이 "생활 상태를
+  /// 설정하고 다시 보면 채워져요"라고 시켜서 온 사용자가 그 인사이트로 못 돌아간다.
+  /// 지금 앱에는 과거 분석으로 들어가는 길이 없어 사진을 다시 찍는 수밖에 없어진다.
+  void _leave() =>
+      context.canPop() ? context.pop() : context.go(Routes.home);
 
   @override
   Widget build(BuildContext context) {
@@ -109,7 +119,7 @@ class _SkinTypePageState extends ConsumerState<SkinTypePage> {
           // 건너뛰기는 API 를 호출하지 않는 것이다. declared_skin_type 이 NULL 로
           // 남아야 "아직 안 정함"과 "잘 모르겠어요(UNKNOWN)"가 구분된다.
           TextButton(
-            onPressed: _busy ? null : () => context.go(Routes.home),
+            onPressed: _busy ? null : _leave,
             child: const Text('건너뛰기',
                 style: TextStyle(color: AppColors.textSecondary)),
           ),

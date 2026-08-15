@@ -90,17 +90,9 @@ class MeResponseDto with _$MeResponseDto {
 
 // ---------- DTO → Entity ----------
 
-extension AuthResponseDtoX on AuthResponseDto {
-  AuthSession toEntity() => AuthSession(
-        accessToken: accessToken,
-        expiresIn: expiresIn,
-        user: AuthUser(
-          userId: user.userId,
-          email: user.email,
-          nickname: user.nickname,
-        ),
-      );
-}
+// AuthResponse → AuthSession 변환은 여기 두지 않는다. 로그인 응답에는 프로필이
+// 없어서 그것만으로 AuthUser 를 만들면 고민·습관이 빈 사용자가 나온다. 세션 조립은
+// `/auth/me` 를 함께 부르는 AuthRepositoryImpl._sessionWithProfile 이 맡는다.
 
 extension MeResponseDtoX on MeResponseDto {
   AuthUser toEntity() => AuthUser(
