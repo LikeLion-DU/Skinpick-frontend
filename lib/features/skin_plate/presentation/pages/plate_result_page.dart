@@ -3,20 +3,24 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../app/config/feature_flags.dart';
-import '../../../../app/router/app_router.dart';
+import '../../../../app/theme/app_colors.dart';
+import '../../../../app/theme/app_theme.dart';
 import '../../../../core/error/failure.dart';
 import '../../../../core/widgets/app_widgets.dart';
 import '../../../../shared/enums/plate_action_code.dart';
+import '../../../auth/presentation/providers/auth_notifier.dart';
 import '../../domain/entities/skin_plate.dart';
 import '../providers/plate_notifier.dart';
+import '../widgets/plate_score_card.dart';
+import '../widgets/plate_summary_cards.dart';
 
-/// S07 — Skin Plate 결과.
+/// S07 — 분석 결과.
 ///
-/// 이 화면의 주인공은 점수가 아니라 **행동**이다. "국물을 절반만 남기면 오릅니다"라는
-/// 문장과, 버튼을 눌러 60 → 68 이 실제로 오르는 경험은 다른 제품이다. (PRD §6 · §21)
+/// 여기 보이는 결과는 **아직 기록이 아니다.** [기록에 저장하기] 를 눌러야
+/// 히스토리에 들어간다. 그냥 나가면 서버에 아무것도 남지 않는다.
 ///
-/// 여기 보이는 결과는 **아직 기록이 아니다.** [기록에 저장하기] 를 눌러야 히스토리와
-/// 리포트에 들어간다. 그냥 나가면 서버에 아무것도 남지 않는다 — 앱이 지울 것도 없다.
+/// 행동 제안·시뮬레이션 UI 는 확정 시안에 없어 [FeatureFlags] 뒤로 물렸다.
+/// 코드는 남긴다 — 서버 룰 엔진과의 계약이 거기 걸려 있다.
 class PlateResultPage extends ConsumerStatefulWidget {
   const PlateResultPage({super.key});
 
@@ -46,7 +50,7 @@ class _PlateResultPageState extends ConsumerState<PlateResultPage> {
     final view = state.view;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Skin Plate')),
+      appBar: AppBar(title: const Text('분석 결과')),
       body: switch (state) {
         // 분석 자체가 실패했다. 만료·미인식은 FailureView 가 "다시 촬영하기"로 낸다.
         PlateState(status: PlateRecordStatus.analyzing, failure: final Failure error) =>
@@ -67,7 +71,7 @@ class _PlateResultPageState extends ConsumerState<PlateResultPage> {
   }
 }
 
-class _Content extends StatelessWidget {
+class _Content extends ConsumerWidget {
   const _Content({
     required this.plate,
     required this.state,
@@ -87,38 +91,47 @@ class _Content extends StatelessWidget {
   final VoidCallback onRetake;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final score = state.displayedScore ?? plate.plateScore;
 
-    return ListView(
-      padding: const EdgeInsets.all(24),
-      children: [
-        if (state.imageBytes != null)
-          ClipRRect(
-            borderRadius: BorderRadius.circular(16),
-            child: Image.memory(state.imageBytes!, height: 180, fit: BoxFit.cover),
-          ),
-        const SizedBox(height: 16),
-        Text(plate.food.foodName, style: Theme.of(context).textTheme.titleLarge),
-        Text('${plate.food.foodCategory ?? ''} · ${plate.food.cookingMethod.label}'),
-        const SizedBox(height: 24),
+    // "민감성 피부 기준" — 채점에 실제로 쓰인 기준을 말해 주는 문구다.
+    // 자가신고 타입이 없으면 문구를 비운다. 지어내서 채우지 않는다.
+    final declaredType = switch (ref.watch(authNotifierProvider)) {
+      Authenticated(:final user) => user.declaredSkinType,
+      _ => null,
+    };
 
-        // end 가 바뀌면 현재 값에서 새 값으로 이어서 움직인다. 시뮬레이션 버튼을
-        // 누르는 순간 숫자가 눈앞에서 올라가는 게 이 화면의 클라이맥스다.
-        Center(
-          child: TweenAnimationBuilder<double>(
-            tween: Tween<double>(begin: 0, end: score.toDouble()),
-            duration: const Duration(milliseconds: 700),
-            curve: Curves.easeOut,
-            builder: (context, value, _) =>
-                ScoreGauge(score: value.round(), label: 'Skin Plate'),
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(
+          AppTheme.pagePadding, 8, AppTheme.pagePadding, 32),
+      children: [
+        // 음식명 칩. 시안이 제목 아래 왼쪽에 오렌지 사각 칩으로 박아 두었다.
+        Align(
+          alignment: Alignment.centerLeft,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
+            decoration: BoxDecoration(
+              color: AppColors.primary,
+              borderRadius: BorderRadius.circular(4),
+            ),
+            child: Text(
+              plate.food.foodName,
+              style: const TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: Colors.white,
+              ),
+            ),
           ),
         ),
-        if (FeatureFlags.actionSimulation && state.simulating)
-          const Padding(
-            padding: EdgeInsets.only(top: 12),
-            child: Center(child: LinearProgressIndicator()),
-          ),
+        const SizedBox(height: 18),
+
+        PlateScoreCard(
+          score: score,
+          basisLabel:
+              declaredType == null ? null : '${declaredType.label} 피부 기준',
+        ),
+
         if (FeatureFlags.actionSimulation && state.simulation != null) ...[
           const SizedBox(height: 12),
           Text(
@@ -128,18 +141,19 @@ class _Content extends StatelessWidget {
           ),
           Text(state.simulation!.summary, textAlign: TextAlign.center),
         ],
-        const SizedBox(height: 16),
-        if (plate.summary.isNotEmpty) Text(plate.summary, textAlign: TextAlign.center),
-        const SizedBox(height: 24),
 
-        _SaveSection(state: state, onSave: onSave, onRetake: onRetake),
-        const SizedBox(height: 24),
+        const SizedBox(height: 26),
+        Text('분석 요약', style: Theme.of(context).textTheme.titleMedium),
+        const SizedBox(height: 10),
+        PlateSummaryCard(good: plate.good, caution: plate.caution),
 
-        _FeedbackSection(title: '좋은 점', items: plate.good, positive: true),
-        _FeedbackSection(title: '주의사항', items: plate.caution, positive: false),
+        const SizedBox(height: 12),
+        // TIP 문장은 지금 룰 요약(summary)이다. 서버에 AI 문장이 생기면
+        // 이 자리만 바뀐다 — 카드도 레이아웃도 그대로다.
+        if (plate.summary.isNotEmpty) PlateTipCard(tip: plate.summary),
 
         if (FeatureFlags.actionSimulation && plate.actions.isNotEmpty) ...[
-          const SizedBox(height: 8),
+          const SizedBox(height: 20),
           Text('추천 행동', style: Theme.of(context).textTheme.titleMedium),
           for (final action in plate.actions)
             _ActionCard(
@@ -149,19 +163,33 @@ class _Content extends StatelessWidget {
             ),
         ],
 
-        const SizedBox(height: 16),
-        _ScoreBreakdown(plate: plate),
-
-        const SizedBox(height: 16),
-        // 서버가 이 Plate 의 기준이 된 skinAnalysisId 를 실어 준다.
-        // "최신 피부 분석"을 대신 쓰면 과거 Plate 를 열었을 때 엉뚱한 추천이 뜬다.
-        if (FeatureFlags.recommendationScreen)
-          FilledButton.tonalIcon(
-            onPressed: () =>
-                context.push('${Routes.recommendations}/${plate.skinAnalysisId}'),
-            icon: const Icon(Icons.restaurant_menu),
-            label: const Text('오늘의 추천 음식 보기'),
+        const SizedBox(height: 26),
+        Text.rich(
+          TextSpan(
+            text: '주요 영양 성분 ',
+            style: Theme.of(context).textTheme.titleMedium,
+            children: const [
+              TextSpan(
+                text: '(1인분 기준)',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w400,
+                  color: AppColors.textSecondary,
+                ),
+              ),
+            ],
           ),
+        ),
+        const SizedBox(height: 12),
+        NutrientTiles(
+          caloriesKcal: plate.food.nutrition.caloriesKcal,
+          sodiumMg: plate.food.nutrition.sodiumMg.toDouble(),
+          sugarG: plate.food.nutrition.sugarG.toDouble(),
+          fatG: plate.food.nutrition.fatG.toDouble(),
+        ),
+
+        const SizedBox(height: 28),
+        _SaveSection(state: state, onSave: onSave, onRetake: onRetake),
         const SafetyNotice(),
       ],
     );
@@ -186,7 +214,7 @@ class _SaveSection extends StatelessWidget {
       PlateRecordStatus.saved => Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.check_circle, color: Colors.green),
+            const Icon(Icons.check_circle, color: AppColors.good),
             const SizedBox(width: 8),
             Text('오늘의 기록에 저장됐어요',
                 style: Theme.of(context).textTheme.titleMedium),
@@ -194,7 +222,7 @@ class _SaveSection extends StatelessWidget {
         ),
 
       // 진행 중에는 눌리지 않는다. onPressed: null 이 곧 중복 클릭 차단이다.
-      PlateRecordStatus.saving => const FilledButton(
+      PlateRecordStatus.saving => const ElevatedButton(
           onPressed: null,
           child: SizedBox(
             height: 20,
@@ -209,10 +237,9 @@ class _SaveSection extends StatelessWidget {
           onRetake: onRetake,
         ),
 
-      _ => FilledButton.icon(
+      _ => ElevatedButton(
           onPressed: onSave,
-          icon: const Icon(Icons.bookmark_add_outlined),
-          label: const Text('기록에 저장하기'),
+          child: const Text('기록에 저장하기'),
         ),
     };
   }
@@ -240,61 +267,23 @@ class _SaveFailed extends StatelessWidget {
         Text(
           failure?.message ?? '기록을 저장하지 못했습니다.',
           textAlign: TextAlign.center,
-          style: TextStyle(color: Theme.of(context).colorScheme.error),
+          style: const TextStyle(color: AppColors.bad),
         ),
         const SizedBox(height: 12),
         // 재시도할 수 없는 실패는 전부 재촬영으로 보낸다. 400·404 처럼 어느 쪽도
         // 아닌 코드에서 버튼을 아예 안 그리면 저장 버튼까지 사라진 화면에
         // 오류 문구만 남아 사용자가 나갈 곳이 없다.
         if (onRetry != null)
-          FilledButton(onPressed: onRetry, child: const Text('다시 시도'))
+          ElevatedButton(onPressed: onRetry, child: const Text('다시 시도'))
         else
-          FilledButton(onPressed: onRetake, child: const Text('다시 촬영하기')),
+          ElevatedButton(onPressed: onRetake, child: const Text('다시 촬영하기')),
       ],
     );
   }
 }
 
-class _FeedbackSection extends StatelessWidget {
-  const _FeedbackSection({
-    required this.title,
-    required this.items,
-    required this.positive,
-  });
-
-  final String title;
-  final List<PlateFeedback> items;
-  final bool positive;
-
-  @override
-  Widget build(BuildContext context) {
-    if (items.isEmpty) return const SizedBox.shrink();
-
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(title, style: Theme.of(context).textTheme.titleMedium),
-          for (final item in items)
-            ListTile(
-              dense: true,
-              contentPadding: EdgeInsets.zero,
-              leading: Icon(
-                positive ? Icons.check_circle : Icons.warning,
-                color: positive ? Colors.green : Colors.orange,
-              ),
-              title: Text(item.message),
-              trailing: Text(
-                item.scoreDelta > 0 ? '+${item.scoreDelta}' : '${item.scoreDelta}',
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-}
-
+/// 행동 제안 카드. [FeatureFlags.actionSimulation] 이 꺼져 있는 동안 화면에
+/// 나오지 않지만, 룰 엔진 계약(PlateActionCode)과 짝이라 지우지 않는다.
 class _ActionCard extends StatelessWidget {
   const _ActionCard({
     required this.action,
@@ -319,62 +308,18 @@ class _ActionCard extends StatelessWidget {
             Text(action.message),
             const SizedBox(height: 8),
             // expectedGain 은 안내용이다. 실제 점수는 서버가 다시 계산해서 준다.
-            // 여기서 plateScore + expectedGain 으로 더하면 실제와 다른 숫자가 나온다.
             Text('실행하면 약 +${action.expectedGain}점',
                 style: Theme.of(context).textTheme.bodySmall),
             const SizedBox(height: 8),
             if (code == null)
-              // 서버가 액션 버튼이 없는 룰에 행동 문구만 붙인 경우다. 문구는 보여준다.
               const Text('(직접 실천해 보세요)')
             else
-              // 저장 전에도 눌린다. 저장을 강제해야 실행해 볼 수 있으면 이 화면의
-              // 존재 이유가 기록 뒤로 밀린다 — 서버가 토큰 기반 simulate 를 준다.
               FilledButton.tonal(
                 onPressed: () => onToggle(code),
                 child: Text(applied ? '되돌리기' : code.label),
               ),
           ],
         ),
-      ),
-    );
-  }
-}
-
-/// "왜 60점인가" 접이식 계산 내역.
-///
-/// baseScore 를 앱이 70 으로 하드코딩하지 않는다. 점수가 0/100 에서 잘렸을 때
-/// 역산이 틀리기 때문에 서버가 값을 내려준다. (설계서 §2.10)
-class _ScoreBreakdown extends StatelessWidget {
-  const _ScoreBreakdown({required this.plate});
-
-  final PlateView plate;
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      child: ExpansionTile(
-        title: Text('왜 ${plate.plateScore}점인가요?'),
-        children: [
-          ListTile(
-            dense: true,
-            title: const Text('기본 점수'),
-            trailing: Text('${plate.baseScore}'),
-          ),
-          for (final item in [...plate.good, ...plate.caution])
-            ListTile(
-              dense: true,
-              title: Text('${item.message}  (${item.ruleCode ?? '-'})'),
-              trailing: Text(
-                item.scoreDelta > 0 ? '+${item.scoreDelta}' : '${item.scoreDelta}',
-              ),
-            ),
-          const Divider(),
-          ListTile(
-            dense: true,
-            title: const Text('합계'),
-            trailing: Text('${plate.plateScore}'),
-          ),
-        ],
       ),
     );
   }
