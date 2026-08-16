@@ -7,7 +7,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
-	<string>Skinplate</string>
+	<string>Skinpick</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -15,7 +15,7 @@
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
-	<string>skinplate</string>
+	<string>Skinpick</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
@@ -36,6 +36,13 @@
 		<key>NSAllowsLocalNetworking</key>
 		<true/>
 	</dict>
+	<!-- 실기기 개발용. iOS 14+ 는 같은 랜의 주소로 붙을 때 권한을 묻는데, 이 키가
+	     없으면 이유가 안 적힌 팝업이 뜬다. 거부하면 두 가지가 한꺼번에 막힌다 —
+	     Mac 에 띄운 백엔드 호출, 그리고 flutter run 의 디버거 연결(mDNS). 둘 다
+	     "원인이 안 보이는 채로 안 된다"는 형태라 실제로 반나절을 잃었다.
+	     배포 서버는 HTTPS 공인 도메인이라 이 권한을 쓰지 않는다. -->
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>개발 중인 로컬 서버에 연결해 분석 결과를 받아오기 위해 사용합니다.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

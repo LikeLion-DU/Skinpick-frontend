@@ -4,6 +4,7 @@ import 'dart:ui' show Offset, Rect;
 
 import 'package:camera/camera.dart'
     show CameraDescription, CameraImage, ImageFormatGroup, XFile;
+import 'package:flutter/foundation.dart' show debugPrint, kDebugMode;
 import 'package:google_mlkit_face_detection/google_mlkit_face_detection.dart';
 import 'package:image/image.dart' as img;
 
@@ -34,6 +35,12 @@ class MlKitFaceGate implements FaceGate {
   final CameraDescription _camera;
   final FaceDetector _detector;
 
+  /// 거울상 프레임이면 -1. yaw 하나에만 곱한다.
+  ///
+  /// roll 도 미러링에서 부호가 뒤집히지만 판정은 `roll.abs()` 만 보므로 결과가
+  /// 같다. pitch 는 좌우 반전과 무관하다. 건드리는 값을 늘리지 않는다.
+  late final double _yawSign = isMirroredStream(_camera) ? -1.0 : 1.0;
+
 
   @override
   Future<FaceGateResult> check(CameraImage frame, FacePhotoType photoType) async {
@@ -43,6 +50,10 @@ class MlKitFaceGate implements FaceGate {
 
     final faces = await _detector.processImage(input);
     final face = faces.isEmpty ? null : faces.first;
+
+    // 거울상으로 들어온 프레임이면 여기서 사용자 기준으로 되돌린다. 정지 이미지
+    // 경로는 뒤집히지 않으므로 그쪽에는 곱하지 않는다.
+    final yaw = face?.headEulerAngleY;
 
     // 센서가 90/270도 돌아 있으면 ML Kit 좌표계는 가로세로가 바뀐 상태다.
     // 여기서 안 맞추면 얼굴 크기 비율이 통째로 틀어져 "조금 더 가까이"만 계속 뜬다.
@@ -55,7 +66,7 @@ class MlKitFaceGate implements FaceGate {
       faceCount: faces.length,
       faceBox: face?.boundingBox,
       frameHeight: orientedHeight,
-      yaw: face?.headEulerAngleY,
+      yaw: yaw == null ? null : yaw * _yawSign,
       pitch: face?.headEulerAngleX,
       roll: face?.headEulerAngleZ,
       // boundingBox 는 회전된 좌표계인데 plane.bytes 는 센서 좌표계다.
@@ -80,20 +91,55 @@ class MlKitFaceGate implements FaceGate {
     );
 
     try {
-      // fromFilePath 는 EXIF 방향까지 알아서 처리한다.
-      final faces =
-          await still.processImage(InputImage.fromFilePath(original.path));
-
       final raw = img.decodeImage(await original.readAsBytes());
       if (raw == null) {
         // 디코딩을 못 하면 검증도 크롭도 못 한다. 원본을 그냥 올리지 않는다.
         return const PreparedPhoto(null, FaceGateUnavailable());
       }
-      // ML Kit 은 EXIF 를 적용한 좌표를 주는데 decodeImage 는 EXIF 를 적용하지 않는다.
-      // 굽지 않으면 세로로 찍은 사진에서 엉뚱한 영역이 잘려 그대로 서버로 간다.
+      // 세로로 찍은 사진은 EXIF 회전이 붙어 온다. 굽지 않으면 엉뚱한 영역이
+      // 잘려 그대로 서버로 간다.
       final photo = img.bakeOrientation(raw);
 
+      // **원본 파일을 ML Kit 에 그대로 넘기지 않는다.** 방금 구운 픽셀을 사본으로
+      // 써서 넘긴다.
+      //
+      // iOS 의 `InputImage.fromFilePath` 는 `UIImage imageWithContentsOfFile:` 라
+      // EXIF 해석을 ImageIO 에 맡기는데, `camera_avfoundation` 의 촬영본은
+      // **1280x720 가로 래스터 + 회전 태그**이고 ImageIO 가 그 태그를 읽지 못한다
+      // (APP1 EXIF 블록이 두 개다 — sips·mdls 도 orientation 을 못 본다).
+      // 그래서 ML Kit 에는 90도 누운 얼굴이 들어가고, 검출이 조용히 0개가 된다.
+      // 프리뷰는 통과했는데 촬영본에서만 "얼굴을 찾을 수 없어요" 로 막히는 게
+      // 이것이다 — 실기기(iPhone 14 Pro / iOS 26.6)에서 확인했다.
+      //
+      // 사본을 쓰면 부수효과가 하나 더 있다. ML Kit 이 돌려주는 좌표계가
+      // [photo] 와 **같은 버퍼**가 되어, 크롭이 어긋날 여지가 사라진다.
+      // 예전에는 "ML Kit 은 EXIF 를 적용한 좌표를 준다"는 전제에 기대고 있었다.
+      final uprightPath =
+          '${File(original.path).parent.path}/upright_${original.name}';
+      final upright = File(uprightPath);
+      await upright.writeAsBytes(img.encodeJpg(photo, quality: 90));
+
+      final List<Face> faces;
+      try {
+        faces = await still.processImage(InputImage.fromFilePath(uprightPath));
+      } finally {
+        // 검출에만 쓰는 중간 파일이다. 남겨두면 촬영할 때마다 하나씩 쌓인다.
+        if (await upright.exists()) await upright.delete();
+      }
+
       final face = faces.isEmpty ? null : faces.first;
+
+      // 이 경로에는 화면에 뜨는 디버그 오버레이가 없다. 프리뷰는 통과했는데
+      // 촬영본에서만 막히면(실제로 iOS 에서 그렇게 나왔다) 볼 수 있는 값이
+      // 하나도 없어서 원인이 라이브인지 정지인지조차 못 가른다.
+      if (kDebugMode) {
+        debugPrint('[SkinStill] faces=${faces.length} '
+            'photo=${photo.width}x${photo.height} raw=${raw.width}x${raw.height} '
+            'exif=${raw.exif.imageIfd.orientation} '
+            'yaw=${face?.headEulerAngleY?.toStringAsFixed(1) ?? '-'} '
+            'box=${face?.boundingBox.size}');
+      }
+
       final gate = fullGate
           ? evaluateFaceGate(
               photoType: photoType,

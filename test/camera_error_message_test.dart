@@ -1,4 +1,6 @@
 import 'package:camera/camera.dart' show CameraException;
+import 'package:flutter/foundation.dart'
+    show TargetPlatform, debugDefaultTargetPlatformOverride;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:skinplate/core/camera/camera_error_message.dart';
 
@@ -41,6 +43,26 @@ void main() {
       cameraErrorMessage(StateError('boom'), '촬영에 실패했습니다.'),
       '촬영에 실패했습니다.',
     );
+  });
+
+  /// 두 OS 의 설정 경로는 서로 없는 자리다. 한쪽 문구를 양쪽에 쓰면 사용자는
+  /// 존재하지 않는 메뉴를 찾다가 포기한다.
+  test('권한 안내 경로가 OS 를 따라간다', () {
+    String messageOn(TargetPlatform platform) {
+      debugDefaultTargetPlatformOverride = platform;
+      try {
+        return cameraErrorMessage(
+          CameraException('CameraAccessDenied', 'denied'),
+          '카메라를 열지 못했습니다.',
+        );
+      } finally {
+        debugDefaultTargetPlatformOverride = null;
+      }
+    }
+
+    expect(messageOn(TargetPlatform.iOS), contains('설정 > Skinpick > 카메라'));
+    expect(messageOn(TargetPlatform.iOS), isNot(contains('앱 > 권한')));
+    expect(messageOn(TargetPlatform.android), contains('설정 > 앱 > 권한'));
   });
 
   test('description 이 비어도 죽지 않는다', () {
