@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:skinplate/app/theme/app_theme.dart';
@@ -73,7 +74,50 @@ void main() {
     // takeException 으로는 안 잡히므로 높이로 본다.
     final titleHeight = tester.getSize(find.text('건성 피부')).height;
     expect(titleHeight, lessThan(30), reason: '제목이 두 줄로 접혔다');
+
+    // 기본 글자 크기에서는 제목과 칩이 같은 줄에 나란히 선다(시안). 폰트 크기가
+    // 달라 세로 중앙이 몇 px 어긋나므로 한 줄 높이 안인지로 본다.
+    final gap = (tester.getTopLeft(find.text('건성 · 민감 경향')).dy -
+            tester.getTopLeft(find.text('건성 피부')).dy)
+        .abs();
+    expect(gap, lessThan(titleHeight), reason: '칩이 아랫줄로 내려갔다');
   });
+
+  /// 서버가 만든 칩 문구는 길이가 정해져 있지 않다. 제목·칩·점수를 한 줄에
+  /// 나란히 두면 셋이 폭을 나눠 갖다가 잘린다 — 2026-08-17 에뮬레이터 QA 에서
+  /// 실서버 문구가 기본 글자 크기에도 "복합성 · T존 ..." 으로 잘렸다.
+  ///
+  /// `dy` 로는 못 잡는다. 폰트 크기가 달라 칩 top 이 원래 제목보다 아래라,
+  /// 같은 줄에서 잘려도 "아랫줄로 내려갔다" 와 구분되지 않는다. 잘림 자체를 본다.
+  for (final (label, scale) in <(String, double)>[
+    ('기본 글자 크기', 1.0),
+    ('글자 크기 2.0', 2.0),
+  ]) {
+    testWidgets('$label — 긴 서버 문구도 칩에서 잘리지 않는다', (tester) async {
+      const long = '복합성 · T존 유분 경향(수부지)';
+      final json = Map<String, dynamic>.from(data('skin_latest'));
+      json['skinType'] = {
+        ...json['skinType'] as Map<String, dynamic>,
+        'label': long,
+      };
+
+      await tester.binding.setSurfaceSize(designSize);
+      await tester.pumpWidget(host(json, textScale: scale));
+      await tester.pumpAndSettle();
+
+      // `didExceedMaxLines` 로 보면 안 된다. 지금 칩에는 maxLines 가 없어서
+      // 구조적으로 항상 false 라, 누가 maxLines 를 되돌려 놓을 때 말고는 아무것도
+      // 잡지 못한다. 폭이 모자란데도 한 줄에 머물렀는지를 본다 — 그게 잘림이다.
+      final chip = tester.renderObject<RenderParagraph>(find.text(long));
+      if (chip.getMaxIntrinsicWidth(double.infinity) > chip.size.width) {
+        // 폭을 안 재면 한 줄이었을 높이. 접혔다면 이보다 커져야 한다.
+        final oneLine = chip.getMinIntrinsicHeight(double.infinity);
+        expect(chip.size.height, greaterThan(oneLine),
+            reason: '폭이 모자란데 한 줄에 머물렀다 — 문구가 잘렸다');
+      }
+      expect(tester.takeException(), isNull);
+    });
+  }
 
   testWidgets('AI 타입이 있으면 앱이 홍조 임계로 민감도를 따로 판정하지 않는다', (tester) async {
     await tester.binding.setSurfaceSize(designSize);

@@ -172,41 +172,48 @@ class _TypeCard extends StatelessWidget {
           Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
+              // **제목과 칩을 Wrap 으로 묶는다.** 한 줄에 나란히 두면 셋이 폭을
+              // 나눠 갖는데, 칩 문구는 서버가 만들어서 길이가 정해져 있지 않다 —
+              // QA 에서 기본 글자 크기에도 "복합성 · T존 ..." 으로 잘렸고, 2.0 에서는
+              // 제목까지 "보통..." 이 됐다. 폭으로 버티는 구조가 계속 새는 자리다.
+              // Wrap 이면 좁을 때 칩이 아랫줄로 내려가 둘 다 온전히 읽힌다.
+              //
               // 제목은 규칙 도출 타입 그대로 둔다. 바로 아래 갭 카드가 같은 값에
               // 기대고 있어서, 여기만 AI 관찰값으로 바꾸면 한 화면에서 "지성 피부" 와
               // "오늘 측정 기준 : 건성" 이 같이 보인다. 둘은 갈릴 수 있는 값이다.
-              // Flexible 은 되돌리되 한 줄로 못 박는다. 그냥 빼 놓으면 이 줄에서
-              // 유일하게 안 줄어드는 위젯이 돼서, 시스템 글자 크기 2.0 에 예전
-              // 분석("민감도 높음" 배지가 뜨는 쪽)이면 145px 하드 오버플로다.
-              // 예전처럼 maxLines 없이 Flexible 만 주면 이번엔 두 줄로 접힌다 —
-              // 접힘은 예외로 안 잡혀서 테스트가 초록인 채로 시안이 깨진다.
-              Flexible(
-                child: Text(
-                  headlineType == null
-                      ? '오늘의 피부'
-                      : '${headlineType!.label} 피부',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: Color(0xFF1A1A1A),
-                  ),
+              Expanded(
+                child: Wrap(
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  spacing: 10,
+                  runSpacing: 6,
+                  children: [
+                    Text(
+                      headlineType == null
+                          ? '오늘의 피부'
+                          : '${headlineType!.label} 피부',
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF1A1A1A),
+                      ),
+                    ),
+                    // AI 가 읽은 타입은 칩으로 따로 단다(설계서 계약 주의표 8번).
+                    // 서버 문구를 그대로 쓴다 — 뒤에 아무것도 붙이지 않는다.
+                    // '수부지' 처럼 괄호로 끝나는 문구가 있어서 이어 붙이면
+                    // "…(수부지) 피부" 로 깨진다.
+                    //
+                    // 예전 분석이면 서버가 키를 생략하므로 기존 민감도 배지로
+                    // 떨어진다. 둘을 같이 달지 않는 이유는, 서버가 "민감 경향"
+                    // 이라고 한 옆에서 앱이 홍조 임계로 "민감도 높음" 을 따로
+                    // 판정하게 되기 때문이다.
+                    if (aiLabel.isNotEmpty)
+                      _Chip(aiLabel)
+                    else if (metrics.redness >= 60)
+                      const _Chip('민감도 높음'),
+                  ],
                 ),
               ),
               const SizedBox(width: 10),
-              // AI 가 읽은 타입은 칩으로 따로 단다(설계서 계약 주의표 8번).
-              // 서버 문구를 그대로 쓴다 — 뒤에 아무것도 붙이지 않는다. '수부지' 처럼
-              // 괄호로 끝나는 문구가 있어서 이어 붙이면 "…(수부지) 피부" 로 깨진다.
-              //
-              // 예전 분석이면 서버가 키를 생략하므로 기존 민감도 배지로 떨어진다.
-              // 둘을 같이 달지 않는 이유는, 서버가 "민감 경향" 이라고 한 옆에서 앱이
-              // 홍조 임계로 "민감도 높음" 을 따로 판정하게 되기 때문이다.
-              if (aiLabel.isNotEmpty)
-                Flexible(child: _Chip(aiLabel))
-              else if (metrics.redness >= 60)
-                const _Chip('민감도 높음'),
-              const Spacer(),
               // 서버가 준 총점. 앱에서 다시 계산하지 않는다.
               Text.rich(
                 TextSpan(
@@ -306,10 +313,11 @@ class _Chip extends StatelessWidget {
         color: const Color(0xFFFFF2EC),
         borderRadius: BorderRadius.circular(16),
       ),
+      // **자르지 않는다.** 문구는 서버가 만들고 길이가 정해져 있지 않다. 한 줄로
+      // 못 박으면 글자를 키운 사용자에게 "복합..." 만 남아 자기 피부 타입을 못
+      // 읽는다. 칩이 두 줄이 되는 쪽이 낫다 — 읽히지 않는 배지는 없는 것과 같다.
       child: Text(
         text,
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
         style: const TextStyle(fontSize: 10, color: AppColors.primary),
       ),
     );
