@@ -105,8 +105,16 @@ void main() {
       await tester.pumpWidget(host(json, textScale: scale));
       await tester.pumpAndSettle();
 
+      // `didExceedMaxLines` 로 보면 안 된다. 지금 칩에는 maxLines 가 없어서
+      // 구조적으로 항상 false 라, 누가 maxLines 를 되돌려 놓을 때 말고는 아무것도
+      // 잡지 못한다. 폭이 모자란데도 한 줄에 머물렀는지를 본다 — 그게 잘림이다.
       final chip = tester.renderObject<RenderParagraph>(find.text(long));
-      expect(chip.didExceedMaxLines, isFalse, reason: '칩 문구가 잘렸다');
+      if (chip.getMaxIntrinsicWidth(double.infinity) > chip.size.width) {
+        // 폭을 안 재면 한 줄이었을 높이. 접혔다면 이보다 커져야 한다.
+        final oneLine = chip.getMinIntrinsicHeight(double.infinity);
+        expect(chip.size.height, greaterThan(oneLine),
+            reason: '폭이 모자란데 한 줄에 머물렀다 — 문구가 잘렸다');
+      }
       expect(tester.takeException(), isNull);
     });
   }
