@@ -91,6 +91,20 @@ class _FoodCapturePageState extends ConsumerState<FoodCapturePage>
     _cameraLock = _cameraLock.then((_) => op()).catchError((_) {});
   }
 
+  /// 같은 줄에 세우되 **결과를 기다린다.**
+  ///
+  /// 촬영과 스트림 재개가 겹치면 CameraX 가 ImageAnalysis 를 두 번 바인딩하고
+  /// "No supported surface combination" 로 화면을 덮는다. 얼굴 촬영에서 실제로
+  /// 터진 결함이라 같은 방식으로 막는다 — `isStreamingImages` 는 네이티브
+  /// 바인딩보다 먼저 바뀌어서 그 사이를 못 막는다.
+  ///
+  /// 실패해도 락은 이어져야 한다. 깨진 채로 두면 이후 카메라 작업이 전부 막힌다.
+  Future<void> _lockCamera(Future<void> Function() op) {
+    final running = _cameraLock.then((_) => op());
+    _cameraLock = running.catchError((_) {});
+    return running;
+  }
+
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.inactive) {
@@ -220,10 +234,13 @@ class _FoodCapturePageState extends ConsumerState<FoodCapturePage>
 
     _set(() => _busy = true);
     try {
-      if (controller.value.isStreamingImages) {
-        await controller.stopImageStream();
-      }
-      final shot = await controller.takePicture();
+      late final XFile shot;
+      await _lockCamera(() async {
+        if (controller.value.isStreamingImages) {
+          await controller.stopImageStream();
+        }
+        shot = await controller.takePicture();
+      });
       if (!mounted || _disposed) return;
       await _start(shot);
     } on Object catch (e) {
@@ -279,7 +296,7 @@ class _FoodCapturePageState extends ConsumerState<FoodCapturePage>
     // 갤러리로 들어온 경로는 스트림이 아직 돌고 있다. 안 멈추면 결과 화면에
     // 머무는 내내 150ms 마다 ML Kit 이 돌고, 돌아왔을 때 천장을 보고 계산한
     // notFood 가 배너에 남는다.
-    await _stopStream();
+    await _lockCamera(_stopStream);
     // 분석만 한다. 기록은 결과 화면에서 사용자가 [기록에 저장하기] 를 눌러야 생긴다.
     // 여기서 돌아 나가면 서버에 아무것도 남지 않는다.
     unawaited(ref.read(plateNotifierProvider.notifier).analyze(image));
