@@ -41,6 +41,13 @@ class AuthNotifier extends Notifier<AuthState> {
   AuthState build() {
     // 인터셉터가 이미 토큰을 지웠다. 여기서는 상태만 되돌린다.
     ref.listen(unauthorizedSignalProvider, (_, __) {
+      // **이미 나간 사용자에게는 "만료됐다"고 하지 않는다.** 로그아웃은 토큰을
+      // 지우고 `_clearSession()` 으로 화면별 프로바이더를 무효화하는데, 그때
+      // 아직 살아 있는 홈이 곧바로 다시 조회한다. 토큰이 없으니 401 이고,
+      // 그 401 이 방금 세운 `expired: false` 를 덮어써서 로그인 화면이 스스로
+      // 나간 사용자에게 "로그인이 만료되었습니다" 를 띄웠다.
+      if (state is Unauthenticated) return;
+
       _clearSession();
       state = const Unauthenticated(expired: true);
     });
