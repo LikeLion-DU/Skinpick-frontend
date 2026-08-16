@@ -24,11 +24,37 @@ import '../providers/skin_analysis_notifier.dart';
 /// **점수와 하이라이트는 반드시 화면에 있어야 한다.** 산식이 공개돼 있어
 /// 심사위원이 직접 검산할 수 있다는 게 이 기능의 근거다(PRD §4.1). 시안이 이
 /// 자리를 그리지 않았을 뿐이라, 타입 카드 안에 넣어 화면을 새로 만들지 않는다.
-class SkinResultPage extends ConsumerWidget {
+class SkinResultPage extends ConsumerStatefulWidget {
   const SkinResultPage({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<SkinResultPage> createState() => _SkinResultPageState();
+}
+
+class _SkinResultPageState extends ConsumerState<SkinResultPage> {
+  @override
+  void initState() {
+    super.initState();
+
+    // 가입 직후 촬영으로 들어온 첫 결과에만 프로필 설문을 덮는다. 플래그를 여기서
+    // 끄므로 두 번째 분석부터는 뜨지 않는다 — 그 자리는 갭 카드와 인라인 칩이 맡는다.
+    //
+    // **결과를 먼저 깔고 그 위에 얹는 것이 핵심이다.** 예전처럼 설문을 분석과 결과
+    // 사이에 끼우면, 거기서 나간 사용자가 방금 기다린 분석을 다시 볼 길이 없다 —
+    // 홈에 결과 진입점이 없어서 그때 붙잡아 두는 코드가 필요했다.
+    if (!ref.read(onboardingCaptureProvider)) return;
+
+    // 라우터도 프로바이더도 위젯 생명주기 안에서 건드릴 수 없다 — Riverpod 은
+    // initState 안의 상태 변경을 그 자리에서 던진다. 첫 프레임 뒤로 미룬다.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      ref.read(onboardingCaptureProvider.notifier).state = false;
+      context.push(Routes.onboardingProfile);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final state = ref.watch(skinAnalysisNotifierProvider);
 
     // 방금 찍고 들어온 경우와 홈에서 들어온 경우가 다르다.
@@ -73,9 +99,11 @@ class SkinResultPage extends ConsumerWidget {
                 style: Theme.of(context).textTheme.titleLarge),
           ),
           const SizedBox(height: 10),
+          // 프로필이 이 화면보다 뒤로 옮겨갔다. "설정한 프로필을 바탕으로"는
+          // 온보딩 사용자에게 거짓말이고, 자가 신고 값은 원래 점수에 안 들어간다.
           const Center(
             child: Text(
-              '설정한 프로필을 바탕으로\n사용자의 피부 상태를 분석했어요 : )',
+              '방금 촬영한 사진으로\n오늘의 피부 상태를 분석했어요 : )',
               textAlign: TextAlign.center,
               style: TextStyle(
                   fontSize: 12, color: AppColors.textBody, height: 1.5),
