@@ -9,8 +9,9 @@ import '../providers/skin_analysis_notifier.dart';
 /// S01d — 가입 직후 촬영 안내. 예전에는 이 자리에 피부 프로필 설문(S01c)이 있었다.
 ///
 /// 순서를 바꾼 이유는 자가 신고 피부 타입이 쓰이는 자리 하나뿐이다 — 점수에는
-/// 안 들어가고 결과 화면의 갭 카드에만 들어간다. "AI 진단이 정확하지 않을 수
-/// 있으니 알려달라"는 부탁은 진단을 보여준 뒤에야 근거가 생긴다.
+/// 안 들어가고 결과 화면의 갭 카드에만 들어간다. 사진을 한 장도 안 찍은
+/// 사용자에게 6문항 설문부터 세울 이유가 없다. 설문은 촬영을 마치고 분석을
+/// 기다리는 자리(S04)로 옮겼다.
 ///
 /// 이 화면은 홈의 하위 라우트다. 홈을 스택 바닥에 깔아 두지 않으면 결과
 /// 화면(S05)의 뒤로가기가 갈 곳이 없어 온보딩 사용자가 그 화면에 갇힌다.
@@ -35,8 +36,9 @@ class SkinCaptureIntroPage extends ConsumerWidget {
               const Spacer(flex: 4),
               ElevatedButton(
                 onPressed: () {
-                  // 결과 화면이 이 플래그를 보고 프로필 설문을 덮는다. 촬영을
-                  // 거친 사용자만 켠다 — 넘어간 사용자는 지금 바로 설문을 본다.
+                  // 로딩 화면이 이 플래그를 보고 분석을 기다리는 동안 설문을
+                  // 얹는다. 촬영을 거친 사용자만 켠다 — 넘어간 사용자는 지금
+                  // 바로 설문을 본다.
                   ref.read(onboardingCaptureProvider.notifier).state = true;
                   context.pushReplacement(Routes.skinCapture);
                 },

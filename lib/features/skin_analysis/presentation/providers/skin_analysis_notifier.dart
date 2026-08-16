@@ -15,9 +15,9 @@ final latestSkinAnalysisProvider = FutureProvider<Result<SkinAnalysis?>>(
 
 /// 가입 직후 촬영 안내(S01d)에서 "촬영하기"로 들어왔는가.
 ///
-/// 결과 화면(S05)이 이 값을 보고 프로필 설문을 그 위에 덮은 뒤 끈다. 라우트
-/// 쿼리로 넘기지 않는 것은 촬영→로딩→결과가 `pushReplacement` 세 번이라 세 곳에
-/// 실어야 하고, 로딩 화면의 재시도가 카메라로 되돌아갈 때 그 값이 끊기기 때문이다.
+/// 로딩 화면(S04)이 이 값을 보고 분석을 기다리는 동안 프로필 설문을 얹은 뒤 끈다.
+/// 라우트 쿼리로 넘기지 않는 것은 촬영→로딩이 `pushReplacement` 라 값을 실어
+/// 날라야 하고, 로딩 화면의 재시도가 카메라로 되돌아갈 때 그 값이 끊기기 때문이다.
 final onboardingCaptureProvider = StateProvider<bool>((ref) => false);
 
 /// 분석 결과를 들고 있는다.
