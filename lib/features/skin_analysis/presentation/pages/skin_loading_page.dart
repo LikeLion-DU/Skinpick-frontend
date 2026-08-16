@@ -30,6 +30,9 @@ class _SkinLoadingPageState extends ConsumerState<SkinLoadingPage> {
   /// 쓰고 있던 설문이 통째로 사라진다.
   bool _surveyOpen = false;
 
+  /// 이 분석에서 설문을 한 번 띄웠는가. 결과까지 도착하면 그때 플래그를 끈다.
+  bool _surveyShown = false;
+
   @override
   void initState() {
     super.initState();
@@ -67,7 +70,11 @@ class _SkinLoadingPageState extends ConsumerState<SkinLoadingPage> {
     }
 
     if (onboarding && declared == null) {
-      ref.read(onboardingCaptureProvider.notifier).state = false;
+      // 플래그는 여기서 끄지 않는다. **"띄웠다" 가 아니라 "온보딩이 끝났다" 에
+      // 끈다** — 결과까지 도착했을 때(_toResult). 띄우자마자 끄면, 설문을 열었다가
+      // 바로 닫은 사용자의 분석이 그 뒤에 실패했을 때 재촬영해도 다시 묻지 못한다.
+      // 여덟 줄 위의 "아직 아무것도 못 물었으면 살려 둔다" 와 같은 규칙이다.
+      _surveyShown = true;
       _surveyOpen = true;
       await context.push(Routes.onboardingProfile);
       if (!mounted) return;
@@ -111,6 +118,13 @@ class _SkinLoadingPageState extends ConsumerState<SkinLoadingPage> {
     if (!mounted || _surveyOpen) return;
     if (ref.read(skinAnalysisNotifierProvider).analysis.valueOrNull == null) {
       return;
+    }
+
+    // 결과까지 왔다 = 온보딩 순간이 지났다. 설문을 열었다가 그냥 닫은 사용자도
+    // 여기서 끈다 — 묻기는 물었고, 안 고른 것은 그 사람의 선택이다. 그 자리는
+    // 결과 화면의 인라인 칩이 이어받는다.
+    if (_surveyShown) {
+      ref.read(onboardingCaptureProvider.notifier).state = false;
     }
 
     // pushReplacement 라 뒤로가기가 로딩 화면으로 돌아오지 않는다.

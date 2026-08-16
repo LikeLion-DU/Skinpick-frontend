@@ -24,10 +24,13 @@ import '../providers/skin_analysis_notifier.dart';
 /// **점수와 하이라이트는 반드시 화면에 있어야 한다.** 산식이 공개돼 있어
 /// 심사위원이 직접 검산할 수 있다는 게 이 기능의 근거다(PRD §4.1). 시안이 이
 /// 자리를 그리지 않았을 뿐이라, 타입 카드 안에 넣어 화면을 새로 만들지 않는다.
-/// 프로필 설문은 이 화면 **앞**, 로딩 자리에 있다(S04). 여기 도착했을 때는 갭
-/// 카드에 필요한 것이 이미 갖춰져 있다 — 설문보다 분석이 먼저 끝났다면 로딩
-/// 화면이 결과를 다시 받아 두고 넘긴다(`_refetchForGap`). 이 화면에서 갭을
-/// 채우려고 서버에 다녀오지 않는 이유다.
+/// 프로필 설문은 이 화면 **앞**, 로딩 자리에 있다(S04). 설문에 답하고 들어온
+/// 사용자는 갭 카드에 필요한 것이 이미 갖춰져 있다 — 설문보다 분석이 먼저
+/// 끝났다면 로딩 화면이 결과를 다시 받아 두고 넘긴다(`_refetchForGap`).
+///
+/// 설문을 그냥 닫았거나 촬영 안내에서 넘어간 사용자는 타입이 비어 있고, 그때는
+/// 갭 카드 자리에 인라인 칩(`_SkinTypePrompt`)이 대신 뜬다. 그 칩은 여기서
+/// 고르는 값이라 자기가 직접 다시 받아 온다.
 class SkinResultPage extends ConsumerWidget {
   const SkinResultPage({super.key});
 
@@ -172,12 +175,23 @@ class _TypeCard extends StatelessWidget {
               // 제목은 규칙 도출 타입 그대로 둔다. 바로 아래 갭 카드가 같은 값에
               // 기대고 있어서, 여기만 AI 관찰값으로 바꾸면 한 화면에서 "지성 피부" 와
               // "오늘 측정 기준 : 건성" 이 같이 보인다. 둘은 갈릴 수 있는 값이다.
-              Text(
-                headlineType == null ? '오늘의 피부' : '${headlineType!.label} 피부',
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: Color(0xFF1A1A1A),
+              // Flexible 은 되돌리되 한 줄로 못 박는다. 그냥 빼 놓으면 이 줄에서
+              // 유일하게 안 줄어드는 위젯이 돼서, 시스템 글자 크기 2.0 에 예전
+              // 분석("민감도 높음" 배지가 뜨는 쪽)이면 145px 하드 오버플로다.
+              // 예전처럼 maxLines 없이 Flexible 만 주면 이번엔 두 줄로 접힌다 —
+              // 접힘은 예외로 안 잡혀서 테스트가 초록인 채로 시안이 깨진다.
+              Flexible(
+                child: Text(
+                  headlineType == null
+                      ? '오늘의 피부'
+                      : '${headlineType!.label} 피부',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF1A1A1A),
+                  ),
                 ),
               ),
               const SizedBox(width: 10),
@@ -372,7 +386,10 @@ class _SkinAgeCard extends StatelessWidget {
             children: [
               // Flexible 이 없으면 시스템 글자 크기를 키웠을 때 하드 오버플로다.
               // 두 자식이 다 고정 크기라 늘어날 자리가 없다.
-              const Flexible(
+              // Flexible + Spacer 로 두면 남는 폭을 반씩 나눠 가져서, Spacer 가
+              // 120px 를 붙들고 있는데 제목만 "AI 추정 피부 나…" 로 잘린다.
+              // Expanded 하나면 오른쪽 정렬은 그대로고 제목이 여유를 다 쓴다.
+              const Expanded(
                 child: Text(
                   'AI 추정 피부 나이',
                   maxLines: 1,
@@ -385,7 +402,6 @@ class _SkinAgeCard extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 8),
-              const Spacer(),
               Text.rich(
                 TextSpan(
                   children: [

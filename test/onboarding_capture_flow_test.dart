@@ -96,9 +96,46 @@ void main() {
 
     expect(find.text('설문'), findsOneWidget);
 
-    // 플래그를 소비했다. 안 끄면 두 번째 분석부터도 설문이 뜬다.
+    // **띄웠다고 끄지 않는다.** 여기서 끄면 설문을 열자마자 닫은 사용자의 분석이
+    // 뒤이어 실패했을 때, 재촬영해도 물어볼 자리가 사라진다. 끄는 시점은 결과 도착이다.
     final container = ProviderScope.containerOf(tester.element(find.text('설문')));
+    expect(container.read(onboardingCaptureProvider), isTrue);
+  });
+
+  testWidgets('결과까지 도착하면 플래그를 끈다', (tester) async {
+    await tester.binding.setSurfaceSize(designSize);
+    await tester.pumpWidget(loadingHost(onboarding: true));
+    await settle(tester);
+
+    final container = ProviderScope.containerOf(tester.element(find.text('설문')));
+    (container.read(skinAnalysisNotifierProvider.notifier) as _StubAnalysis)
+        .land(analysis);
+    await settle(tester);
+
+    Navigator.of(tester.element(find.text('설문'))).pop();
+    await settle(tester);
+
+    // 안 끄면 두 번째 분석부터도 설문이 뜬다. 안 고르고 닫았어도 묻기는 물었다.
+    expect(find.text('결과'), findsOneWidget);
     expect(container.read(onboardingCaptureProvider), isFalse);
+  });
+
+  testWidgets('설문을 닫은 뒤 분석이 깨졌으면 플래그가 살아 있다', (tester) async {
+    await tester.binding.setSurfaceSize(designSize);
+    await tester.pumpWidget(loadingHost(onboarding: true));
+    await settle(tester);
+
+    final container = ProviderScope.containerOf(tester.element(find.text('설문')));
+    final stub =
+        container.read(skinAnalysisNotifierProvider.notifier) as _StubAnalysis;
+
+    Navigator.of(tester.element(find.text('설문'))).pop();
+    await settle(tester);
+    stub.fail();
+    await settle(tester);
+
+    // 재촬영으로 성공했을 때 이 자리에서 다시 물어야 한다 — 여는 곳이 여기뿐이다.
+    expect(container.read(onboardingCaptureProvider), isTrue);
   });
 
   testWidgets('그냥 재분석하면 설문 없이 기다린다', (tester) async {
@@ -316,6 +353,14 @@ class _StubAnalysis extends SkinAnalysisNotifier {
   /// 백그라운드로 돌던 분석이 지금 도착했다.
   void land(SkinAnalysis analysis) =>
       state = SkinAnalysisState(analysis: AsyncData<SkinAnalysis?>(analysis));
+
+  /// 서버가 뒤늦게 실패로 답했다. 얼굴 미검출은 셔터 몇 초 뒤에 온다.
+  void fail() => state = const SkinAnalysisState(
+        analysis: AsyncError<SkinAnalysis?>(
+          AnalysisFailure('FACE_NOT_DETECTED', '얼굴이 인식되지 않았어요.'),
+          StackTrace.empty,
+        ),
+      );
 
   @override
   Future<void> refresh(int id) async => refreshCalls++;
