@@ -18,8 +18,22 @@ import '../providers/auth_notifier.dart';
 ///
 /// 고민·습관도 전부 서버가 소유한다. 인사이트(S10)가 서버 DB 의 값을 읽어
 /// 주제를 고르므로, 기기에만 저장하면 그 기능이 통째로 동작하지 않는다.
+/// 이 화면이 서는 두 자리.
+enum ProfileFormMode {
+  /// 가입 직후(S01c)와 홈의 "피부 프로필 수정". 타입·고민·습관 전부, 건너뛰기 있음.
+  full,
+
+  /// 첫 분석 직후(S04b) 강제 단계. 생활 습관 4종만 묻고 건너뛰기가 없다.
+  ///
+  /// 여기서 타입·고민을 다시 묻지 않는다 — 가입 때 이미 받았고, 다시 그리면
+  /// 사용자가 같은 설문을 두 번 하는 것처럼 느낀다.
+  lifestyle,
+}
+
 class SkinTypePage extends ConsumerStatefulWidget {
-  const SkinTypePage({super.key});
+  const SkinTypePage({super.key, this.mode = ProfileFormMode.full});
+
+  final ProfileFormMode mode;
 
   @override
   ConsumerState<SkinTypePage> createState() => _SkinTypePageState();
@@ -39,10 +53,20 @@ class _SkinTypePageState extends ConsumerState<SkinTypePage> {
   bool _busy = false;
   String? _error;
 
-  /// 고민은 제출 조건에 넣지 않는다. 넣으면 고민을 전부 해제한 사용자가 버튼이
+  bool get _lifestyleOnly => widget.mode == ProfileFormMode.lifestyle;
+
+  /// full — 고민은 제출 조건에 넣지 않는다. 넣으면 고민을 전부 해제한 사용자가 버튼이
   /// 왜 꺼졌는지 모른 채 갇히고, "이제 고민 없어요"를 서버에 저장할 방법이 사라진다
   /// — 서버가 빈 배열을 "전부 해제"로 읽도록 만들어 둔 경로가 통째로 사문이 된다.
-  bool get _complete => _type != null;
+  ///
+  /// lifestyle — 네 개를 다 골라야 넘어간다. 하나라도 비면 그 항목은 인사이트에서
+  /// 영영 빠지는데, 사용자는 왜 빠졌는지 알 길이 없다.
+  bool get _complete => _lifestyleOnly
+      ? (_sleep != null &&
+          _stress != null &&
+          _exercise != null &&
+          _water != null)
+      : _type != null;
 
   @override
   void initState() {
@@ -68,8 +92,7 @@ class _SkinTypePageState extends ConsumerState<SkinTypePage> {
       ((_sleep ?? _stress ?? _exercise ?? _water) != null ? 1 : 0);
 
   Future<void> _submit() async {
-    final type = _type;
-    if (type == null) return;
+    if (!_complete) return;
 
     setState(() {
       _busy = true;
@@ -81,10 +104,13 @@ class _SkinTypePageState extends ConsumerState<SkinTypePage> {
     //
     // 고민은 비어 있어도 보낸다 — 서버가 [] 를 "전부 해제"로 읽는다. 안 보내면
     // 사용자가 방금 지운 고민이 서버에 그대로 남는다.
+    //
+    // lifestyle 모드는 습관만 보낸다. 여기서 고민을 같이 실으면 화면에 그리지도
+    // 않은 값으로 서버의 고민을 덮어쓴다 — 빈 배열이 곧 "전부 해제"라 특히 위험하다.
     final failure =
         await ref.read(authNotifierProvider.notifier).updateProfile(
-              declaredSkinType: type,
-              skinConcerns: _concerns,
+              declaredSkinType: _lifestyleOnly ? null : _type,
+              skinConcerns: _lifestyleOnly ? null : _concerns,
               sleepPattern: _sleep,
               stressLevel: _stress,
               exerciseHabit: _exercise,
@@ -98,6 +124,13 @@ class _SkinTypePageState extends ConsumerState<SkinTypePage> {
         _busy = false;
         _error = failure.message;
       });
+      return;
+    }
+
+    // 강제 단계는 분석과 결과 사이에 낀 화면이다. 저장했으면 결과로 넘긴다 —
+    // pop 하면 로딩 화면으로 돌아가고, 거기는 이미 끝난 분석을 다시 보여준다.
+    if (_lifestyleOnly) {
+      context.pushReplacement(Routes.skinResult);
       return;
     }
     _leave();
@@ -115,61 +148,75 @@ class _SkinTypePageState extends ConsumerState<SkinTypePage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text(''),
+        // 강제 단계에는 나갈 문을 두지 않는다. 뒤로가기를 남기면 로딩 화면으로
+        // 돌아가 이미 끝난 분석을 다시 보게 되고, 습관은 비어 있는 채로 남는다.
+        automaticallyImplyLeading: !_lifestyleOnly,
         actions: [
           // 건너뛰기는 API 를 호출하지 않는 것이다. declared_skin_type 이 NULL 로
           // 남아야 "아직 안 정함"과 "잘 모르겠어요(UNKNOWN)"가 구분된다.
-          TextButton(
-            onPressed: _busy ? null : _leave,
-            child: const Text('건너뛰기',
-                style: TextStyle(color: AppColors.textSecondary)),
-          ),
+          if (!_lifestyleOnly)
+            TextButton(
+              onPressed: _busy ? null : _leave,
+              child: const Text('건너뛰기',
+                  style: TextStyle(color: AppColors.textSecondary)),
+            ),
         ],
       ),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(
             AppTheme.pagePadding, 0, AppTheme.pagePadding, 24),
         children: [
-          Text('피부 프로필을\n설정해 볼까요?',
+          Text(
+              _lifestyleOnly
+                  ? '거의 다 왔어요!'
+                  : '피부 프로필을\n설정해 볼까요?',
               style: Theme.of(context).textTheme.titleLarge),
           const SizedBox(height: 8),
-          Text('정확한 분석을 위해 알려주세요',
+          Text(
+              _lifestyleOnly
+                  ? '더 정확한 개인화 분석을 위해\n평소 생활 습관을 알려주세요.'
+                  : '정확한 분석을 위해 알려주세요',
               style: Theme.of(context).textTheme.bodyMedium),
           const SizedBox(height: 20),
-          _ProgressDots(filled: _progress),
-          const SizedBox(height: 26),
+          if (!_lifestyleOnly) ...[
+            _ProgressDots(filled: _progress),
+            const SizedBox(height: 26),
 
-          Text('피부 타입', style: Theme.of(context).textTheme.titleMedium),
-          const SizedBox(height: 12),
-          _TypeTiles(
-            selected: _type,
-            onSelect: _busy ? null : (type) => setState(() => _type = type),
-          ),
-          const SizedBox(height: 28),
+            Text('피부 타입', style: Theme.of(context).textTheme.titleMedium),
+            const SizedBox(height: 12),
+            _TypeTiles(
+              selected: _type,
+              onSelect: _busy ? null : (type) => setState(() => _type = type),
+            ),
+            const SizedBox(height: 28),
+          ],
 
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text('주요 피부 고민',
-                  style: Theme.of(context).textTheme.titleMedium),
-              const SizedBox(width: 6),
-              const Padding(
-                padding: EdgeInsets.only(bottom: 1),
-                child: Text('(복수 선택 가능)',
-                    style: TextStyle(
-                        fontSize: 10, color: AppColors.textSecondary)),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          _ConcernChips(
-            selected: _concerns,
-            onToggle: _busy
-                ? null
-                : (concern) => setState(() {
-                      if (!_concerns.remove(concern)) _concerns.add(concern);
-                    }),
-          ),
-          const SizedBox(height: 28),
+          if (!_lifestyleOnly) ...[
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Text('주요 피부 고민',
+                    style: Theme.of(context).textTheme.titleMedium),
+                const SizedBox(width: 6),
+                const Padding(
+                  padding: EdgeInsets.only(bottom: 1),
+                  child: Text('(복수 선택 가능)',
+                      style: TextStyle(
+                          fontSize: 10, color: AppColors.textSecondary)),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            _ConcernChips(
+              selected: _concerns,
+              onToggle: _busy
+                  ? null
+                  : (concern) => setState(() {
+                        if (!_concerns.remove(concern)) _concerns.add(concern);
+                      }),
+            ),
+            const SizedBox(height: 28),
+          ],
 
           Row(
             crossAxisAlignment: CrossAxisAlignment.end,
@@ -177,11 +224,14 @@ class _SkinTypePageState extends ConsumerState<SkinTypePage> {
               Text('나의 생활 습관',
                   style: Theme.of(context).textTheme.titleMedium),
               const SizedBox(width: 6),
-              const Padding(
-                padding: EdgeInsets.only(bottom: 1),
-                child: Text('(선택)',
+              Padding(
+                padding: const EdgeInsets.only(bottom: 1),
+                child: Text(_lifestyleOnly ? '(필수)' : '(선택)',
                     style: TextStyle(
-                        fontSize: 10, color: AppColors.textSecondary)),
+                        fontSize: 10,
+                        color: _lifestyleOnly
+                            ? AppColors.primary
+                            : AppColors.textSecondary)),
               ),
             ],
           ),
@@ -309,7 +359,7 @@ class _SkinTypePageState extends ConsumerState<SkinTypePage> {
                     child: CircularProgressIndicator(
                         strokeWidth: 2, color: Colors.white),
                   )
-                : const Text('프로필 설정 완료'),
+                : Text(_lifestyleOnly ? '완료하고 결과 보기' : '프로필 설정 완료'),
           ),
         ],
       ),

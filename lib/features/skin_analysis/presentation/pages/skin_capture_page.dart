@@ -409,7 +409,12 @@ class _SkinCapturePageState extends ConsumerState<SkinCapturePage>
     });
 
     if (!mounted || _disposed) return;
-    context.push(Routes.skinLoading);
+    // push 가 아니라 교체다. 세 장을 넘긴 시점에 이 화면의 일은 끝났고, 결과에서
+    // 뒤로 가는 사용자는 "촬영 이전 화면"으로 나가려는 것이지 카메라를 다시 보려는
+    // 게 아니다. push 로 두면 결과 아래에 카메라가 살아 있다가 뒤로가기에 되살아난다.
+    //
+    // 다시 찍는 길은 홈의 [다시 분석] 과 로딩 실패의 [다시 촬영하기] 뿐이다.
+    context.pushReplacement(Routes.skinLoading);
   }
 
   Future<void> _stopStream() async {
