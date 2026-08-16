@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:skinplate/app/router/app_router.dart';
 import 'package:skinplate/app/theme/app_theme.dart';
+import 'package:skinplate/core/error/failure.dart';
 import 'package:skinplate/core/widgets/app_widgets.dart';
 import 'package:skinplate/features/auth/domain/entities/auth_user.dart';
 import 'package:skinplate/features/auth/presentation/pages/skin_type_page.dart';
@@ -49,12 +50,14 @@ void main() {
     required bool onboarding,
     AuthUser profile = fresh,
     SkinAnalysis? ready,
+    bool failed = false,
   }) =>
       ProviderScope(
         overrides: [
           authNotifierProvider.overrideWith(() => _StubAuth(profile)),
           onboardingCaptureProvider.overrideWith((ref) => onboarding),
-          skinAnalysisNotifierProvider.overrideWith(() => _StubAnalysis(ready)),
+          skinAnalysisNotifierProvider
+              .overrideWith(() => _StubAnalysis(ready, failed: failed)),
         ],
         child: MaterialApp.router(
           theme: AppTheme.light,
@@ -122,6 +125,57 @@ void main() {
     await settle(tester);
 
     expect(find.text('설문'), findsNothing);
+    // 물을 것이 없어 건너뛴 경우에도 플래그는 꺼야 한다. 조건 안에서 끄면
+    // 그때 플래그가 세션에 그대로 남는다.
+    final container =
+        ProviderScope.containerOf(tester.element(find.byType(SkinLoadingPage)));
+    expect(container.read(onboardingCaptureProvider), isFalse);
+  });
+
+  testWidgets('이미 실패한 분석 위에는 설문을 얹지 않는다', (tester) async {
+    await tester.binding.setSurfaceSize(designSize);
+    await tester.pumpWidget(loadingHost(onboarding: true, failed: true));
+    await settle(tester);
+
+    // 얹으면 사용자가 20초짜리 설문을 다 쓰고 나서야 실패 화면을 만난다.
+    expect(find.text('설문'), findsNothing);
+    expect(find.text('얼굴이 인식되지 않았어요.'), findsOneWidget);
+  });
+
+  testWidgets('설문보다 분석이 먼저 끝났으면 결과를 다시 받는다', (tester) async {
+    await tester.binding.setSurfaceSize(designSize);
+    await tester.pumpWidget(loadingHost(onboarding: true));
+    await settle(tester);
+
+    final container = ProviderScope.containerOf(tester.element(find.text('설문')));
+    final stub =
+        container.read(skinAnalysisNotifierProvider.notifier) as _StubAnalysis;
+    stub.land(analysis);
+    await settle(tester);
+
+    Navigator.of(tester.element(find.text('설문'))).pop();
+    await settle(tester);
+
+    // 셔터 시점에 나간 POST 의 응답에는 방금 고른 타입이 안 들어 있다 — 서버는
+    // 응답을 조립할 때 declared 를 읽는다. 다시 안 받으면 갭 카드 대신 같은
+    // 질문을 던지는 인라인 칩이 뜨고 카드 제목이 자가 신고값으로 떨어진다.
+    expect(stub.refreshCalls, 1);
+  });
+
+  testWidgets('분석이 아직 안 왔으면 다시 받지 않는다', (tester) async {
+    await tester.binding.setSurfaceSize(designSize);
+    await tester.pumpWidget(loadingHost(onboarding: true));
+    await settle(tester);
+
+    final container = ProviderScope.containerOf(tester.element(find.text('설문')));
+    final stub =
+        container.read(skinAnalysisNotifierProvider.notifier) as _StubAnalysis;
+
+    Navigator.of(tester.element(find.text('설문'))).pop();
+    await settle(tester);
+
+    // 그 응답은 프로필이 서버에 들어간 뒤에 조립되므로 갭이 처음부터 들어 있다.
+    expect(stub.refreshCalls, 0);
   });
 
   testWidgets('설문을 쓰는 동안 분석이 끝나도 설문이 살아 있다', (tester) async {
@@ -205,15 +259,25 @@ class _StubAuth extends AuthNotifier {
 
 /// 서버 왕복 없이 분석 도착 시점만 테스트가 정한다.
 class _StubAnalysis extends SkinAnalysisNotifier {
-  _StubAnalysis(this.seed);
+  _StubAnalysis(this.seed, {this.failed = false});
 
   final SkinAnalysis? seed;
+  final bool failed;
+  int refreshCalls = 0;
 
   @override
-  SkinAnalysisState build() =>
-      SkinAnalysisState(analysis: AsyncData<SkinAnalysis?>(seed));
+  SkinAnalysisState build() => SkinAnalysisState(
+        analysis: failed
+            ? const AsyncError<SkinAnalysis?>(
+                AnalysisFailure('FACE_NOT_DETECTED', '얼굴이 인식되지 않았어요.'),
+                StackTrace.empty)
+            : AsyncData<SkinAnalysis?>(seed),
+      );
 
   /// 백그라운드로 돌던 분석이 지금 도착했다.
   void land(SkinAnalysis analysis) =>
       state = SkinAnalysisState(analysis: AsyncData<SkinAnalysis?>(analysis));
+
+  @override
+  Future<void> refresh(int id) async => refreshCalls++;
 }

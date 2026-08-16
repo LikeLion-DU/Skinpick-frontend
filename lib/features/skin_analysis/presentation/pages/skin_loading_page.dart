@@ -40,19 +40,32 @@ class _SkinLoadingPageState extends ConsumerState<SkinLoadingPage> {
   Future<void> _askProfileThenResult() async {
     if (!mounted) return;
 
+    // 플래그는 한 번 쓰고 끈다. **물을 것이 없어 건너뛰는 경우에도 끈다** —
+    // 조건 안에서 끄면 그때 플래그가 세션에 그대로 남는다.
+    final onboarding = ref.read(onboardingCaptureProvider);
+    if (onboarding) {
+      ref.read(onboardingCaptureProvider.notifier).state = false;
+    }
+
+    // 타입이 이미 있으면 물을 것이 없다 — 촬영을 중간에 접어 플래그만 남은 채
+    // 프로필을 직접 설정한 사용자다. 다 아는 것을 다시 묻게 된다.
     final declared = switch (ref.read(authNotifierProvider)) {
       Authenticated(:final user) => user.declaredSkinType,
       _ => null,
     };
 
-    // 타입이 이미 있으면 물을 것이 없다 — 촬영을 중간에 접어 플래그만 남은 채
-    // 프로필을 직접 설정한 사용자다. 다 아는 것을 다시 묻게 된다.
-    if (ref.read(onboardingCaptureProvider) && declared == null) {
-      ref.read(onboardingCaptureProvider.notifier).state = false;
+    // 이미 실패한 분석 위에는 얹지 않는다. 얼굴 미검출이나 네트워크 끊김은 보통
+    // 몇 초 안에 돌아오는데, 그 위에 설문을 얹으면 사용자가 20초를 들여 설문을
+    // 다 쓰고 나서야 실패 화면을 만난다.
+    final failed = ref.read(skinAnalysisNotifierProvider).analysis.hasError;
+
+    if (onboarding && declared == null && !failed) {
       _surveyOpen = true;
       await context.push(Routes.onboardingProfile);
       if (!mounted) return;
       _surveyOpen = false;
+      await _refetchForGap();
+      if (!mounted) return;
     }
 
     // 설문을 보는 동안(혹은 첫 프레임 전에) 분석이 끝났으면 아래 listen 은 이미
@@ -60,9 +73,30 @@ class _SkinLoadingPageState extends ConsumerState<SkinLoadingPage> {
     _toResult();
   }
 
+  /// **갭 문장은 서버가 만든다.** 분석 요청은 셔터를 누르는 순간 이미 나갔고,
+  /// 서버는 응답을 조립할 때 사용자의 declared 타입을 읽는다
+  /// (`SkinAnalysisService.toResponse`). 설문보다 분석이 먼저 끝나면 그 응답에는
+  /// 방금 고른 타입이 안 들어가 `skinTypeGap` 이 null 로 남는다. 그대로 두면
+  /// 결과 화면이 같은 질문을 던지는 인라인 칩을 띄우고, 카드 제목이 측정값 대신
+  /// 자가 신고값으로 떨어진다.
+  ///
+  /// 아직 안 왔으면 다시 받을 것도 없다 — 그 응답은 프로필이 서버에 들어간 뒤에
+  /// 조립되므로 갭이 처음부터 들어 있다.
+  Future<void> _refetchForGap() async {
+    final id = ref.read(skinAnalysisNotifierProvider).analysis.valueOrNull?.id;
+    if (id == null) return;
+
+    await ref.read(skinAnalysisNotifierProvider.notifier).refresh(id);
+  }
+
+  /// `value` 가 아니라 `valueOrNull` 이다. **AsyncError 에서 `value` 는 담고 있는
+  /// 에러를 그대로 되던진다** — 분석이 실패한 순간 여기서 예외가 나가고, 사용자는
+  /// 실패 화면 대신 아무 일도 안 일어난 로딩 화면을 보게 된다.
   void _toResult() {
     if (!mounted || _surveyOpen) return;
-    if (ref.read(skinAnalysisNotifierProvider).analysis.value == null) return;
+    if (ref.read(skinAnalysisNotifierProvider).analysis.valueOrNull == null) {
+      return;
+    }
 
     // pushReplacement 라 뒤로가기가 로딩 화면으로 돌아오지 않는다.
     context.pushReplacement(Routes.skinResult);
@@ -78,7 +112,7 @@ class _SkinLoadingPageState extends ConsumerState<SkinLoadingPage> {
     // 그래서 게이트는 습관이 실제로 필요한 S10 이 쥔다. 여기서 막으면 점수·지표만
     // 보려는 사용자까지 설문 앞에 세운다.
     ref.listen(skinAnalysisNotifierProvider, (previous, next) {
-      if (next.analysis.value == null) return;
+      if (next.analysis.valueOrNull == null) return;
       _toResult();
     });
 
