@@ -106,12 +106,22 @@ final routerProvider = Provider<GoRouter>((ref) {
   );
 });
 
-/// AuthState 가 바뀌면 go_router 가 redirect 를 다시 평가하게 한다.
+/// AuthState 의 **종류**가 바뀌면 go_router 가 redirect 를 다시 평가하게 한다.
+///
+/// 값이 바뀔 때마다 알리면 안 된다. redirect 는 로그인 여부만 보므로 프로필 저장처럼
+/// `Authenticated` 안의 값만 달라진 경우엔 어차피 같은 답을 내는데, 알리는 것만으로
+/// go_router 가 라우트를 다시 세워 그 순간 열려 있던 화면이 통째로 새로 만들어진다.
+///
+/// 실제로 났던 증상: 프로필 설문에서 저장을 누르면 서버에는 잘 들어가는데 화면이
+/// 닫히지 않고 설문이 처음부터 다시 떴다. 저장 직후 상태가 바뀌며 이 화면이
+/// 헐리는 바람에, 뒤이어 실행될 "닫고 돌아가기"가 영영 실행되지 않았다.
 class _AuthRefreshListenable extends ChangeNotifier {
   _AuthRefreshListenable(Ref ref) {
     _subscription = ref.listen<AuthState>(
       authNotifierProvider,
-      (_, __) => notifyListeners(),
+      (previous, next) {
+        if (previous.runtimeType != next.runtimeType) notifyListeners();
+      },
     );
   }
 
