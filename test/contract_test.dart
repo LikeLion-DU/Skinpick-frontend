@@ -281,6 +281,35 @@ void main() {
     expect(daily.recommend.every((food) => food.reason.isNotEmpty), isTrue);
   });
 
+  test('GET /reports?period=WEEK — 서버가 센 이번 주', () {
+    final json = data('report_week');
+    final report = PlateReportDto.fromJson(json).toEntity();
+
+    // lastDays(7) 이라 오늘을 포함한 7일이다. 달력 주가 아니다.
+    expect(report.from, DateTime(2026, 8, 10));
+    expect(report.to, DateTime(2026, 8, 16));
+    expect(report.recordCount, 7);
+    expect(report.averageScore, 75);
+
+    // 앱이 안 읽는 필드가 응답에 남아 있어도 파싱이 깨지지 않아야 한다.
+    expect(json.containsKey('skinScoreTrend'), isTrue);
+    expect(json.containsKey('penalties'), isTrue);
+  });
+
+  test('기록이 0건인 주는 averagePlateScore 키가 통째로 빠진다', () {
+    final json = data('report_week_empty');
+
+    // 여기가 이 계약에서 유일하게 위험한 지점이다. required 로 받으면 파싱이
+    // 죽고, @Default(0) 으로 받으면 화면이 "평균 0점"을 그린다 — 0 점은
+    // "아주 나쁘게 먹은 주"고 이건 "안 먹은 주"다.
+    expect(json.containsKey('averagePlateScore'), isFalse);
+    expect(json.containsKey('latestSkinScore'), isFalse);
+
+    final report = PlateReportDto.fromJson(json).toEntity();
+    expect(report.averageScore, isNull);
+    expect(report.recordCount, 0);
+  });
+
   test('실패 응답에는 data 키 자체가 없다', () {
     // 서버가 non_null 직렬화라 값이 없으면 키가 사라진다.
     // "data 가 null" 과 "data 키 없음"을 같게 다루지 않으면 여기서 깨진다.

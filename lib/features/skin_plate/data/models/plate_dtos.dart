@@ -7,6 +7,7 @@ import '../../../../shared/enums/plate_action_code.dart';
 import '../../domain/entities/plate_analysis.dart' as domain;
 import '../../domain/entities/plate_history.dart' as domain;
 import '../../domain/entities/skin_plate.dart' as domain;
+import '../../domain/entities/weekly_report.dart' as domain;
 
 part 'plate_dtos.freezed.dart';
 part 'plate_dtos.g.dart';
@@ -330,5 +331,36 @@ extension PlateSimulationDtoX on PlateSimulationDto {
             .toList(),
         removedRules: removedRules,
         summary: summary,
+      );
+}
+
+/// `GET /reports?period=WEEK` — 서버가 센 이번 주.
+///
+/// 응답에는 `latestSkinScore` · `skinScoreTrend` · `penalties` · `meals` 도 있지만
+/// **받지 않는다.** 주간 리포트 화면이 그리는 것은 "이번 주 내가 뭘 먹었고 내 피부
+/// 기준으로 어땠는가" 뿐이고, 피부 점수 추이를 같이 그리면 그 화면의 주인공이
+/// 음식에서 피부로 넘어간다. 나중에 필요해지면 필드만 늘리면 된다.
+@freezed
+class PlateReportDto with _$PlateReportDto {
+  const factory PlateReportDto({
+    required DateTime from,
+    required DateTime to,
+
+    /// 기간 안에 기록이 하나도 없으면 서버가 키를 뺀다. 0 이 아니다 —
+    /// 0 은 "아주 나쁘게 먹은 주"고 이건 "안 먹은 주"다.
+    int? averagePlateScore,
+    @Default(0) int recordCount,
+  }) = _PlateReportDto;
+
+  factory PlateReportDto.fromJson(Map<String, dynamic> json) =>
+      _$PlateReportDtoFromJson(json);
+}
+
+extension PlateReportDtoX on PlateReportDto {
+  domain.PlateReport toEntity() => domain.PlateReport(
+        from: from,
+        to: to,
+        averageScore: averagePlateScore,
+        recordCount: recordCount,
       );
 }

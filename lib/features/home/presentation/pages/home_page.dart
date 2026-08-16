@@ -10,6 +10,8 @@ import '../../../../shared/widgets/app_bottom_nav.dart';
 import '../../../auth/presentation/providers/auth_notifier.dart';
 import '../../../skin_analysis/presentation/providers/skin_analysis_notifier.dart';
 import '../../../skin_plate/presentation/providers/plate_history_provider.dart';
+import '../../../skin_plate/presentation/providers/weekly_report_provider.dart';
+import '../../../skin_plate/presentation/widgets/weekly_summary_card.dart';
 import '../providers/today_provider.dart';
 import '../widgets/daily_score_card.dart';
 import '../widgets/today_records_card.dart';
@@ -24,8 +26,9 @@ import '../widgets/today_records_card.dart';
 /// 없을 때만 촬영 버튼이 안내를 띄운다 — 숨기지는 않는다. 버튼이 사라지면
 /// 사용자는 그 기능이 없는 줄 안다.
 ///
-/// 시안에 피부 분석으로 가는 버튼이 따로 없다. 우측 상단 프로필 메뉴 안에
-/// "다시 분석"이 들어가 있어 그대로 옮겼다.
+/// 피부 분석으로 가는 입구는 우측 상단 프로필 아이콘 → **나의 피부 프로필**이다.
+/// 홈 본문에 두지 않는 것은 의도다 — 피부 분석은 주인공이 아니라 음식 점수의
+/// 기준값이고, 그 기준을 확인하러 갔을 때 다시 분석하는 흐름이 자연스럽다.
 class HomePage extends ConsumerWidget {
   const HomePage({super.key});
 
@@ -78,6 +81,7 @@ class HomePage extends ConsumerWidget {
           onRefresh: () => Future.wait([
             ref.refresh(latestSkinAnalysisProvider.future),
             ref.refresh(plateHistoryProvider.future),
+            ref.refresh(weeklyReportProvider.future),
           ]),
           child: ListView(
             padding: const EdgeInsets.fromLTRB(
@@ -90,7 +94,12 @@ class HomePage extends ConsumerWidget {
             children: [
               Align(
                 alignment: Alignment.centerRight,
-                child: _ProfileMenu(hasSkinRecord: hasSkinRecord),
+                child: IconButton(
+                  tooltip: '나의 피부 프로필',
+                  onPressed: () => context.push(Routes.skinProfile),
+                  icon: SvgPicture.asset('assets/icons/profile.svg',
+                      width: 28, height: 28),
+                ),
               ),
               const SizedBox(height: 35),
               Text('안녕하세요, $nickname님',
@@ -121,6 +130,10 @@ class HomePage extends ConsumerWidget {
                 onItemTap: (item) =>
                     context.push('${Routes.plateResult}/${item.plateId}'),
               ),
+              // 이번 주 기록이 0건이면 카드가 스스로 사라진다. 첫 사용자에게
+              // "평균 OO점" 빈 카드를 보여 줄 이유가 없다.
+              const SizedBox(height: 21),
+              const WeeklySummaryCard(),
             ],
           ),
         ),
@@ -177,32 +190,3 @@ class _DailyCommentCard extends StatelessWidget {
   }
 }
 
-/// 우측 상단 프로필. 시안에서 피부 분석으로 가는 유일한 입구다.
-class _ProfileMenu extends ConsumerWidget {
-  const _ProfileMenu({required this.hasSkinRecord});
-
-  final bool hasSkinRecord;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    return PopupMenuButton<String>(
-      tooltip: '내 정보',
-      offset: const Offset(0, 36),
-      color: AppColors.background,
-      icon: SvgPicture.asset('assets/icons/profile.svg', width: 28, height: 28),
-      onSelected: (value) => switch (value) {
-        'skin-type' => context.push(Routes.skinType),
-        'analyze' => context.push(Routes.skinCapture),
-        _ => ref.read(authNotifierProvider.notifier).logout(),
-      },
-      itemBuilder: (context) => [
-        const PopupMenuItem(value: 'skin-type', child: Text('피부 프로필 수정')),
-        PopupMenuItem(
-          value: 'analyze',
-          child: Text(hasSkinRecord ? '다시 분석' : '피부 분석하기'),
-        ),
-        const PopupMenuItem(value: 'logout', child: Text('로그아웃')),
-      ],
-    );
-  }
-}

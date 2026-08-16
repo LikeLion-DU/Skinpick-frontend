@@ -9,6 +9,7 @@ import '../../features/recommendation/data/repositories/recommendation_repositor
 import '../../features/recommendation/domain/repositories/recommendation_repository.dart';
 import '../../features/skin_analysis/data/datasources/skin_remote_datasource.dart';
 import '../../features/skin_analysis/data/repositories/skin_repository_impl.dart';
+import '../../features/skin_analysis/domain/entities/skin_analysis.dart';
 import '../../features/skin_analysis/domain/entities/skin_insight.dart';
 import '../../features/skin_analysis/domain/repositories/skin_repository.dart';
 import '../../features/skin_plate/data/datasources/plate_remote_datasource.dart';
@@ -61,6 +62,16 @@ final skinInsightProvider =
     FutureProvider.autoDispose.family<Result<SkinInsight>, int>(
   (ref, skinAnalysisId) =>
       ref.watch(skinRepositoryProvider).getInsight(skinAnalysisId),
+);
+
+/// 음식 결과 화면이 "이 점수를 매긴 피부 기준"을 같이 보여주려고 쓴다.
+///
+/// **최신(`latest`)이 아니라 id 로 읽는다.** 그 사이에 피부를 다시 분석했으면
+/// 저장된 기록의 62점은 옛 기준으로 매겨진 값인데, 화면에는 새 기준이 붙어
+/// 숫자와 근거가 어긋난다. `/plates/*` 응답이 `skinAnalysisId` 를 주는 이유다.
+final skinAnalysisByIdProvider =
+    FutureProvider.autoDispose.family<Result<SkinAnalysis>, int>(
+  (ref, skinAnalysisId) => ref.watch(skinRepositoryProvider).getById(skinAnalysisId),
 );
 
 // ---------- skin_plate ----------

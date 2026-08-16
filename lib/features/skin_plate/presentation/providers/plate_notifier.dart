@@ -10,6 +10,7 @@ import '../../data/datasources/plate_image_store.dart';
 import '../../domain/entities/plate_analysis.dart';
 import '../../domain/entities/skin_plate.dart';
 import 'plate_history_provider.dart';
+import 'weekly_report_provider.dart';
 
 /// 기록의 수명주기. **분석 결과가 아니라 "기록으로 확정됐는가"** 를 나타낸다.
 ///
@@ -208,6 +209,9 @@ class PlateNotifier extends Notifier<PlateState> {
       // 촬영·결과를 다녀와도 dispose 가 걸리지 않는다. 이게 없으면 방금 저장한
       // 끼니가 홈 카드에도, 기록 화면에도 안 보인다.
       ref.invalidate(plateHistoryProvider);
+      // 주간 카드도 같은 이유로 버린다. 이게 없으면 오늘 기록은 늘었는데
+      // 홈의 "이번 주 평균"만 저장 전 숫자로 남는다.
+      ref.invalidate(weeklyReportProvider);
     }
 
     // 기다리는 동안 사용자가 뒤로 나가 다른 음식을 찍었을 수 있다(타임아웃이 32초고,

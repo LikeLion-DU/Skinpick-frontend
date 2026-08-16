@@ -14,6 +14,7 @@ import '../../domain/entities/skin_plate.dart';
 import '../providers/plate_notifier.dart';
 import '../widgets/plate_score_card.dart';
 import '../widgets/plate_summary_cards.dart';
+import '../widgets/skin_basis_card.dart';
 
 /// S07 — 분석 결과.
 ///
@@ -148,6 +149,8 @@ class _Content extends ConsumerWidget {
         ],
 
         const SizedBox(height: 26),
+        // 점수의 왼쪽 항. 아래 분석 요약(음식 쪽)과 짝이다.
+        SkinBasisCard(skinAnalysisId: plate.skinAnalysisId),
         Text('분석 요약', style: Theme.of(context).textTheme.titleMedium),
         const SizedBox(height: 10),
         PlateSummaryCard(good: plate.good, caution: plate.caution),

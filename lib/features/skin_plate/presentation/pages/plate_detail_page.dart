@@ -10,6 +10,7 @@ import '../../../auth/presentation/providers/auth_notifier.dart';
 import '../../domain/entities/skin_plate.dart';
 import '../widgets/plate_score_card.dart';
 import '../widgets/plate_summary_cards.dart';
+import '../widgets/skin_basis_card.dart';
 
 /// 저장된 기록 하나. `GET /plates/{id}`.
 ///
@@ -88,6 +89,9 @@ class _Body extends ConsumerWidget {
               declaredType == null ? null : '${declaredType.label} 피부 기준',
         ),
         const SizedBox(height: 26),
+        // 저장된 기록도 같은 근거를 보여준다. 그때 채점에 쓰인 분석 id 로 읽으므로
+        // 그 뒤에 피부를 다시 분석했어도 이 기록의 기준은 바뀌지 않는다.
+        SkinBasisCard(skinAnalysisId: plate.skinAnalysisId),
         Text('분석 요약', style: Theme.of(context).textTheme.titleMedium),
         const SizedBox(height: 10),
         PlateSummaryCard(good: plate.good, caution: plate.caution),

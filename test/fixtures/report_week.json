@@ -1,0 +1,30 @@
+{
+    "success": true,
+    "data": {
+        "period": "WEEK",
+        "from": "2026-08-10",
+        "to": "2026-08-16",
+        "latestSkinScore": 57,
+        "skinScoreTrend": [
+            {
+                "date": "2026-08-15",
+                "score": 57
+            }
+        ],
+        "recordCount": 7,
+        "averagePlateScore": 75,
+        "penalties": [
+            {
+                "ruleCode": "R04",
+                "label": "\ub098\ud2b8\ub968 \uacfc\ub2e4",
+                "count": 2,
+                "totalDelta": -16,
+                "topFoods": [
+                    "\ub5a1\ubcf6\uc774",
+                    "\ub77c\uba74"
+                ]
+            }
+        ],
+        "meals": []
+    }
+}
