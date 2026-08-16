@@ -6,7 +6,6 @@ import 'package:go_router/go_router.dart';
 import '../../../../app/router/app_router.dart';
 import '../../../../core/error/failure.dart';
 import '../../../../core/widgets/app_widgets.dart';
-import '../../../auth/presentation/providers/auth_notifier.dart';
 import '../providers/skin_analysis_notifier.dart';
 
 /// S04 — 분석 로딩.
@@ -21,18 +20,17 @@ class SkinLoadingPage extends ConsumerWidget {
     ref.listen(skinAnalysisNotifierProvider, (previous, next) {
       if (next.analysis.value == null) return;
 
-      // 생활 습관이 하나라도 비어 있으면 결과로 바로 보내지 않는다. 인사이트가
-      // 서버 DB 의 습관을 읽어 주제를 고르는데, 비어 있으면 생활 관련 인사이트가
-      // 하나도 안 뜬 채로 그 분석에 굳는다 — 나중에 채워도 늦다.
+      // **습관이 비어 있어도 결과로 바로 보낸다.** 예전에는 여기서 생활 습관 4종을
+      // 강제했는데, 그 근거였던 "인사이트가 습관 없이 굳는다" 가 성립하지 않는다 —
+      // 인사이트는 분석 시점이 아니라 사용자가 S10 에 **들어갈 때** 서버가 처음
+      // 만든다(GET /skin-insights 가 get-or-create).
       //
-      // 이미 다 채운 사용자는 이 단계를 보지 않는다.
-      final auth = ref.read(authNotifierProvider);
-      final needsLifestyle =
-          auth is Authenticated && auth.user.hasIncompleteLifestyle;
-
+      // 그래서 게이트는 습관이 실제로 필요한 S10 이 쥔다. 여기서 막으면 점수·지표만
+      // 보려는 사용자까지 설문 앞에 세우고, 그 화면에서 이탈하면 5~8초 기다린 분석을
+      // 다시 볼 길이 없어진다(홈에 결과 진입점이 없다).
+      //
       // pushReplacement 라 뒤로가기가 로딩 화면으로 돌아오지 않는다.
-      context.pushReplacement(
-          needsLifestyle ? Routes.lifestyle : Routes.skinResult);
+      context.pushReplacement(Routes.skinResult);
     });
 
     final analysis = ref.watch(skinAnalysisNotifierProvider).analysis;

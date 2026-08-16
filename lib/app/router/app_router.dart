@@ -28,7 +28,7 @@ class Routes {
   static const login = '/auth/login';         // S01
   static const signup = '/auth/signup';       // S01b
   static const skinType = '/onboarding/skin-type'; // S01c
-  static const lifestyle = '/onboarding/lifestyle'; // S04b — 첫 분석 직후 강제
+  static const lifestyle = '/onboarding/lifestyle'; // 인사이트(S10) 진입 전 습관 입력
   static const home = '/home';                // S02
   static const skinCapture = '/skin/capture'; // S03
   static const skinLoading = '/skin/loading'; // S04
@@ -72,7 +72,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: Routes.login, builder: (_, __) => const LoginPage()),
       GoRoute(path: Routes.signup, builder: (_, __) => const SignupPage()),
       GoRoute(path: Routes.skinType, builder: (_, __) => const SkinTypePage()),
-      // 첫 분석과 결과 사이에 끼는 강제 단계. 같은 화면을 습관 전용 모드로 쓴다 —
+      // 인사이트가 습관을 받으러 보내는 화면. 같은 화면을 습관 전용 모드로 쓴다 —
       // 습관 UI 를 한 벌 더 만들면 둘 중 하나는 반드시 낡는다.
       GoRoute(
         path: Routes.lifestyle,

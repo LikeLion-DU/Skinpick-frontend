@@ -127,41 +127,28 @@ class _SkinTypePageState extends ConsumerState<SkinTypePage> {
       return;
     }
 
-    // 강제 단계는 분석과 결과 사이에 낀 화면이다. 저장했으면 결과로 넘긴다 —
-    // pop 하면 로딩 화면으로 돌아가고, 거기는 이미 끝난 분석을 다시 보여준다.
-    if (_lifestyleOnly) {
-      context.pushReplacement(Routes.skinResult);
-      return;
-    }
+    // 습관만 묻는 화면은 인사이트(S10)가 불러서 온 곳이다. 부른 화면으로 그대로
+    // 돌아가면 게이트가 풀린 상태로 다시 그려지고, 그때 인사이트를 처음 조회한다.
     _leave();
   }
 
   /// 온보딩(가입 직후)에서는 쌓인 화면이 없으니 홈으로 간다. 그 외에는 부른 화면으로
-  /// 돌아간다 — `go` 로 통일하면 스택이 통째로 날아가서, 인사이트 화면이 "생활 상태를
-  /// 설정하고 다시 보면 채워져요"라고 시켜서 온 사용자가 그 인사이트로 못 돌아간다.
-  /// 지금 앱에는 과거 분석으로 들어가는 길이 없어 사진을 다시 찍는 수밖에 없어진다.
+  /// 돌아간다 — `go` 로 통일하면 스택이 통째로 날아가서, 인사이트 화면이 습관을
+  /// 받으러 보낸 사용자가 그 인사이트로 못 돌아간다.
   void _leave() =>
       context.canPop() ? context.pop() : context.go(Routes.home);
 
+  /// **뒤로가기를 막지 않는다.** 예전에는 이 화면이 분석과 결과 사이에 낀 강제
+  /// 단계라, 나가면 방금 한 분석을 다시 볼 길이 없어서 붙잡아 두어야 했다.
+  /// 지금은 인사이트(S10)가 부르는 화면이고 결과는 이미 봤으므로, 나가도 잃는
+  /// 것이 없다 — 인사이트를 나중에 보겠다는 선택을 막을 이유가 없다.
   @override
-  Widget build(BuildContext context) {
-    return PopScope(
-      // 그려지는 문만 없애면 하드웨어 백·엣지 스와이프가 그대로 빠져나간다.
-      // 그리고 이 화면에서 나가면 방금 한 분석을 다시 볼 방법이 없다 — 결과로
-      // 가는 길은 로딩과 이 화면 둘뿐이고 홈에는 진입점이 없다. 5~8초 기다린
-      // 분석이 통째로 사라지고, 습관도 비어 있어 사진부터 다시 찍어야 한다.
-      //
-      // 저장이 계속 실패하는 사용자(오프라인)까지 가두지는 않는다.
-      canPop: !_lifestyleOnly || _error != null,
-      child: _form(context),
-    );
-  }
+  Widget build(BuildContext context) => _form(context);
 
   Widget _form(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text(''),
-        automaticallyImplyLeading: !_lifestyleOnly,
         actions: [
           // 건너뛰기는 API 를 호출하지 않는 것이다. declared_skin_type 이 NULL 로
           // 남아야 "아직 안 정함"과 "잘 모르겠어요(UNKNOWN)"가 구분된다.
