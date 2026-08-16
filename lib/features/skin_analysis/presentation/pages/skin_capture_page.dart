@@ -42,7 +42,15 @@ const _stillOnlyCamera = CameraDescription(
 /// **우회 경로는 없다.** 촬영이든 갤러리든 게이트를 통과하지 못하면 업로드하지
 /// 않는다. 게이트를 걸 수 없는 환경(웹·포맷 미지원)도 통과가 아니라 차단이다.
 class SkinCapturePage extends ConsumerStatefulWidget {
-  const SkinCapturePage({super.key});
+  const SkinCapturePage({super.key, this.onboarding = false});
+
+  /// 가입 직후 첫 진입인가. 이 화면의 안내(`_introView`)는 시안 그대로라 두 경로가
+  /// 같은 것을 보여주지만, 두 버튼이 하는 일은 다르다 — 온보딩은 결과까지 간 뒤
+  /// 프로필을 물어야 하고(플래그), 넘어가면 설문으로 보내야 한다.
+  ///
+  /// **안내 화면을 따로 만들지 않는다.** 예전에 그렇게 했다가 가입 사용자가 같은
+  /// 안내를 두 번 봤다 — 여기 이미 있는 것을 못 보고 한 벌 더 만든 탓이다.
+  final bool onboarding;
 
   @override
   ConsumerState<SkinCapturePage> createState() => _SkinCapturePageState();
@@ -527,6 +535,11 @@ class _SkinCapturePageState extends ConsumerState<SkinCapturePage>
               const Spacer(),
               ElevatedButton(
                 onPressed: () {
+                  // 로딩 화면이 이 플래그를 보고 분석을 기다리는 동안 프로필
+                  // 설문을 얹는다. 촬영을 시작한 가입자만 켠다.
+                  if (widget.onboarding) {
+                    ref.read(onboardingCaptureProvider.notifier).state = true;
+                  }
                   setState(() => _intro = false);
                   _runCamera(_openCamera);
                 },
@@ -536,7 +549,13 @@ class _SkinCapturePageState extends ConsumerState<SkinCapturePage>
               // 시안은 두 버튼이 같은 오렌지다. 그대로 두면 어느 쪽이 주 동작인지
               // 안 보이지만, 디자이너의 선택이라 따른다.
               ElevatedButton(
-                onPressed: () => context.pop(),
+                // 가입자가 넘어가면 pop 은 홈이다 — 진단도 프로필도 없이 떨어지면
+                // 음식 점수와 비교할 기준값이 하나도 없다. 설문은 보여준다. 다만
+                // 강제하지 않는다(건너뛰기가 있는 full 모드) — 진단을 안 본
+                // 사용자에게 "AI 진단을 보정해 달라"고 말할 근거가 아직 없다.
+                onPressed: () => widget.onboarding
+                    ? context.pushReplacement(Routes.skinType)
+                    : context.pop(),
                 child: const Text('넘어가기'),
               ),
               const Spacer(),

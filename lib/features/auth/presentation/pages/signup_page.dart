@@ -63,10 +63,10 @@ class _SignupPageState extends ConsumerState<SignupPage> {
       return;
     }
 
-    // 가입 직후에는 기준값이 될 피부 분석이 없다. 설문(S01c)보다 촬영 안내(S01d)가
+    // 가입 직후에는 기준값이 될 피부 분석이 없다. 설문(S01c)보다 촬영이
     // 먼저다 — 자가 신고 타입은 결과 화면의 갭 카드에만 쓰이므로, 진단을 보여준
     // 뒤에 물어야 "AI 진단이 정확하지 않을 수 있다"는 부탁에 근거가 생긴다.
-    context.go(Routes.skinCaptureIntro);
+    context.go(Routes.onboardingCapture);
   }
 
   @override
