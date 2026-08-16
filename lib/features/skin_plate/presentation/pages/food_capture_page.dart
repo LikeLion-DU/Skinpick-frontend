@@ -10,6 +10,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../app/router/app_router.dart';
 import '../../../../app/theme/app_colors.dart';
+import '../../../../core/camera/camera_error_message.dart';
 import '../../../../core/utils/photo_picker.dart';
 import '../../../../core/widgets/camera_preview_box.dart';
 import '../../data/datasources/food_gate.dart';
@@ -170,8 +171,7 @@ class _FoodCapturePageState extends ConsumerState<FoodCapturePage>
       });
     } on Object catch (e) {
       // 권한 거부·플랫폼 예외에서도 화면이 죽지 않아야 한다.
-      _set(() => _cameraError =
-          e is CameraException ? (e.description ?? '카메라를 열지 못했습니다.') : '카메라를 열지 못했습니다.');
+      _set(() => _cameraError = cameraErrorMessage(e, '카메라를 열지 못했습니다.'));
     }
   }
 
@@ -247,11 +247,9 @@ class _FoodCapturePageState extends ConsumerState<FoodCapturePage>
       if (!mounted || _disposed) return;
       _runCamera(_resumeStream);
       _set(() => _busy = false);
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(e is CameraException
-            ? (e.description ?? '촬영에 실패했습니다.')
-            : '촬영에 실패했습니다.'),
-      ));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(cameraErrorMessage(e, '촬영에 실패했습니다.'))),
+      );
     }
   }
 

@@ -12,6 +12,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../app/router/app_router.dart';
 import '../../../../app/theme/app_colors.dart';
 import '../../../../app/theme/app_theme.dart';
+import '../../../../core/camera/camera_error_message.dart';
 import '../../../../core/utils/photo_picker.dart';
 import '../../../../core/widgets/camera_preview_box.dart';
 import '../../data/datasources/face_gate.dart';
@@ -218,7 +219,7 @@ class _SkinCapturePageState extends ConsumerState<SkinCapturePage>
       });
     } on Object catch (e) {
       // CameraException 만 잡으면 권한 거부·플랫폼 예외에서 화면이 빈 채로 멈춘다.
-      _set(() => _cameraError = _messageOf(e, '카메라를 열지 못했습니다.'));
+      _set(() => _cameraError = cameraErrorMessage(e, '카메라를 열지 못했습니다.'));
     }
   }
 
@@ -307,7 +308,7 @@ class _SkinCapturePageState extends ConsumerState<SkinCapturePage>
     } on Object catch (e) {
       // takePicture · ML Kit · 파일 IO · 이미지 디코딩 어디서든 던질 수 있다.
       // 하나라도 새어 나가면 _busy 가 선 채로 화면이 죽는다.
-      await _recover(_messageOf(e, '촬영에 실패했습니다.'));
+      await _recover(cameraErrorMessage(e, '촬영에 실패했습니다.'));
     }
   }
 
@@ -354,7 +355,7 @@ class _SkinCapturePageState extends ConsumerState<SkinCapturePage>
 
       await _accept(prepared.file!);
     } on Object catch (e) {
-      await _recover(_messageOf(e, '사진을 불러오지 못했습니다.'));
+      await _recover(cameraErrorMessage(e, '사진을 불러오지 못했습니다.'));
     }
   }
 
@@ -456,9 +457,6 @@ class _SkinCapturePageState extends ConsumerState<SkinCapturePage>
 
   static const _unavailableGuide =
       '이 기기에서는 얼굴 검사를 할 수 없어 촬영할 수 없습니다.\n갤러리에서 선택해 주세요.';
-
-  static String _messageOf(Object error, String fallback) =>
-      error is CameraException ? (error.description ?? fallback) : fallback;
 
   // "왼쪽" 은 언제나 **고개를 돌리는 방향**이다(사용자 기준). "왼쪽 얼굴(왼쪽 뺨)"
   // 이라고 쓰면 지시문·게이트 판정과 정반대가 된다 — 게이트는 왼쪽으로 돌린
