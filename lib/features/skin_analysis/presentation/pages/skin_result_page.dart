@@ -24,58 +24,14 @@ import '../providers/skin_analysis_notifier.dart';
 /// **점수와 하이라이트는 반드시 화면에 있어야 한다.** 산식이 공개돼 있어
 /// 심사위원이 직접 검산할 수 있다는 게 이 기능의 근거다(PRD §4.1). 시안이 이
 /// 자리를 그리지 않았을 뿐이라, 타입 카드 안에 넣어 화면을 새로 만들지 않는다.
-class SkinResultPage extends ConsumerStatefulWidget {
+/// 프로필 설문은 이 화면 **앞**, 로딩 자리에 있다(S04). 그래서 여기 도착했을 때는
+/// 자가 신고 타입이 이미 서버에 들어가 있어 갭 카드가 첫 진입부터 뜬다 — 결과를
+/// 받은 뒤에 물었다면 갭 문장을 받으러 서버에 한 번 더 다녀와야 했다.
+class SkinResultPage extends ConsumerWidget {
   const SkinResultPage({super.key});
 
   @override
-  ConsumerState<SkinResultPage> createState() => _SkinResultPageState();
-}
-
-class _SkinResultPageState extends ConsumerState<SkinResultPage> {
-  @override
-  void initState() {
-    super.initState();
-
-    // 가입 직후 촬영으로 들어온 첫 결과에만 프로필 설문을 덮는다. 플래그를 여기서
-    // 끄므로 두 번째 분석부터는 뜨지 않는다 — 그 자리는 갭 카드와 인라인 칩이 맡는다.
-    //
-    // **결과를 먼저 깔고 그 위에 얹는 것이 핵심이다.** 예전처럼 설문을 분석과 결과
-    // 사이에 끼우면, 거기서 나간 사용자가 방금 기다린 분석을 다시 볼 길이 없다 —
-    // 홈에 결과 진입점이 없어서 그때 붙잡아 두는 코드가 필요했다.
-    if (!ref.read(onboardingCaptureProvider)) return;
-
-    // 라우터도 프로바이더도 위젯 생명주기 안에서 건드릴 수 없다 — Riverpod 은
-    // initState 안의 상태 변경을 그 자리에서 던진다. 첫 프레임 뒤로 미룬다.
-    WidgetsBinding.instance.addPostFrameCallback((_) => _askProfile());
-  }
-
-  Future<void> _askProfile() async {
-    if (!mounted) return;
-    ref.read(onboardingCaptureProvider.notifier).state = false;
-
-    // 촬영을 중간에 접었다가(권한 거부·얼굴 게이트 실패) 나중에 프로필을 직접
-    // 설정한 사용자다. 플래그만 남아 있을 뿐 여기서 물어볼 것이 없다.
-    final declared = switch (ref.read(authNotifierProvider)) {
-      Authenticated(:final user) => user.declaredSkinType,
-      _ => null,
-    };
-    if (declared != null) return;
-
-    await context.push(Routes.onboardingProfile);
-    if (!mounted) return;
-
-    // **갭 문장은 서버가 만든다.** 방금 고른 타입으로 결과를 다시 받지 않으면
-    // `skinTypeGap` 이 null 로 남아, 같은 질문을 던지는 인라인 칩이 그 자리에
-    // 다시 뜨고 카드 제목이 측정값 대신 자가 신고값으로 떨어진다.
-    // 인라인 칩(_SkinTypePrompt)이 이미 하는 일과 같다.
-    final id = ref.read(skinAnalysisNotifierProvider).analysis.value?.id;
-    if (id != null) {
-      await ref.read(skinAnalysisNotifierProvider.notifier).refresh(id);
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(skinAnalysisNotifierProvider);
 
     // 방금 찍고 들어온 경우와 홈에서 들어온 경우가 다르다.

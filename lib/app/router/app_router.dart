@@ -30,8 +30,8 @@ class Routes {
   static const signup = '/auth/signup';       // S01b
   static const skinType = '/onboarding/skin-type'; // S01c
   static const lifestyle = '/onboarding/lifestyle'; // 인사이트(S10) 진입 전 습관 입력
-  // 진단 직후 결과 화면 위에 덮이는 프로필 설문. 같은 화면을 건너뛰기 없는
-  // 모드로 쓴다 — 설문을 한 벌 더 만들면 둘 중 하나는 반드시 낡는다.
+  // 촬영을 마치고 분석을 기다리는 동안(S04 위) 뜨는 프로필 설문. 같은 화면을
+  // 건너뛰기 없는 모드로 쓴다 — 설문을 한 벌 더 만들면 둘 중 하나는 반드시 낡는다.
   static const onboardingProfile = '/onboarding/profile';
   static const home = '/home';                // S02
   static const skinCaptureIntro = '/home/skin-intro'; // S01d — 홈의 하위 라우트

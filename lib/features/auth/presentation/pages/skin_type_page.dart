@@ -24,9 +24,10 @@ enum ProfileFormMode {
   /// 타입·고민·습관 전부, 건너뛰기 있음.
   full,
 
-  /// 진단 직후 결과 화면(S05) 위에 덮이는 모드. 묻는 항목은 full 과 같고
-  /// 건너뛰기만 없다 — 갇히지는 않는다. 타입에 "잘 모르겠어요"(UNKNOWN)가 있고,
-  /// 닫고 나가면 밑에 깔린 결과가 그대로 있다. 뒤로가기를 막지 않는 이유다.
+  /// 촬영을 마치고 분석을 기다리는 동안(S04 위) 뜨는 모드. 묻는 항목은 full 과
+  /// 같고 건너뛰기만 없다 — 갇히지는 않는다. 타입에 "잘 모르겠어요"(UNKNOWN)가
+  /// 있고, 닫고 나가면 밑에 로딩 화면이 그대로 있어 결과로 이어진다.
+  /// 뒤로가기를 막지 않는 이유다.
   onboarding,
 
   /// 인사이트(S10)가 습관을 받으러 보내는 화면. 생활 습관 4종만 묻고 건너뛰기가
@@ -63,7 +64,7 @@ class _SkinTypePageState extends ConsumerState<SkinTypePage> {
   bool get _lifestyleOnly => widget.mode == ProfileFormMode.lifestyle;
 
   /// 건너뛰기가 있는 모드는 full 하나뿐이다. 습관 모드는 네 개가 다 있어야 하고,
-  /// 온보딩 모드는 진단 뒤 한 번 받아 두는 자리라 출구를 UNKNOWN 에 맡긴다.
+  /// 온보딩 모드는 첫 분석에 한 번 받아 두는 자리라 출구를 UNKNOWN 에 맡긴다.
   bool get _canSkip => widget.mode == ProfileFormMode.full;
 
   /// full — 고민은 제출 조건에 넣지 않는다. 넣으면 고민을 전부 해제한 사용자가 버튼이
@@ -151,8 +152,9 @@ class _SkinTypePageState extends ConsumerState<SkinTypePage> {
 
   /// **뒤로가기를 막지 않는다.** 예전에는 이 화면이 분석과 결과 사이에 낀 강제
   /// 단계라, 나가면 방금 한 분석을 다시 볼 길이 없어서 붙잡아 두어야 했다.
-  /// 지금은 부르는 쪽이 둘 다 결과를 이미 보여준 뒤다 — 인사이트(S10)는 결과를
-  /// 지나서 오고, 온보딩 모드는 결과 화면 위에 덮인다. 나가도 잃는 것이 없다.
+  /// 지금은 나가도 잃는 것이 없다 — 인사이트(S10)는 결과를 지나서 오고, 온보딩
+  /// 모드 밑에는 로딩 화면이 깔려 있어 나가면 그대로 결과로 이어진다.
+  /// 분석은 촬영하는 순간 이미 시작됐으므로 여기서 나가도 그 분석을 잃지 않는다.
   @override
   Widget build(BuildContext context) => _form(context);
 
@@ -191,8 +193,8 @@ class _SkinTypePageState extends ConsumerState<SkinTypePage> {
                 ProfileFormMode.lifestyle =>
                   '수면·스트레스·운동·수분 네 가지를 알려주시면\n'
                       '오늘 피부 상태와 함께 인사이트를 만들어 드려요.',
-                // 진단을 이미 보여준 뒤라서 할 수 있는 말이다. 설문이 촬영보다
-                // 앞에 있던 시절에는 이 문장에 근거가 없었다.
+                // 촬영을 마친 직후라서 할 수 있는 말이다. 설문이 촬영보다 앞에
+                // 있던 시절에는 "사진 촬영이 끝났습니다" 자체가 거짓이었다.
                 ProfileFormMode.onboarding => 'AI의 진단이 정확하지 않을 수 있으니\n'
                     '프로필 설정으로 추가적인 피부 타입을 알려주세요',
                 ProfileFormMode.full => '정확한 분석을 위해 알려주세요',
