@@ -140,6 +140,12 @@ void main() {
     // 얹으면 사용자가 20초짜리 설문을 다 쓰고 나서야 실패 화면을 만난다.
     expect(find.text('설문'), findsNothing);
     expect(find.text('얼굴이 인식되지 않았어요.'), findsOneWidget);
+
+    // 아직 아무것도 못 물었으니 플래그는 살아 있어야 한다. 여기서 끄면 재촬영으로
+    // 성공했을 때 프로필을 영영 안 묻는다.
+    final container =
+        ProviderScope.containerOf(tester.element(find.byType(SkinLoadingPage)));
+    expect(container.read(onboardingCaptureProvider), isTrue);
   });
 
   testWidgets('설문보다 분석이 먼저 끝났으면 결과를 다시 받는다', (tester) async {
@@ -153,6 +159,8 @@ void main() {
     stub.land(analysis);
     await settle(tester);
 
+    (container.read(authNotifierProvider.notifier) as _StubAuth)
+        .declare(SkinType.dry);
     Navigator.of(tester.element(find.text('설문'))).pop();
     await settle(tester);
 
@@ -160,6 +168,26 @@ void main() {
     // 응답을 조립할 때 declared 를 읽는다. 다시 안 받으면 갭 카드 대신 같은
     // 질문을 던지는 인라인 칩이 뜨고 카드 제목이 자가 신고값으로 떨어진다.
     expect(stub.refreshCalls, 1);
+  });
+
+  testWidgets('설문을 그냥 닫았으면 다시 받지 않는다', (tester) async {
+    await tester.binding.setSurfaceSize(designSize);
+    await tester.pumpWidget(loadingHost(onboarding: true));
+    await settle(tester);
+
+    final container = ProviderScope.containerOf(tester.element(find.text('설문')));
+    final stub =
+        container.read(skinAnalysisNotifierProvider.notifier) as _StubAnalysis;
+    stub.land(analysis);
+    await settle(tester);
+
+    // 아무것도 안 고르고 뒤로가기. 서버에 바뀐 것이 없으니 같은 응답을 받으러
+    // 다녀오는 동안 사용자가 가짜 진행 표시를 계속 보게 된다.
+    Navigator.of(tester.element(find.text('설문'))).pop();
+    await settle(tester);
+
+    expect(stub.refreshCalls, 0);
+    expect(find.text('결과'), findsOneWidget);
   });
 
   testWidgets('분석이 아직 안 왔으면 다시 받지 않는다', (tester) async {
@@ -171,6 +199,8 @@ void main() {
     final stub =
         container.read(skinAnalysisNotifierProvider.notifier) as _StubAnalysis;
 
+    (container.read(authNotifierProvider.notifier) as _StubAuth)
+        .declare(SkinType.dry);
     Navigator.of(tester.element(find.text('설문'))).pop();
     await settle(tester);
 
@@ -255,6 +285,15 @@ class _StubAuth extends AuthNotifier {
 
   @override
   AuthState build() => Authenticated(user);
+
+  /// 설문 화면은 이 테스트에서 더미라 updateProfile 을 부르지 않는다.
+  /// 사용자가 타입을 골라 저장한 상태를 테스트가 직접 만든다.
+  void declare(SkinType type) => state = Authenticated(AuthUser(
+        userId: user.userId,
+        email: user.email,
+        nickname: user.nickname,
+        declaredSkinType: type,
+      ));
 }
 
 /// 서버 왕복 없이 분석 도착 시점만 테스트가 정한다.

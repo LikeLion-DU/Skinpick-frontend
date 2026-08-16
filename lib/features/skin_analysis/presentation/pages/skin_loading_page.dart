@@ -40,12 +40,7 @@ class _SkinLoadingPageState extends ConsumerState<SkinLoadingPage> {
   Future<void> _askProfileThenResult() async {
     if (!mounted) return;
 
-    // 플래그는 한 번 쓰고 끈다. **물을 것이 없어 건너뛰는 경우에도 끈다** —
-    // 조건 안에서 끄면 그때 플래그가 세션에 그대로 남는다.
     final onboarding = ref.read(onboardingCaptureProvider);
-    if (onboarding) {
-      ref.read(onboardingCaptureProvider.notifier).state = false;
-    }
 
     // 타입이 이미 있으면 물을 것이 없다 — 촬영을 중간에 접어 플래그만 남은 채
     // 프로필을 직접 설정한 사용자다. 다 아는 것을 다시 묻게 된다.
@@ -54,17 +49,37 @@ class _SkinLoadingPageState extends ConsumerState<SkinLoadingPage> {
       _ => null,
     };
 
-    // 이미 실패한 분석 위에는 얹지 않는다. 얼굴 미검출이나 네트워크 끊김은 보통
-    // 몇 초 안에 돌아오는데, 그 위에 설문을 얹으면 사용자가 20초를 들여 설문을
-    // 다 쓰고 나서야 실패 화면을 만난다.
+    // 들어오자마자 실패해 있으면 얹지 않는다. 여기서 잡히는 것은 **로컬 실패**뿐이다
+    // — 비행기 모드처럼 요청이 나가기도 전에 깨진 경우. 서버 실패(얼굴 미검출,
+    // 5xx, 타임아웃)는 셔터 몇 초 뒤에 오므로 그때는 이미 설문이 위에 떠 있다.
+    //
+    // 그 경우를 잡겠다고 설문을 걷지는 않는다. 설문은 이 분석과 무관하게 쓸모가
+    // 있고(프로필은 서버에 남는다), 쓰던 화면이 밑에서 사라지는 쪽이 실패를 20초
+    // 늦게 아는 것보다 나쁘다. 재촬영하면 타입이 이미 있어 다시 묻지 않는다.
+    //
+    // **플래그는 끄지 않는다** — 아직 아무것도 못 물었다. 여기서 끄면 재촬영으로
+    // 성공했을 때 프로필을 영영 안 묻게 된다.
     final failed = ref.read(skinAnalysisNotifierProvider).analysis.hasError;
+    if (failed) return;
 
-    if (onboarding && declared == null && !failed) {
+    if (onboarding && declared != null) {
+      ref.read(onboardingCaptureProvider.notifier).state = false;
+    }
+
+    if (onboarding && declared == null) {
+      ref.read(onboardingCaptureProvider.notifier).state = false;
       _surveyOpen = true;
       await context.push(Routes.onboardingProfile);
       if (!mounted) return;
       _surveyOpen = false;
-      await _refetchForGap();
+
+      // 설문을 그냥 닫았으면(뒤로가기) 서버에 바뀐 것이 없다. 다시 받아 봐야
+      // 같은 응답이고, 그동안 사용자는 가짜 진행 표시를 계속 본다.
+      final answered = switch (ref.read(authNotifierProvider)) {
+        Authenticated(:final user) => user.declaredSkinType != null,
+        _ => false,
+      };
+      if (answered) await _refetchForGap();
       if (!mounted) return;
     }
 
