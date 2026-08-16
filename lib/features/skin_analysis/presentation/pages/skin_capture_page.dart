@@ -129,9 +129,24 @@ class _SkinCapturePageState extends ConsumerState<SkinCapturePage>
     super.dispose();
   }
 
-  /// 카메라 작업을 하나씩 줄 세운다.
+  /// 카메라 작업을 하나씩 줄 세운다. 결과를 기다릴 필요가 없을 때 쓴다.
   void _runCamera(Future<void> Function() op) {
     _cameraLock = _cameraLock.then((_) => op()).catchError((_) {});
+  }
+
+  /// 같은 줄에 세우되 **결과를 기다린다.**
+  ///
+  /// 촬영·스트림 재개는 순서가 어긋나면 CameraX 가 use case 를 중복으로 바인딩하고
+  /// "No supported surface combination" 로 화면을 덮는다. 실제로 그렇게 터졌다 —
+  /// _recover 가 부른 startImageStream 이 끝나기 전에 rebuild 가 한 번 더 부르면,
+  /// takePicture 가 남긴 IMAGE_CAPTURE 위에 ImageAnalysis 가 두 개 붙는다.
+  /// `isStreamingImages` 는 그 사이를 못 막는다 — 네이티브 바인딩보다 먼저 바뀐다.
+  ///
+  /// 실패해도 락은 이어져야 한다. 한 번 깨진 채로 두면 이후 카메라 작업이 전부 막힌다.
+  Future<void> _lockCamera(Future<void> Function() op) {
+    final running = _cameraLock.then((_) => op());
+    _cameraLock = running.catchError((_) {});
+    return running;
   }
 
   @override
@@ -268,10 +283,15 @@ class _SkinCapturePageState extends ConsumerState<SkinCapturePage>
     });
 
     try {
-      if (controller.value.isStreamingImages) {
-        await controller.stopImageStream();
-      }
-      final shot = await controller.takePicture();
+      // 스트림 정지와 촬영을 한 덩어리로 잠근다. 둘 사이에 스트림 재개가 끼어들면
+      // ImageAnalysis 가 두 번 바인딩된다.
+      late final XFile shot;
+      await _lockCamera(() async {
+        if (controller.value.isStreamingImages) {
+          await controller.stopImageStream();
+        }
+        shot = await controller.takePicture();
+      });
 
       // 프리뷰의 faceRect 를 크롭에 쓰지 않는다. 사진에서 한 번 더 검출한다.
       final prepared = await gate.prepareSkinPhoto(shot, photoType: _stage);
@@ -315,7 +335,7 @@ class _SkinCapturePageState extends ConsumerState<SkinCapturePage>
       if (picked == null) {
         // 사용자가 취소했다. 잠금만 풀고 프리뷰를 되살린다 — 쿨다운은 걸지 않는다.
         // 걸면 이미 자세를 잡고 있던 사용자가 이유 없이 3초를 기다린다.
-        await _resumeStream();
+        await _lockCamera(_resumeStream);
         _set(() {
           _busy = false;
           _blockedGuide = null;
@@ -344,7 +364,7 @@ class _SkinCapturePageState extends ConsumerState<SkinCapturePage>
 
     final photos = SkinPhotoSet.tryFrom(_shots);
     if (photos == null) {
-      await _resumeStream();
+      await _lockCamera(_resumeStream);
       _set(() {
         _busy = false;
         _result = null; // 방향이 바뀌었으니 이전 판정은 버린다
@@ -360,7 +380,7 @@ class _SkinCapturePageState extends ConsumerState<SkinCapturePage>
   /// 업로드하지 못했을 때 화면을 되살린다. 이걸 빠뜨리면 _busy 가 선 채로
   /// 촬영·갤러리 버튼이 영구 비활성이 되고 프리뷰도 멈춘 채로 남는다.
   Future<void> _recover(String guide) async {
-    await _resumeStream();
+    await _lockCamera(_resumeStream);
     _set(() {
       _busy = false;
       _blockedGuide = guide;
@@ -399,7 +419,7 @@ class _SkinCapturePageState extends ConsumerState<SkinCapturePage>
     //
     // 세 장을 넘긴 시점에 이 화면의 일은 끝났다. 지금 정리해 두면 어느 경로로
     // 돌아오든 처음(정면)부터 다시 찍을 수 있는 상태다.
-    await _stopStream();
+    await _lockCamera(_stopStream);
     _set(() {
       _busy = false;
       _blockedGuide = null;
