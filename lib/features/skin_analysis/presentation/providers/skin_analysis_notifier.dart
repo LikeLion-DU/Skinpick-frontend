@@ -13,6 +13,13 @@ final latestSkinAnalysisProvider = FutureProvider<Result<SkinAnalysis?>>(
   (ref) => ref.watch(skinRepositoryProvider).getLatest(),
 );
 
+/// 가입 직후 촬영 안내(S01d)에서 "촬영하기"로 들어왔는가.
+///
+/// 결과 화면(S05)이 이 값을 보고 프로필 설문을 그 위에 덮은 뒤 끈다. 라우트
+/// 쿼리로 넘기지 않는 것은 촬영→로딩→결과가 `pushReplacement` 세 번이라 세 곳에
+/// 실어야 하고, 로딩 화면의 재시도가 카메라로 되돌아갈 때 그 값이 끊기기 때문이다.
+final onboardingCaptureProvider = StateProvider<bool>((ref) => false);
+
 /// 분석 결과를 들고 있는다.
 ///
 /// **얼굴 사진 바이트는 들고 있지 않는다.** 확정 시안의 결과 화면(S05)에는 사진

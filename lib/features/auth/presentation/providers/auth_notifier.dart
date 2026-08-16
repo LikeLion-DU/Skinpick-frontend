@@ -165,6 +165,9 @@ class AuthNotifier extends Notifier<AuthState> {
       ..invalidate(plateNotifierProvider)
       ..invalidate(skinAnalysisNotifierProvider)
       ..invalidate(latestSkinAnalysisProvider)
+      // 촬영 안내에서 켜 놓고 나가 버린 경우가 남는다. 그대로 두면 다음 계정의
+      // 첫 분석 결과 위에 프로필 설문이 난데없이 덮인다.
+      ..invalidate(onboardingCaptureProvider)
       // family 전체를 비운다. 이전 사용자의 피부 지표로 만든 추천 문구가 남는다.
       ..invalidate(recommendationProvider);
   }

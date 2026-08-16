@@ -20,8 +20,14 @@ import '../providers/auth_notifier.dart';
 /// 주제를 고르므로, 기기에만 저장하면 그 기능이 통째로 동작하지 않는다.
 /// 이 화면이 서는 두 자리.
 enum ProfileFormMode {
-  /// 가입 직후(S01c)와 홈의 "피부 프로필 수정". 타입·고민·습관 전부, 건너뛰기 있음.
+  /// 홈의 "피부 프로필 수정"과 촬영 안내(S01d)에서 넘어간 경우.
+  /// 타입·고민·습관 전부, 건너뛰기 있음.
   full,
+
+  /// 진단 직후 결과 화면(S05) 위에 덮이는 모드. 묻는 항목은 full 과 같고
+  /// 건너뛰기만 없다 — 갇히지는 않는다. 타입에 "잘 모르겠어요"(UNKNOWN)가 있고,
+  /// 닫고 나가면 밑에 깔린 결과가 그대로 있다. 뒤로가기를 막지 않는 이유다.
+  onboarding,
 
   /// 인사이트(S10)가 습관을 받으러 보내는 화면. 생활 습관 4종만 묻고 건너뛰기가
   /// 없다 — 네 개가 다 있어야 인사이트를 만들 수 있다.
@@ -55,6 +61,10 @@ class _SkinTypePageState extends ConsumerState<SkinTypePage> {
   String? _error;
 
   bool get _lifestyleOnly => widget.mode == ProfileFormMode.lifestyle;
+
+  /// 건너뛰기가 있는 모드는 full 하나뿐이다. 습관 모드는 네 개가 다 있어야 하고,
+  /// 온보딩 모드는 진단 뒤 한 번 받아 두는 자리라 출구를 UNKNOWN 에 맡긴다.
+  bool get _canSkip => widget.mode == ProfileFormMode.full;
 
   /// full — 고민은 제출 조건에 넣지 않는다. 넣으면 고민을 전부 해제한 사용자가 버튼이
   /// 왜 꺼졌는지 모른 채 갇히고, "이제 고민 없어요"를 서버에 저장할 방법이 사라진다
@@ -141,8 +151,8 @@ class _SkinTypePageState extends ConsumerState<SkinTypePage> {
 
   /// **뒤로가기를 막지 않는다.** 예전에는 이 화면이 분석과 결과 사이에 낀 강제
   /// 단계라, 나가면 방금 한 분석을 다시 볼 길이 없어서 붙잡아 두어야 했다.
-  /// 지금은 인사이트(S10)가 부르는 화면이고 결과는 이미 봤으므로, 나가도 잃는
-  /// 것이 없다 — 인사이트를 나중에 보겠다는 선택을 막을 이유가 없다.
+  /// 지금은 부르는 쪽이 둘 다 결과를 이미 보여준 뒤다 — 인사이트(S10)는 결과를
+  /// 지나서 오고, 온보딩 모드는 결과 화면 위에 덮인다. 나가도 잃는 것이 없다.
   @override
   Widget build(BuildContext context) => _form(context);
 
@@ -153,7 +163,7 @@ class _SkinTypePageState extends ConsumerState<SkinTypePage> {
         actions: [
           // 건너뛰기는 API 를 호출하지 않는 것이다. declared_skin_type 이 NULL 로
           // 남아야 "아직 안 정함"과 "잘 모르겠어요(UNKNOWN)"가 구분된다.
-          if (!_lifestyleOnly)
+          if (_canSkip)
             TextButton(
               onPressed: _busy ? null : _leave,
               child: const Text('건너뛰기',
@@ -169,16 +179,24 @@ class _SkinTypePageState extends ConsumerState<SkinTypePage> {
           // 있어서 "거의 다 왔어요!" 가 맞았지만, 지금은 인사이트를 보려다 들른
           // 화면이라 그 말이 어디에 가까워졌다는 것인지 알 수 없다.
           Text(
-              _lifestyleOnly
-                  ? '생활 습관을\n알려주세요'
-                  : '피부 프로필을\n설정해 볼까요?',
+              switch (widget.mode) {
+                ProfileFormMode.lifestyle => '생활 습관을\n알려주세요',
+                ProfileFormMode.onboarding => '사진 촬영이 끝났습니다',
+                ProfileFormMode.full => '피부 프로필을\n설정해 볼까요?',
+              },
               style: Theme.of(context).textTheme.titleLarge),
           const SizedBox(height: 8),
           Text(
-              _lifestyleOnly
-                  ? '수면·스트레스·운동·수분 네 가지를 알려주시면\n'
-                      '오늘 피부 상태와 함께 인사이트를 만들어 드려요.'
-                  : '정확한 분석을 위해 알려주세요',
+              switch (widget.mode) {
+                ProfileFormMode.lifestyle =>
+                  '수면·스트레스·운동·수분 네 가지를 알려주시면\n'
+                      '오늘 피부 상태와 함께 인사이트를 만들어 드려요.',
+                // 진단을 이미 보여준 뒤라서 할 수 있는 말이다. 설문이 촬영보다
+                // 앞에 있던 시절에는 이 문장에 근거가 없었다.
+                ProfileFormMode.onboarding => 'AI의 진단이 정확하지 않을 수 있으니\n'
+                    '프로필 설정으로 추가적인 피부 타입을 알려주세요',
+                ProfileFormMode.full => '정확한 분석을 위해 알려주세요',
+              },
               style: Theme.of(context).textTheme.bodyMedium),
           const SizedBox(height: 20),
           if (!_lifestyleOnly) ...[
