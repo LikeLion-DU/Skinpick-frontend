@@ -284,8 +284,6 @@ class _FoodCapturePageState extends ConsumerState<FoodCapturePage>
     // 여기서 돌아 나가면 서버에 아무것도 남지 않는다.
     unawaited(ref.read(plateNotifierProvider.notifier).analyze(image));
 
-    // 결과 화면에서 뒤로 돌아왔을 때를 대비해 넘기기 전에 정리한다.
-    // (로딩·결과 화면이 pushReplacement 를 쓰면 push 의 완료 future 가 오지 않는다)
     _window.clear();
     _set(() {
       _busy = false;
@@ -294,7 +292,13 @@ class _FoodCapturePageState extends ConsumerState<FoodCapturePage>
     });
 
     if (!mounted || _disposed) return;
-    context.push(Routes.plateResult);
+    // push 가 아니라 교체다. 찍고 나면 이 화면의 일은 끝났고, 결과에서 뒤로 가는
+    // 사용자는 "촬영 이전 화면"으로 나가려는 것이지 카메라를 다시 보려는 게 아니다.
+    // push 로 두면 결과 아래에 카메라가 살아 있다가 뒤로가기에 되살아난다.
+    //
+    // 다시 찍는 길은 결과 화면의 [다시 촬영] 하나로 모은다 — 명시적으로 고를 때만
+    // 카메라가 뜬다.
+    context.pushReplacement(Routes.plateResult);
   }
 
   /// 결과 화면에서 돌아왔을 때 프리뷰를 되살린다.

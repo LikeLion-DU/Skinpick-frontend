@@ -55,7 +55,11 @@ class _PlateResultPageState extends ConsumerState<PlateResultPage> {
       body: switch (state) {
         // 분석 자체가 실패했다. 만료·미인식은 FailureView 가 "다시 촬영하기"로 낸다.
         PlateState(status: PlateRecordStatus.analyzing, failure: final Failure error) =>
-          FailureView(failure: error, onRetry: () => context.pop()),
+          // 촬영 화면은 이미 교체돼 스택에 없다. pop 하면 촬영 이전 화면으로 나가
+          // 버리므로, 재촬영은 카메라로 명시적으로 다시 들어간다.
+          FailureView(
+              failure: error,
+              onRetry: () => context.pushReplacement(Routes.foodCapture)),
         PlateState(status: PlateRecordStatus.analyzing) =>
           const Center(child: CircularProgressIndicator()),
         _ when view != null => _Content(
@@ -64,7 +68,7 @@ class _PlateResultPageState extends ConsumerState<PlateResultPage> {
             applied: _applied,
             onToggle: _toggle,
             onSave: () => ref.read(plateNotifierProvider.notifier).saveRecord(),
-            onRetake: () => context.pop(),
+            onRetake: () => context.pushReplacement(Routes.foodCapture),
           ),
         _ => const Center(child: CircularProgressIndicator()),
       },
