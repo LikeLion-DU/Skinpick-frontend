@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../app/router/app_router.dart';
 import '../../../../app/theme/app_colors.dart';
 import '../../../../app/theme/app_theme.dart';
+import '../../../../core/di/providers.dart';
 import '../../../../core/widgets/app_widgets.dart';
 import '../../../../shared/enums/score_grade.dart';
 import '../../../../shared/widgets/app_bottom_nav.dart';
@@ -204,6 +205,89 @@ class _DayView extends StatelessWidget {
   }
 }
 
+/// 기록 삭제. 카드 우측 상단의 ×.
+///
+/// 지우기 전에 반드시 한 번 묻는다 — 되돌릴 방법이 없고(서버도 기기 사진도 사라진다),
+/// 스크롤하다 스칠 수 있는 자리에 있다.
+class _DeleteButton extends ConsumerStatefulWidget {
+  const _DeleteButton({required this.item});
+
+  final PlateHistoryItem item;
+
+  @override
+  ConsumerState<_DeleteButton> createState() => _DeleteButtonState();
+}
+
+class _DeleteButtonState extends ConsumerState<_DeleteButton> {
+  bool _busy = false;
+
+  Future<void> _confirmAndDelete() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('이 기록을 지울까요?'),
+        content: Text(
+          '${widget.item.foodName} 기록과 사진이 사라져요. 되돌릴 수 없어요.',
+          style: const TextStyle(fontSize: 13, height: 1.5),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('취소',
+                style: TextStyle(color: AppColors.textSecondary)),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: const Text('삭제', style: TextStyle(color: AppColors.bad)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true || !mounted) return;
+
+    setState(() => _busy = true);
+    final result = await ref
+        .read(plateRepositoryProvider)
+        .deleteRecord(widget.item.plateId);
+
+    if (!mounted) return;
+    setState(() => _busy = false);
+
+    result.when(
+      // 목록을 다시 받는다. 카드만 지우면 그날의 점수·코멘트가 옛값으로 남는다.
+      // 홈의 오늘 카드는 이 프로바이더에서 파생되므로 같이 갱신된다.
+      success: (_) => ref.invalidate(plateHistoryProvider),
+      failure: (failure) => ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(failure.message))),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_busy) {
+      return const SizedBox(
+        width: 32,
+        height: 32,
+        child: Padding(
+          padding: EdgeInsets.all(8),
+          child: CircularProgressIndicator(strokeWidth: 2),
+        ),
+      );
+    }
+
+    return IconButton(
+      onPressed: _confirmAndDelete,
+      icon: const Icon(Icons.close, size: 18),
+      color: AppColors.textSecondary,
+      visualDensity: VisualDensity.compact,
+      constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+      padding: EdgeInsets.zero,
+      tooltip: '기록 삭제',
+    );
+  }
+}
+
 /// 끼니 하나의 카드. 시안 수치 — 높이 241 · 사진 120 · 모서리 9.
 class _MealCard extends ConsumerWidget {
   const _MealCard({required this.item});
@@ -253,6 +337,10 @@ class _MealCard extends ConsumerWidget {
                     fontSize: 12,
                     color: AppColors.textSecondary,
                   )),
+              const Spacer(),
+              // 되돌릴 수 없는 동작이라 확인 창을 한 번 지난다. 스크롤하다 스칠 수
+              // 있는 자리라 더 그렇다.
+              _DeleteButton(item: item),
             ],
           ),
           const SizedBox(height: 14),

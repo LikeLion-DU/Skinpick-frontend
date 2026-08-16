@@ -73,4 +73,18 @@ class PlateImageStore {
       return false;
     }
   }
+
+  /// 기록을 지울 때 사진도 같이 지운다.
+  ///
+  /// **실패해도 삼킨다.** 서버 기록은 이미 사라졌으므로 여기서 오류를 올리면
+  /// "삭제 실패"라고 안내하면서 목록에서는 사라진 모순이 된다. 남은 파일은
+  /// 아무 화면도 참조하지 않는 고아라 다음 설치까지 조용히 자리만 차지한다.
+  static Future<void> delete(int plateId) async {
+    try {
+      final file = fileFor(await directory(), plateId);
+      if (await file.exists()) await file.delete();
+    } on Object catch (_) {
+      // 무시한다 — 위 주석 참고.
+    }
+  }
 }

@@ -7,6 +7,7 @@ import '../../domain/entities/plate_analysis.dart';
 import '../../domain/entities/plate_history.dart';
 import '../../domain/entities/skin_plate.dart';
 import '../../domain/repositories/plate_repository.dart';
+import '../datasources/plate_image_store.dart';
 import '../datasources/plate_remote_datasource.dart';
 import '../models/plate_dtos.dart';
 
@@ -27,6 +28,14 @@ class PlateRepositoryImpl implements PlateRepository {
   @override
   Future<Result<SkinPlate>> getById(int id) =>
       callApi(() async => (await _remote.getById(id)).toEntity());
+
+  /// 서버가 먼저다. 사진을 먼저 지우면 서버 삭제가 실패했을 때 기록은 남고
+  /// 사진만 사라진 상태가 된다 — 히스토리에 깨진 칸이 생긴다.
+  @override
+  Future<Result<void>> deleteRecord(int plateId) => callApi(() async {
+        await _remote.delete(plateId);
+        await PlateImageStore.delete(plateId);
+      });
 
   @override
   Future<Result<List<PlateHistoryDay>>> history(DateTime from, DateTime to) =>

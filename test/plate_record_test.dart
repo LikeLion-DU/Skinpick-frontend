@@ -608,6 +608,9 @@ class _FakeRepository implements PlateRepository {
   Future<Result<SkinPlate>> getById(int id) => throw UnimplementedError();
 
   @override
+  Future<Result<void>> deleteRecord(int plateId) => throw UnimplementedError();
+
+  @override
   Future<Result<List<PlateHistoryDay>>> history(DateTime from, DateTime to) =>
       throw UnimplementedError();
 }
