@@ -41,12 +41,16 @@ class SkinAnalysis {
   final DateTime analyzedAt;
 }
 
-/// 점수 하나 + 서버 등급 + 관찰 근거. 피부 지표와 나이 축이 같이 쓴다.
+/// 점수 하나 + 관찰 근거. 피부 지표와 나이 축이 같이 쓴다.
+///
+/// 서버가 같이 주는 `level` 은 도메인까지 올리지 않는다. 화면 색은 `MetricBand` 가
+/// 그리고 있어서 읽는 곳이 없는데, 원시 문자열로 들고 있으면 이 저장소가 정한
+/// "wire enum 은 파서를 거친다" 규칙만 헐거워진다. 계약이 어긋나는지는 DTO 층의
+/// 계약 테스트가 본다.
 class ScoredItem {
   const ScoredItem({
     required this.key,
     required this.score,
-    required this.level,
     required this.evidence,
   });
 
@@ -54,10 +58,6 @@ class ScoredItem {
 
   /// 서버가 준 원값. 방향을 뒤집지 않았으므로 바 길이는 이 값으로 그린다.
   final int score;
-
-  /// 서버가 방향을 맞춰 계산한 등급 문자열.
-  /// 지금 화면은 `MetricBand` 로 색을 칠한다 — 이 값으로 옮기는 것은 화면을 같이 손볼 때다.
-  final String level;
 
   final List<String> evidence;
 }
@@ -89,6 +89,10 @@ class SkinAge {
 
   /// 왜 그 나이로 봤는지. 서버가 만든 문장이라 앱이 고치지 않는다.
   final String assessment;
+
+  /// 서버가 이미 18~80 을 보장하지만 앱이 한 번 더 본다.
+  /// 회귀가 나면 "AI 추정 피부 나이 0세" 가 확신에 찬 설명 옆에 그려진다.
+  bool get isUsable => estimatedSkinAge >= 18 && estimatedSkinAge <= 80;
 }
 
 /// 자가 진단 ↔ 오늘 측정 비교. 서버가 계산해서 내려준다.

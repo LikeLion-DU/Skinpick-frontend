@@ -147,8 +147,10 @@ extension SkinAnalysisDtoX on SkinAnalysisDto {
 }
 
 extension ScoredItemDtoX on ScoredItemDto {
+  /// level 은 도메인으로 넘기지 않는다 — 읽는 화면이 없다.
+  /// 계약이 어긋나는지는 이 DTO 를 보는 계약 테스트가 잡는다.
   ScoredItem toEntity() =>
-      ScoredItem(key: key, score: score, level: level, evidence: evidence);
+      ScoredItem(key: key, score: score, evidence: evidence);
 }
 
 extension AiSkinTypeDtoX on AiSkinTypeDto {

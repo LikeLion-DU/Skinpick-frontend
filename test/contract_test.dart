@@ -140,8 +140,11 @@ void main() {
     expect(analysis.metricDetails.map((d) => d.key).toList(),
         ['hydration', 'oil', 'redness', 'trouble', 'barrier']);
     expect(analysis.metricDetails.first.score, 38);
-    // 방향을 맞춘 뒤 매긴 등급이다 — 유분 52 는 정렬 48 이라 NORMAL 이다.
-    expect(analysis.metricDetails[1].level, 'NORMAL');
+    // 등급은 DTO 층에서 본다 — 읽는 화면이 없어 도메인까지 올리지 않았다.
+    // 방향을 맞춘 뒤 매긴 값이라 유분 52 는 정렬 48 로 NORMAL 이다.
+    final rawDetails = SkinAnalysisDto.fromJson(data('skin_latest')).metricDetails;
+    expect(rawDetails[1].level, 'NORMAL');
+    expect(rawDetails.map((d) => d.level), everyElement(isNotEmpty));
     expect(analysis.metricDetails.first.evidence, isNotEmpty);
 
     // AI 관찰 타입. 위 skinTypeGap.observed(규칙 도출)와 다른 값이고 갈릴 수 있다.
