@@ -11,20 +11,52 @@ import 'package:skinplate/features/auth/presentation/providers/auth_notifier.dar
 import 'package:skinplate/features/skin_analysis/domain/entities/skin_analysis.dart';
 import 'package:skinplate/features/skin_analysis/presentation/pages/skin_result_page.dart';
 import 'package:skinplate/features/skin_analysis/presentation/providers/skin_analysis_notifier.dart';
+import 'package:skinplate/shared/enums/highlight_status.dart';
+import 'package:skinplate/shared/enums/skin_type.dart';
 
-/// 가입 직후 순서를 뒤집었다: 촬영 안내(S01d) → 진단 → 결과 → 프로필 설문.
+/// 가입 직후 순서를 뒤집었다: 촬영 안내(S01d) → 진단 → 결과(S05) → 프로필 설문.
 ///
 /// 설문은 결과 화면을 **덮는다**. 예전처럼 분석과 결과 사이에 끼우면 거기서 나간
 /// 사용자가 방금 기다린 분석을 다시 볼 길이 없다 — 홈에 결과 진입점이 없다.
 void main() {
   const designSize = Size(402, 874);
 
-  Widget resultHost({required bool onboarding}) => ProviderScope(
+  const fresh = AuthUser(
+    userId: 1,
+    email: 'test@skinplate.app',
+    nickname: '테스트유저',
+  );
+
+  final analysis = SkinAnalysis(
+    id: 101,
+    skinScore: 58,
+    metrics: const SkinMetrics(
+      hydration: 38,
+      oil: 52,
+      redness: 64,
+      trouble: 25,
+      barrier: 78,
+    ),
+    summary: '건조와 홍조가 함께 보여요.',
+    highlights: const [
+      Highlight(label: '피부 장벽 양호', status: HighlightStatus.good),
+    ],
+    analyzedAt: DateTime(2026, 8, 16, 10, 30),
+  );
+
+  Widget resultHost({
+    required bool onboarding,
+    AuthUser profile = fresh,
+    SkinAnalysisNotifier Function()? analysisNotifier,
+  }) =>
+      ProviderScope(
         overrides: [
-          authNotifierProvider.overrideWith(_StubAuth.new),
+          authNotifierProvider.overrideWith(() => _StubAuth(profile)),
           latestSkinAnalysisProvider
               .overrideWith((ref) => const Success<SkinAnalysis?>(null)),
           onboardingCaptureProvider.overrideWith((ref) => onboarding),
+          if (analysisNotifier != null)
+            skinAnalysisNotifierProvider.overrideWith(analysisNotifier),
         ],
         child: MaterialApp.router(
           theme: AppTheme.light,
@@ -45,13 +77,17 @@ void main() {
         ),
       );
 
+  // 분석이 비어 있으면 결과 화면이 스피너를 돌려 pumpAndSettle 이 끝나지 않는다.
+  // 한 프레임(postFrame 콜백)과 라우트 전환 시간만 흘린다.
+  Future<void> settle(WidgetTester tester) async {
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 1));
+  }
+
   testWidgets('온보딩 촬영으로 들어온 결과는 프로필 설문이 덮는다', (tester) async {
     await tester.binding.setSurfaceSize(designSize);
     await tester.pumpWidget(resultHost(onboarding: true));
-    // 분석이 비어 있어 결과 화면은 스피너를 돌린다 — pumpAndSettle 은 끝나지 않는다.
-    // 한 프레임(postFrame 콜백)과 라우트 전환 시간만 흘린다.
-    await tester.pump();
-    await tester.pump(const Duration(seconds: 1));
+    await settle(tester);
 
     expect(find.text('덮개'), findsOneWidget);
 
@@ -63,16 +99,49 @@ void main() {
   testWidgets('그냥 재분석한 결과는 덮지 않는다', (tester) async {
     await tester.binding.setSurfaceSize(designSize);
     await tester.pumpWidget(resultHost(onboarding: false));
-    await tester.pump();
-    await tester.pump(const Duration(seconds: 1));
+    await settle(tester);
 
     expect(find.text('덮개'), findsNothing);
+  });
+
+  testWidgets('촬영을 접었다가 프로필을 직접 설정한 사용자는 덮지 않는다', (tester) async {
+    await tester.binding.setSurfaceSize(designSize);
+    // 플래그는 켜져 있지만(촬영 안내에서 촬영하기를 눌렀다) 타입이 이미 있다.
+    await tester.pumpWidget(resultHost(
+      onboarding: true,
+      profile: const AuthUser(
+        userId: 1,
+        email: 'test@skinplate.app',
+        nickname: '테스트유저',
+        declaredSkinType: SkinType.dry,
+      ),
+    ));
+    await settle(tester);
+
+    expect(find.text('덮개'), findsNothing);
+  });
+
+  testWidgets('설문을 닫으면 결과를 다시 받는다', (tester) async {
+    final spy = _SpyAnalysis(analysis);
+
+    await tester.binding.setSurfaceSize(designSize);
+    await tester
+        .pumpWidget(resultHost(onboarding: true, analysisNotifier: () => spy));
+    await settle(tester);
+    expect(find.text('덮개'), findsOneWidget);
+
+    Navigator.of(tester.element(find.text('덮개'))).pop();
+    await settle(tester);
+
+    // 갭 문장은 서버가 만든다. 다시 안 받으면 같은 질문을 던지는 인라인 칩이
+    // 그 자리에 다시 뜨고, 카드 제목이 측정값 대신 자가 신고값으로 떨어진다.
+    expect(spy.refreshCalls, 1);
   });
 
   testWidgets('온보딩 모드 설문은 건너뛰기가 없고 촬영이 끝났다고 말한다', (tester) async {
     await tester.binding.setSurfaceSize(designSize);
     await tester.pumpWidget(ProviderScope(
-      overrides: [authNotifierProvider.overrideWith(_StubAuth.new)],
+      overrides: [authNotifierProvider.overrideWith(() => _StubAuth(fresh))],
       child: const MaterialApp(
         home: SkinTypePage(mode: ProfileFormMode.onboarding),
       ),
@@ -84,10 +153,10 @@ void main() {
     expect(find.text('건너뛰기'), findsNothing);
   });
 
-  testWidgets('홈에서 들어온 프로필 수정에는 건너뛰기가 남아 있다', (tester) async {
+  testWidgets('촬영을 넘어간 사용자의 설문에는 건너뛰기가 남아 있다', (tester) async {
     await tester.binding.setSurfaceSize(designSize);
     await tester.pumpWidget(ProviderScope(
-      overrides: [authNotifierProvider.overrideWith(_StubAuth.new)],
+      overrides: [authNotifierProvider.overrideWith(() => _StubAuth(fresh))],
       child: const MaterialApp(home: SkinTypePage()),
     ));
     await tester.pumpAndSettle();
@@ -97,12 +166,25 @@ void main() {
 }
 
 class _StubAuth extends AuthNotifier {
+  _StubAuth(this.user);
+
+  final AuthUser user;
+
   @override
-  AuthState build() => const Authenticated(user);
+  AuthState build() => Authenticated(user);
 }
 
-const user = AuthUser(
-  userId: 1,
-  email: 'test@skinplate.app',
-  nickname: '테스트유저',
-);
+/// 다시 받기가 실제로 불렸는지만 센다. 서버 왕복은 이 테스트의 관심사가 아니다.
+class _SpyAnalysis extends SkinAnalysisNotifier {
+  _SpyAnalysis(this.seed);
+
+  final SkinAnalysis seed;
+  int refreshCalls = 0;
+
+  @override
+  SkinAnalysisState build() =>
+      SkinAnalysisState(analysis: AsyncData<SkinAnalysis?>(seed));
+
+  @override
+  Future<void> refresh(int id) async => refreshCalls++;
+}

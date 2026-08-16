@@ -46,11 +46,32 @@ class _SkinResultPageState extends ConsumerState<SkinResultPage> {
 
     // 라우터도 프로바이더도 위젯 생명주기 안에서 건드릴 수 없다 — Riverpod 은
     // initState 안의 상태 변경을 그 자리에서 던진다. 첫 프레임 뒤로 미룬다.
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      ref.read(onboardingCaptureProvider.notifier).state = false;
-      context.push(Routes.onboardingProfile);
-    });
+    WidgetsBinding.instance.addPostFrameCallback((_) => _askProfile());
+  }
+
+  Future<void> _askProfile() async {
+    if (!mounted) return;
+    ref.read(onboardingCaptureProvider.notifier).state = false;
+
+    // 촬영을 중간에 접었다가(권한 거부·얼굴 게이트 실패) 나중에 프로필을 직접
+    // 설정한 사용자다. 플래그만 남아 있을 뿐 여기서 물어볼 것이 없다.
+    final declared = switch (ref.read(authNotifierProvider)) {
+      Authenticated(:final user) => user.declaredSkinType,
+      _ => null,
+    };
+    if (declared != null) return;
+
+    await context.push(Routes.onboardingProfile);
+    if (!mounted) return;
+
+    // **갭 문장은 서버가 만든다.** 방금 고른 타입으로 결과를 다시 받지 않으면
+    // `skinTypeGap` 이 null 로 남아, 같은 질문을 던지는 인라인 칩이 그 자리에
+    // 다시 뜨고 카드 제목이 측정값 대신 자가 신고값으로 떨어진다.
+    // 인라인 칩(_SkinTypePrompt)이 이미 하는 일과 같다.
+    final id = ref.read(skinAnalysisNotifierProvider).analysis.value?.id;
+    if (id != null) {
+      await ref.read(skinAnalysisNotifierProvider.notifier).refresh(id);
+    }
   }
 
   @override

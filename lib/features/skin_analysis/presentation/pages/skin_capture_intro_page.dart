@@ -44,8 +44,10 @@ class SkinCaptureIntroPage extends ConsumerWidget {
               ),
               const SizedBox(height: 12),
               ElevatedButton(
-                // 넘어가도 프로필은 받는다. 진단도 프로필도 없이 홈에 떨어지면
-                // 음식 점수와 비교할 기준값이 하나도 없다.
+                // 넘어가도 설문은 보여준다 — 진단도 프로필도 없이 홈에 떨어지면
+                // 음식 점수와 비교할 기준값이 하나도 없다. 다만 강제하지는
+                // 않는다(건너뛰기가 있는 full 모드). 진단을 안 본 사용자에게는
+                // "AI 진단을 보정해 달라"고 말할 근거가 아직 없다.
                 onPressed: () => context.pushReplacement(Routes.skinType),
                 child: const Text('넘어가기'),
               ),
