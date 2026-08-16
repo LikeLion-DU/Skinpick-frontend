@@ -28,15 +28,8 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   final _email = TextEditingController();
   final _password = TextEditingController();
 
-  /// 슬롯 1은 발표 시연 전용이다. 팀 테스트는 2·3 으로 해서 기록을 섞지 않는다.
-  int _slot = 1;
   bool _busy = false;
   String? _error;
-
-  /// 시연·테스트 도구를 로고 다섯 번 탭 뒤에만 보여준다. 시안에 없는 UI 를
-  /// 항상 띄워 두면 심사 화면이 시안과 달라진다 — 숨기되 없애지는 않는다.
-  int _logoTaps = 0;
-  bool _showTestTools = false;
 
   @override
   void dispose() {
@@ -62,13 +55,6 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     });
   }
 
-  void _onLogoTap() {
-    _logoTaps++;
-    if (_logoTaps >= 5 && !_showTestTools) {
-      setState(() => _showTestTools = true);
-    }
-  }
-
   void _notReady() {
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('SNS 로그인은 준비 중이에요.')),
@@ -91,16 +77,12 @@ class _LoginPageState extends ConsumerState<LoginPage> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               const SizedBox(height: 120),
-              GestureDetector(
-                onTap: _onLogoTap,
-                behavior: HitTestBehavior.opaque,
-                child: Align(
-                  alignment: Alignment.centerLeft,
-                  // 로고는 검정+오렌지 2색이라 단색 필터를 씌우지 않는다.
-                  child: SvgPicture.asset(
-                    'assets/icons/logo_skinpick.svg',
-                    width: 176,
-                  ),
+              Align(
+                alignment: Alignment.centerLeft,
+                // 로고는 검정+오렌지 2색이라 단색 필터를 씌우지 않는다.
+                child: SvgPicture.asset(
+                  'assets/icons/logo_skinpick.svg',
+                  width: 176,
                 ),
               ),
               const SizedBox(height: 14),
@@ -182,32 +164,44 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                     width: 267, fit: BoxFit.contain),
               ),
 
-              if (_showTestTools) ...[
-                const Divider(height: 48),
-                // 심사위원이 무대에서 이메일을 타이핑하는 20초를 없애는 버튼이다.
-                // 오타 한 번이면 흐름이 끊긴다. (PRD §4.4.2)
-                const Text('시연 · 테스트용', textAlign: TextAlign.center),
-                const SizedBox(height: 8),
-                SegmentedButton<int>(
-                  segments: const [
-                    ButtonSegment(value: 1, label: Text('슬롯 1')),
-                    ButtonSegment(value: 2, label: Text('슬롯 2')),
-                    ButtonSegment(value: 3, label: Text('슬롯 3')),
+              const Divider(height: 48),
+              // 심사위원이 무대에서 이메일을 타이핑하는 20초를 없애는 버튼이다.
+              // 오타 한 번이면 흐름이 끊긴다. (PRD §4.4.2)
+              //
+              // 슬롯을 고르고 다시 누르는 2단계였는데 QA 중에 계정을 자주 갈아타므로
+              // 한 번 눌러 바로 들어가게 폈다. 슬롯 1은 발표 시연 전용이고
+              // 2·3 은 팀 테스트용이다 — 기록을 섞지 않으려고 나눠 둔 것이다.
+              const Text('시연 · 테스트용', textAlign: TextAlign.center),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  for (final slot in const [1, 2, 3]) ...[
+                    Expanded(
+                      child: OutlinedButton(
+                        // 테마에 outlinedButtonTheme 이 없어 M3 기본값(알약)이 나온다.
+                        // 숨겨져 있을 땐 안 보였지만 이제 상시 노출이라, 화면에서 유일하게
+                        // 곡률 8을 벗어난 버튼이 로그인 화면 하단에 남는다. 여기서만 맞춘다 —
+                        // 테마에 넣으면 촬영 화면의 갤러리 버튼까지 같이 바뀐다.
+                        style: OutlinedButton.styleFrom(
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8)),
+                          side: const BorderSide(color: AppColors.borderOnWhite),
+                          foregroundColor: AppColors.primary,
+                          // 좁은 기기(360dp)에서 라벨이 두 줄로 접히지 않게 좌우를 줄인다.
+                          padding: const EdgeInsets.symmetric(horizontal: 8),
+                        ),
+                        onPressed: _busy
+                            ? null
+                            : () => _run(() => ref
+                                .read(authNotifierProvider.notifier)
+                                .loginWithTestAccount(slot: slot)),
+                        child: Text('테스트 $slot'),
+                      ),
+                    ),
+                    if (slot != 3) const SizedBox(width: 8),
                   ],
-                  selected: {_slot},
-                  onSelectionChanged: (selected) =>
-                      setState(() => _slot = selected.first),
-                ),
-                const SizedBox(height: 8),
-                OutlinedButton(
-                  onPressed: _busy
-                      ? null
-                      : () => _run(() => ref
-                          .read(authNotifierProvider.notifier)
-                          .loginWithTestAccount(slot: _slot)),
-                  child: const Text('테스트 계정으로 시작하기'),
-                ),
-              ],
+                ],
+              ),
             ],
           ),
         ),

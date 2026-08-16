@@ -537,7 +537,7 @@ PRD §6 원칙 6이 요구한 "점수가 눈앞에서 움직이는" 재계산 �
 16. `lib/features/home/presentation/widgets/daily_score_card.dart` — 점수 카드. `OO점` 규칙과 진행 막대.
 17. `lib/features/home/presentation/widgets/today_records_card.dart` — 기록 카드. 빈 상태의 예시 줄과 빈 슬롯, 썸네일 폴백.
 18. `lib/features/auth/presentation/pages/splash_page.dart` — 로고 한 장. 스피너를 두지 않는 이유.
-19. `lib/features/auth/presentation/pages/login_page.dart` — 로그인 배치, 링크 줄, SNS 자산, 숨긴 시연 도구.
+19. `lib/features/auth/presentation/pages/login_page.dart` — 로그인 배치, 링크 줄, SNS 자산, 시연용 테스트 계정 버튼 3개.
 20. `lib/features/auth/presentation/pages/signup_page.dart` — 회원가입. 시안 토큰이 적용되지 않은 화면.
 21. `lib/features/auth/presentation/pages/skin_type_page.dart` — 설문 화면. `_Selectable`·고민 칩·진행 점·접히는 습관 줄.
 22. `lib/features/auth/domain/entities/skin_profile.dart` — 고민 9종·수면·스트레스·운동의 라벨과 설명 문구.

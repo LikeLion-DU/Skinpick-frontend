@@ -15,7 +15,7 @@ abstract interface class AuthRepository {
     required String password,
   });
 
-  /// 로그인 화면의 "테스트 계정으로 시작하기" 버튼
+  /// 로그인 화면의 "테스트 1·2·3" 버튼
   Future<Result<AuthSession>> loginWithTestAccount({int slot = 1});
 
   /// 앱 시작 시 저장된 토큰의 유효성을 확인하며 사용자 정보를 가져온다

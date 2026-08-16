@@ -101,7 +101,7 @@ class AuthNotifier extends Notifier<AuthState> {
     );
   }
 
-  /// 로그인 화면의 "테스트 계정으로 시작하기". 슬롯 1은 발표 시연 전용이다.
+  /// 로그인 화면의 "테스트 1·2·3" 버튼. 슬롯 1은 발표 시연 전용이다.
   Future<Failure?> loginWithTestAccount({int slot = 1}) async {
     final result =
         await ref.read(authRepositoryProvider).loginWithTestAccount(slot: slot);
