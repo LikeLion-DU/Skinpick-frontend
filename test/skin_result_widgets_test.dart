@@ -29,7 +29,7 @@ void main() {
     nickname: '테스트유저',
   );
 
-  Widget host(Map<String, dynamic> json) {
+  Widget host(Map<String, dynamic> json, {double textScale = 1.0}) {
     final analysis = SkinAnalysisDto.fromJson(json).toEntity();
 
     return ProviderScope(
@@ -40,7 +40,10 @@ void main() {
       ],
       child: MaterialApp(
         theme: AppTheme.light,
-        home: const SkinResultPage(),
+        home: MediaQuery(
+          data: MediaQueryData(textScaler: TextScaler.linear(textScale)),
+          child: const SkinResultPage(),
+        ),
       ),
     );
   }
@@ -100,7 +103,35 @@ void main() {
     expect(find.text('민감도 높음'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
+
+  /// 시스템 글자 크기를 키운 사용자. 카드 제목 줄에는 안 줄어드는 위젯을 하나도
+  /// 두면 안 된다 — 제목·배지·점수가 전부 고정폭이면 시안 폭에서 그대로 넘친다.
+  ///
+  /// 예전 기록 쪽이 더 위험하다. AI 칩(Flexible)이 없어서 '민감도 높음' 배지가
+  /// 고정폭으로 들어오기 때문이다.
+  for (final (label, mutate) in <(String, void Function(Map<String, dynamic>))>[
+    ('AI 타입이 있는 기록', _keepAll),
+    ('확장 필드가 없던 기록', _stripExtensions),
+  ]) {
+    testWidgets('$label — 글자 크기 2.0 에서도 넘치지 않는다', (tester) async {
+      final json = Map<String, dynamic>.from(data('skin_latest'));
+      mutate(json);
+
+      await tester.binding.setSurfaceSize(designSize);
+      await tester.pumpWidget(host(json, textScale: 2.0));
+      await tester.pumpAndSettle();
+
+      expect(tester.takeException(), isNull);
+    });
+  }
 }
+
+void _keepAll(Map<String, dynamic> json) {}
+
+void _stripExtensions(Map<String, dynamic> json) => json
+  ..remove('skinType')
+  ..remove('skinAge')
+  ..remove('metricDetails');
 
 class _StubAuth extends AuthNotifier {
   _StubAuth(this.user);
