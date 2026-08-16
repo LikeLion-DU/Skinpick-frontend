@@ -38,6 +38,20 @@ void main() {
     await tester.pumpAndSettle();
   }
 
+  /// 가입 직후 진입 경로. **홈의 하위여야 한다** — 최상위로 옮기면 스택 바닥이
+  /// 카메라가 되어 결과(S05)에서 나갈 곳이 사라진다.
+  ///
+  /// 실제 라우터를 띄워 확인하지는 못한다. 이 경로의 페이지가 카메라 하드웨어를
+  /// 잡는 SkinCapturePage 라, pump 하는 순간 위젯 테스트가 감당하지 못한다.
+  /// 그래서 경로 형태만 본다 — 스택이 그 형태로 쌓이는 것은 아래 전이 테스트들이 덮는다.
+  ///
+  /// 안내 화면을 따로 만들지 않는 것도 이 경로가 지킨다. 안내는 SkinCapturePage 가
+  /// 이미 갖고 있어서, 별도 페이지를 앞에 세우면 가입자가 같은 안내를 두 번 본다
+  /// (2026-08-17 에뮬레이터 QA 에서 실제로 그랬다).
+  test('가입 직후 촬영 경로는 홈의 하위다', () {
+    expect(Routes.onboardingCapture, startsWith('${Routes.home}/'));
+  });
+
   testWidgets('촬영 전 뒤로가기 — 촬영 이전 화면으로 돌아간다', (tester) async {
     final router = build();
     await pump(tester, router);

@@ -11,7 +11,6 @@ import '../../features/auth/presentation/providers/auth_notifier.dart';
 import '../../features/home/presentation/pages/home_page.dart';
 import '../../features/recommendation/presentation/pages/recommendation_page.dart';
 import '../../features/skin_plate/presentation/pages/plate_detail_page.dart';
-import '../../features/skin_analysis/presentation/pages/skin_capture_intro_page.dart';
 import '../../features/skin_analysis/presentation/pages/skin_capture_page.dart';
 import '../../features/skin_analysis/presentation/pages/skin_insight_page.dart';
 import '../../features/skin_analysis/presentation/pages/skin_loading_page.dart';
@@ -34,7 +33,9 @@ class Routes {
   // 건너뛰기 없는 모드로 쓴다 — 설문을 한 벌 더 만들면 둘 중 하나는 반드시 낡는다.
   static const onboardingProfile = '/onboarding/profile';
   static const home = '/home';                // S02
-  static const skinCaptureIntro = '/home/skin-intro'; // S01d — 홈의 하위 라우트
+  // 가입 직후의 촬영 진입점. 화면은 `/skin/capture` 와 **같은** SkinCapturePage 다 —
+  // 경로만 홈의 하위라 `go` 한 번으로 홈이 스택 바닥에 깔린다.
+  static const onboardingCapture = '/home/skin-capture';
   static const skinCapture = '/skin/capture'; // S03
   static const skinLoading = '/skin/loading'; // S04
   static const skinResult = '/skin/result';   // S05
@@ -89,17 +90,20 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (_, __) =>
             const SkinTypePage(mode: ProfileFormMode.onboarding),
       ),
-      // 가입 직후 촬영 안내(S01d)를 홈의 **하위**에 둔다. `go` 한 번으로 홈 위에
-      // 얹혀서, 촬영을 거쳐 결과(S05)까지 갔을 때 스택이 [홈, 결과]가 된다 —
-      // 홈에서 촬영을 시작한 경우와 같은 모양이라 뒤로가기가 홈으로 간다.
-      // 최상위에 두면 스택 바닥이 이 안내 화면이라 결과에서 나갈 곳이 없다.
+      // 가입 직후 촬영을 홈의 **하위**에 둔다. `go` 한 번으로 홈 위에 얹혀서,
+      // 촬영을 거쳐 결과(S05)까지 갔을 때 스택이 [홈, 결과]가 된다 — 홈에서
+      // 촬영을 시작한 경우와 같은 모양이라 뒤로가기가 홈으로 간다. 최상위에
+      // 두면 스택 바닥이 카메라라 결과에서 나갈 곳이 없다.
+      //
+      // 페이지는 아래 `/skin/capture` 와 같은 것을 쓴다. 안내 화면은 그 페이지가
+      // 이미 갖고 있다(`_introView`) — 따로 만들면 가입자가 같은 안내를 두 번 본다.
       GoRoute(
         path: Routes.home,
         builder: (_, __) => const HomePage(),
         routes: <RouteBase>[
           GoRoute(
-            path: 'skin-intro',
-            builder: (_, __) => const SkinCaptureIntroPage(),
+            path: 'skin-capture',
+            builder: (_, __) => const SkinCapturePage(onboarding: true),
           ),
         ],
       ),
