@@ -231,13 +231,31 @@ class _SaveSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return switch (state.status) {
-      PlateRecordStatus.saved => Row(
-          mainAxisAlignment: MainAxisAlignment.center,
+      // 저장으로 이 화면의 일은 끝났다. 다음에 갈 곳을 주지 않으면 사용자가
+      // 뒤로가기 말고는 나갈 방법이 없고, 방금 만든 기록도 보러 갈 수 없다.
+      //
+      // 둘 다 go 다 — 흐름이 끝났으니 촬영·결과를 스택에 남길 이유가 없다.
+      PlateRecordStatus.saved => Column(
           children: [
-            const Icon(Icons.check_circle, color: AppColors.good),
-            const SizedBox(width: 8),
-            Text('오늘의 기록에 저장됐어요',
-                style: Theme.of(context).textTheme.titleMedium),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.check_circle, color: AppColors.good),
+                const SizedBox(width: 8),
+                Text('오늘의 기록에 저장됐어요',
+                    style: Theme.of(context).textTheme.titleMedium),
+              ],
+            ),
+            const SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: () => context.go(Routes.home),
+              child: const Text('홈으로'),
+            ),
+            const SizedBox(height: 4),
+            TextButton(
+              onPressed: () => context.go(Routes.plateHistory),
+              child: const Text('기록 보러 가기'),
+            ),
           ],
         ),
 
