@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:skinplate/app/router/app_router.dart';
+import 'package:skinplate/features/auth/domain/entities/auth_user.dart';
+import 'package:skinplate/features/auth/presentation/providers/auth_notifier.dart';
 
 /// 촬영 화면이 결과 아래에 남아 있으면 안 된다.
 ///
@@ -38,18 +41,29 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  /// 가입 직후 진입 경로. **홈의 하위여야 한다** — 최상위로 옮기면 스택 바닥이
-  /// 카메라가 되어 결과(S05)에서 나갈 곳이 사라진다.
+  /// 가입 직후 진입 경로. **실제 라우터 설정**을 세워 확인한다 — 페이지가 카메라
+  /// 하드웨어를 잡아서 화면은 못 띄우지만, 경로 매칭은 빌더를 부르지 않는다.
   ///
-  /// 실제 라우터를 띄워 확인하지는 못한다. 이 경로의 페이지가 카메라 하드웨어를
-  /// 잡는 SkinCapturePage 라, pump 하는 순간 위젯 테스트가 감당하지 못한다.
-  /// 그래서 경로 형태만 본다 — 스택이 그 형태로 쌓이는 것은 아래 전이 테스트들이 덮는다.
-  ///
-  /// 안내 화면을 따로 만들지 않는 것도 이 경로가 지킨다. 안내는 SkinCapturePage 가
-  /// 이미 갖고 있어서, 별도 페이지를 앞에 세우면 가입자가 같은 안내를 두 번 본다
-  /// (2026-08-17 에뮬레이터 QA 에서 실제로 그랬다).
-  test('가입 직후 촬영 경로는 홈의 하위다', () {
-    expect(Routes.onboardingCapture, startsWith('${Routes.home}/'));
+  /// 두 가지를 본다.
+  /// - 그 경로에 라우트가 **실제로 등록돼 있는가**. 상수만 고치고 라우트를 안
+  ///   고치면 가입자가 "페이지 없음" 화면에 떨어지는데, signup 은 `go` 라 돌아올
+  ///   길도 없다.
+  /// - 매칭이 **홈을 깔고 그 위에 얹히는가**. 최상위로 옮기면 스택 바닥이 카메라가
+  ///   되어 결과(S05)에서 나갈 곳이 사라진다.
+  test('가입 직후 촬영 경로는 홈을 깔고 그 위에 얹힌다', () {
+    final container = ProviderContainer(
+        overrides: [authNotifierProvider.overrideWith(_StubAuth.new)]);
+    addTearDown(container.dispose);
+
+    final matches = container
+        .read(routerProvider)
+        .configuration
+        .findMatch(Uri.parse(Routes.onboardingCapture))
+        .matches
+        .map((match) => match.matchedLocation)
+        .toList();
+
+    expect(matches, [Routes.home, Routes.onboardingCapture]);
   });
 
   testWidgets('촬영 전 뒤로가기 — 촬영 이전 화면으로 돌아간다', (tester) async {
@@ -151,4 +165,14 @@ void main() {
     await tester.pumpAndSettle();
     expect(stackOf(router), [Routes.home]);
   });
+}
+
+/// 라우터의 redirect 는 로그인 여부만 본다. 세션만 세워 주면 된다.
+class _StubAuth extends AuthNotifier {
+  @override
+  AuthState build() => const Authenticated(AuthUser(
+        userId: 1,
+        email: 'test@skinplate.app',
+        nickname: '테스트유저',
+      ));
 }

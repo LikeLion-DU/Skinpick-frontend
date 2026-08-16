@@ -101,8 +101,11 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: Routes.home,
         builder: (_, __) => const HomePage(),
         routes: <RouteBase>[
+          // 하위 경로를 리터럴로 적지 않는다. 상수와 따로 놀면 상수만 바꿨을 때
+          // analyze 도 테스트도 통과한 채로 가입자가 "페이지 없음" 화면에 떨어진다
+          // — signup 은 `go` 라 돌아올 길도 없다. 여기서 잘라 쓰면 어긋날 수 없다.
           GoRoute(
-            path: 'skin-capture',
+            path: Routes.onboardingCapture.substring(Routes.home.length + 1),
             builder: (_, __) => const SkinCapturePage(onboarding: true),
           ),
         ],

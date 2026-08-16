@@ -13,7 +13,8 @@ final latestSkinAnalysisProvider = FutureProvider<Result<SkinAnalysis?>>(
   (ref) => ref.watch(skinRepositoryProvider).getLatest(),
 );
 
-/// 가입 직후 촬영 안내(S01d)에서 "촬영하기"로 들어왔는가.
+/// 가입 직후 촬영 화면의 안내(`SkinCapturePage._introView`)에서 "촬영하기"로
+/// 들어왔는가. 안내는 그 화면이 갖고 있다 — 별도 페이지가 아니다.
 ///
 /// 로딩 화면(S04)이 이 값을 보고 분석을 기다리는 동안 프로필 설문을 얹은 뒤 끈다.
 /// 라우트 쿼리로 넘기지 않는 것은 촬영→로딩이 `pushReplacement` 라 값을 실어
