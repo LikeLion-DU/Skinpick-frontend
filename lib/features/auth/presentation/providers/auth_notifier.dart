@@ -157,8 +157,9 @@ class AuthNotifier extends Notifier<AuthState> {
   /// 둘 다 여기를 지나게 한다. 한쪽만 걸면 만료로 튕긴 경우에 그대로 남는다.
   ///
   /// ponytail: 디스크에 남은 기록 사진(`<documents>/plates/*.jpg`)은 지우지 않는다.
-  /// 기록 삭제 기능이 아직 없어서 지우면 되살릴 방법이 없다. 계정 전환이 잦아지거나
-  /// 용량이 문제가 되면 PlateImageStore 에 삭제 경로를 만든다.
+  /// 사진은 기록을 삭제할 때만 지운다(PlateImageStore.delete) — 로그아웃은 기록을
+  /// 지우는 것이 아니라 세션을 끊는 것이라, 여기서 지우면 다시 로그인한 사용자의
+  /// 히스토리에서 사진만 사라진다. 계정 전환이 잦아지면 사용자별 디렉터리로 나눈다.
   void _clearSession() {
     ref
       ..invalidate(plateNotifierProvider)

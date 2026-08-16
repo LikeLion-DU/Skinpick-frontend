@@ -106,7 +106,12 @@ class _PlateHistoryPageState extends ConsumerState<PlateHistoryPage> {
         current: AppTab.records,
         onCapture: () => context.push(Routes.foodCapture),
         onTabSelected: (tab) {
-          if (tab == AppTab.home) context.pop();
+          // 홈에서 push 로 들어오면 pop 이 맞지만, 기록 저장 후 [기록 보러 가기] 는
+          // go 로 와서 이 화면이 스택의 유일한 페이지다. 그때 pop 하면 go_router 가
+          // "There is nothing to pop" 을 던지고 화면은 그대로 — 홈으로 갈 문이 없다.
+          if (tab == AppTab.home) {
+            context.canPop() ? context.pop() : context.go(Routes.home);
+          }
         },
       ),
     );
@@ -251,13 +256,23 @@ class _DeleteButtonState extends ConsumerState<_DeleteButton> {
         .read(plateRepositoryProvider)
         .deleteRecord(widget.item.plateId);
 
+    // 목록을 다시 받는다. 카드만 지우면 그날의 점수·코멘트가 옛값으로 남는다.
+    // 홈의 오늘 카드는 이 프로바이더에서 파생되므로 같이 갱신된다.
+    //
+    // **다시 받을 때까지 기다린다.** invalidate 만 하고 버튼을 풀면, 갱신 중에는
+    // 이전 목록이 그대로 그려지는 동안(AsyncValue 는 refresh 중 옛 데이터를 유지한다)
+    // 이미 지워진 카드가 다시 눌린다 — 상세로 들어가면 404, × 를 또 누르면 방금
+    // 성공한 삭제에 대해 "지우지 못했어요" 가 뜬다.
+    if (result.isSuccess) {
+      // ignore: unused_result — 새 목록 자체가 아니라 "다 받았다"는 시점만 쓴다.
+      await ref.refresh(plateHistoryProvider.future);
+    }
+
     if (!mounted) return;
     setState(() => _busy = false);
 
     result.when(
-      // 목록을 다시 받는다. 카드만 지우면 그날의 점수·코멘트가 옛값으로 남는다.
-      // 홈의 오늘 카드는 이 프로바이더에서 파생되므로 같이 갱신된다.
-      success: (_) => ref.invalidate(plateHistoryProvider),
+      success: (_) {},
       failure: (failure) => ScaffoldMessenger.of(context)
           .showSnackBar(SnackBar(content: Text(failure.message))),
     );

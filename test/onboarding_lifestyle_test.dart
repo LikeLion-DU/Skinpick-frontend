@@ -70,6 +70,31 @@ void main() {
     expect(find.byType(BackButton), findsNothing);
   });
 
+  /// 화면을 붙잡고 있는 PopScope 가 있는가. MaterialApp 내부에도 PopScope 가 있어
+  /// 타입만으로는 우리 것을 못 집는다 — canPop 이 막힌 것이 하나라도 있으면 된다.
+  bool blocksBack(WidgetTester tester) => tester
+      .widgetList(find.byWidgetPredicate((widget) => widget is PopScope))
+      .cast<PopScope>()
+      .any((scope) => !scope.canPop);
+
+  testWidgets('하드웨어 백으로도 빠져나갈 수 없다', (tester) async {
+    // 그려지는 문만 없애면 Android 백·엣지 스와이프가 그대로 나간다. 그리고 나가면
+    // 방금 한 분석을 다시 볼 방법이 없다 — 결과로 가는 길이 로딩과 이 화면뿐이다.
+    await tester.binding.setSurfaceSize(designSize);
+    await tester.pumpWidget(host(fresh, mode: ProfileFormMode.lifestyle));
+    await tester.pumpAndSettle();
+
+    expect(blocksBack(tester), isTrue);
+  });
+
+  testWidgets('일반 모드는 막지 않는다 — 프로필 수정은 언제든 나갈 수 있다', (tester) async {
+    await tester.binding.setSurfaceSize(designSize);
+    await tester.pumpWidget(host(fresh, mode: ProfileFormMode.full));
+    await tester.pumpAndSettle();
+
+    expect(blocksBack(tester), isFalse);
+  });
+
   testWidgets('네 개를 다 고르기 전에는 완료할 수 없다', (tester) async {
     await tester.binding.setSurfaceSize(designSize);
     await tester.pumpWidget(host(fresh, mode: ProfileFormMode.lifestyle));

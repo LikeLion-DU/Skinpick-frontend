@@ -145,11 +145,22 @@ class _SkinTypePageState extends ConsumerState<SkinTypePage> {
 
   @override
   Widget build(BuildContext context) {
+    return PopScope(
+      // 그려지는 문만 없애면 하드웨어 백·엣지 스와이프가 그대로 빠져나간다.
+      // 그리고 이 화면에서 나가면 방금 한 분석을 다시 볼 방법이 없다 — 결과로
+      // 가는 길은 로딩과 이 화면 둘뿐이고 홈에는 진입점이 없다. 5~8초 기다린
+      // 분석이 통째로 사라지고, 습관도 비어 있어 사진부터 다시 찍어야 한다.
+      //
+      // 저장이 계속 실패하는 사용자(오프라인)까지 가두지는 않는다.
+      canPop: !_lifestyleOnly || _error != null,
+      child: _form(context),
+    );
+  }
+
+  Widget _form(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text(''),
-        // 강제 단계에는 나갈 문을 두지 않는다. 뒤로가기를 남기면 로딩 화면으로
-        // 돌아가 이미 끝난 분석을 다시 보게 되고, 습관은 비어 있는 채로 남는다.
         automaticallyImplyLeading: !_lifestyleOnly,
         actions: [
           // 건너뛰기는 API 를 호출하지 않는 것이다. declared_skin_type 이 NULL 로
