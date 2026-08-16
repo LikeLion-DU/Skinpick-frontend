@@ -134,6 +134,52 @@ void main() {
     expect(analysis.skinTypeGap!.observed, SkinType.dry);
     expect(analysis.skinTypeGap!.matched, isFalse);
     expect(analysis.skinTypeGap!.message, isNotEmpty);
+
+    // 지표 5개에 서버 등급과 근거가 붙어 온다. 화면 색은 아직 MetricBand 가 그리지만
+    // 값이 유실되면 다음 화면 작업에서야 드러나므로 여기서 잡는다.
+    expect(analysis.metricDetails.map((d) => d.key).toList(),
+        ['hydration', 'oil', 'redness', 'trouble', 'barrier']);
+    expect(analysis.metricDetails.first.score, 38);
+    // 등급은 DTO 층에서 본다 — 읽는 화면이 없어 도메인까지 올리지 않았다.
+    // 방향을 맞춘 뒤 매긴 값이라 유분 52 는 정렬 48 로 NORMAL 이다.
+    final rawDetails = SkinAnalysisDto.fromJson(data('skin_latest')).metricDetails;
+    expect(rawDetails[1].level, 'NORMAL');
+    expect(rawDetails.map((d) => d.level), everyElement(isNotEmpty));
+    expect(analysis.metricDetails.first.evidence, isNotEmpty);
+
+    // AI 관찰 타입. 위 skinTypeGap.observed(규칙 도출)와 다른 값이고 갈릴 수 있다.
+    expect(analysis.aiSkinType!.primary, SkinType.dry);
+    // 화면 문구는 서버가 조합해 준다 — 앱이 타입과 경향을 이어 붙이지 않는다.
+    expect(analysis.aiSkinType!.label, '건성 · 민감 경향');
+
+    // 피부 나이 축은 7개다. 붉은기는 지표 쪽에 이미 있어 서버가 응답에서 뺀다 —
+    // 8개가 오면 계약이 어긋난 것이다.
+    expect(analysis.skinAge!.estimatedSkinAge, inInclusiveRange(18, 80));
+    expect(analysis.skinAge!.axes.map((a) => a.key).toList(), [
+      'skinTexture', 'elasticity', 'wrinkles', 'skinTone',
+      'pores', 'pigmentation', 'blemishMarks',
+    ]);
+    expect(analysis.skinAge!.assessment, isNotEmpty);
+  });
+
+  test('GET /skin/analyses/latest — 확장 필드가 없던 시절의 기록도 파싱된다', () {
+    // 이 기능 이전에 저장된 분석은 서버가 세 키를 통째로 생략한다(non_null).
+    // required 를 쓰면 여기서 죽는다 — 옛 기록을 여는 순간 앱이 멎는다.
+    final analysis = SkinAnalysisDto.fromJson({
+      'skinAnalysisId': 1,
+      'skinScore': 55,
+      'metrics': {
+        'hydration': 38, 'oil': 52, 'redness': 64, 'trouble': 25, 'barrier': 78,
+      },
+      'summary': '요약',
+      'highlights': <Map<String, dynamic>>[],
+      'analyzedAt': '2026-08-12T13:45:26.097264',
+    }).toEntity();
+
+    expect(analysis.skinScore, 55);
+    expect(analysis.metricDetails, isEmpty);
+    expect(analysis.aiSkinType, isNull);
+    expect(analysis.skinAge, isNull);
   });
 
   test('POST /plates/analyze — 토큰은 있고 plateId 는 없다', () {

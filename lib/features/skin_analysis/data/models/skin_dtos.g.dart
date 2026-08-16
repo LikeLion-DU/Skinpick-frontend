@@ -54,12 +54,75 @@ Map<String, dynamic> _$$SkinTypeGapDtoImplToJson(
       'message': instance.message,
     };
 
+_$ScoredItemDtoImpl _$$ScoredItemDtoImplFromJson(Map<String, dynamic> json) =>
+    _$ScoredItemDtoImpl(
+      key: json['key'] as String,
+      score: (json['score'] as num).toInt(),
+      level: json['level'] as String? ?? '',
+      evidence: (json['evidence'] as List<dynamic>?)
+              ?.map((e) => e as String)
+              .toList() ??
+          const <String>[],
+    );
+
+Map<String, dynamic> _$$ScoredItemDtoImplToJson(_$ScoredItemDtoImpl instance) =>
+    <String, dynamic>{
+      'key': instance.key,
+      'score': instance.score,
+      'level': instance.level,
+      'evidence': instance.evidence,
+    };
+
+_$AiSkinTypeDtoImpl _$$AiSkinTypeDtoImplFromJson(Map<String, dynamic> json) =>
+    _$AiSkinTypeDtoImpl(
+      primary: json['primary'] as String?,
+      traits: (json['traits'] as List<dynamic>?)
+              ?.map((e) => e as String)
+              .toList() ??
+          const <String>[],
+      label: json['label'] as String? ?? '',
+    );
+
+Map<String, dynamic> _$$AiSkinTypeDtoImplToJson(_$AiSkinTypeDtoImpl instance) =>
+    <String, dynamic>{
+      'primary': instance.primary,
+      'traits': instance.traits,
+      'label': instance.label,
+    };
+
+_$SkinAgeDtoImpl _$$SkinAgeDtoImplFromJson(Map<String, dynamic> json) =>
+    _$SkinAgeDtoImpl(
+      estimatedSkinAge: (json['estimatedSkinAge'] as num).toInt(),
+      axes: (json['axes'] as List<dynamic>?)
+              ?.map((e) => ScoredItemDto.fromJson(e as Map<String, dynamic>))
+              .toList() ??
+          const <ScoredItemDto>[],
+      assessment: json['assessment'] as String? ?? '',
+    );
+
+Map<String, dynamic> _$$SkinAgeDtoImplToJson(_$SkinAgeDtoImpl instance) =>
+    <String, dynamic>{
+      'estimatedSkinAge': instance.estimatedSkinAge,
+      'axes': instance.axes,
+      'assessment': instance.assessment,
+    };
+
 _$SkinAnalysisDtoImpl _$$SkinAnalysisDtoImplFromJson(
         Map<String, dynamic> json) =>
     _$SkinAnalysisDtoImpl(
       skinAnalysisId: (json['skinAnalysisId'] as num).toInt(),
       skinScore: (json['skinScore'] as num).toInt(),
       metrics: SkinMetricsDto.fromJson(json['metrics'] as Map<String, dynamic>),
+      metricDetails: (json['metricDetails'] as List<dynamic>?)
+              ?.map((e) => ScoredItemDto.fromJson(e as Map<String, dynamic>))
+              .toList() ??
+          const <ScoredItemDto>[],
+      skinType: json['skinType'] == null
+          ? null
+          : AiSkinTypeDto.fromJson(json['skinType'] as Map<String, dynamic>),
+      skinAge: json['skinAge'] == null
+          ? null
+          : SkinAgeDto.fromJson(json['skinAge'] as Map<String, dynamic>),
       summary: json['summary'] as String? ?? '',
       highlights: (json['highlights'] as List<dynamic>?)
               ?.map((e) => HighlightDto.fromJson(e as Map<String, dynamic>))
@@ -78,6 +141,9 @@ Map<String, dynamic> _$$SkinAnalysisDtoImplToJson(
       'skinAnalysisId': instance.skinAnalysisId,
       'skinScore': instance.skinScore,
       'metrics': instance.metrics,
+      'metricDetails': instance.metricDetails,
+      'skinType': instance.skinType,
+      'skinAge': instance.skinAge,
       'summary': instance.summary,
       'highlights': instance.highlights,
       'skinTypeGap': instance.skinTypeGap,
