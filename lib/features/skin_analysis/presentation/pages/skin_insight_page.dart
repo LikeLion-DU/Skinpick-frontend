@@ -29,33 +29,102 @@ class SkinInsightPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final insight = ref.watch(skinInsightProvider(skinAnalysisId));
+    final auth = ref.watch(authNotifierProvider);
+    final needsLifestyle =
+        auth is Authenticated && auth.user.hasIncompleteLifestyle;
 
     return Scaffold(
       appBar: AppBar(title: const Text('오늘의 피부 인사이트')),
-      body: insight.when(
-        // 첫 조회는 서버가 AI 를 기다리느라 최대 ~27초다. 스피너만 돌면 멈춘 줄 안다.
-        loading: () => const LoadingSteps(
-          steps: [
-            '피부와 생활 상태를 함께 보고 있어요',
-            '오늘 측정한 지표를 살펴보는 중이에요',
-            '설정해 둔 생활 습관과 맞춰 보는 중이에요',
-            '오늘 신경 쓰면 좋을 것을 고르고 있어요',
+      // **습관이 비어 있으면 조회 자체를 하지 않는다.** `GET /skin-insights` 는
+      // get-or-create 라, 한 번이라도 부르면 서버가 습관 없이 인사이트를 만들어
+      // 저장한다 — 그 뒤에 습관을 채워도 생활 관련 주제는 영영 안 들어간다.
+      // 그래서 [skinInsightProvider] 를 watch 하기 **전에** 갈라야 한다.
+      //
+      // 게이트를 진입점(결과 화면·피부 프로필)이 아니라 여기 두는 이유 — 진입점이
+      // 둘이고 앞으로 늘어난다. 화면마다 가드를 두면 언젠가 한 곳을 빠뜨리고,
+      // 그 한 곳이 습관 없는 인사이트를 굳혀 버린다.
+      body: needsLifestyle
+          ? const _LifestyleNeeded()
+          : _InsightView(skinAnalysisId: skinAnalysisId),
+    );
+  }
+}
+
+/// 습관을 아직 안 채운 사용자에게 **왜** 필요한지 먼저 말한다.
+///
+/// 곧바로 설문으로 튕기지 않는 이유 — 이 화면은 사용자가 "내 생활 상태와 함께
+/// 분석하기" 를 눌러서 온 곳이다. 이유 없이 설문이 뜨면 가입 때 "선택" 이라고
+/// 했던 항목이 갑자기 필수가 된 것으로만 읽힌다.
+class _LifestyleNeeded extends StatelessWidget {
+  const _LifestyleNeeded();
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(AppTheme.pagePadding),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              '맞춤 인사이트를 보려면\n생활 습관 정보가 필요해요',
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
+            const SizedBox(height: 12),
+            Text(
+              '수면·스트레스·운동·수분 네 가지를 알려주시면\n'
+              '오늘 피부 상태와 함께 봐 드릴게요.',
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.bodyMedium,
+            ),
+            const SizedBox(height: 28),
+            ElevatedButton(
+              // push 다 — 입력을 마치면 이 화면으로 돌아와야 한다. 돌아오면
+              // authNotifier 의 사용자 정보가 갱신돼 있어 게이트가 풀리고,
+              // 그때 처음으로 인사이트를 조회한다.
+              onPressed: () => context.push(Routes.lifestyle),
+              child: const Text('생활 습관 입력하기'),
+            ),
           ],
         ),
-        error: (error, _) => Center(child: Text('$error')),
-        data: (result) => result.when(
-          // AI 실패(502·504)는 mapToFailure 가 AnalysisFailure 로 번역하고
-          // shouldRetakePhoto 가 false 라 "다시 시도" 가 나온다. 서버가 실패한
-          // 인사이트를 저장하지 않으므로 같은 GET 이 그대로 재시도가 된다.
-          //
-          // 404(타인·없는 분석)는 ServerFailure 로 떨어져 서버 메시지만 보인다.
-          failure: (failure) => FailureView(
-            failure: failure,
-            onRetry: () => ref.invalidate(skinInsightProvider(skinAnalysisId)),
-          ),
-          success: (data) => _Body(insight: data),
+      ),
+    );
+  }
+}
+
+/// 게이트를 지난 뒤에만 만들어진다. 여기서 처음 [skinInsightProvider] 를 건드린다.
+class _InsightView extends ConsumerWidget {
+  const _InsightView({required this.skinAnalysisId});
+
+  final int skinAnalysisId;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final insight = ref.watch(skinInsightProvider(skinAnalysisId));
+
+    return insight.when(
+      // 첫 조회는 서버가 AI 를 기다리느라 최대 ~27초다. 스피너만 돌면 멈춘 줄 안다.
+      loading: () => const LoadingSteps(
+        steps: [
+          '피부와 생활 상태를 함께 보고 있어요',
+          '오늘 측정한 지표를 살펴보는 중이에요',
+          '설정해 둔 생활 습관과 맞춰 보는 중이에요',
+          '오늘 신경 쓰면 좋을 것을 고르고 있어요',
+        ],
+      ),
+      error: (error, _) => Center(child: Text('$error')),
+      data: (result) => result.when(
+        // AI 실패(502·504)는 mapToFailure 가 AnalysisFailure 로 번역하고
+        // shouldRetakePhoto 가 false 라 "다시 시도" 가 나온다. 서버가 실패한
+        // 인사이트를 저장하지 않으므로 같은 GET 이 그대로 재시도가 된다.
+        //
+        // 404(타인·없는 분석)는 ServerFailure 로 떨어져 서버 메시지만 보인다.
+        failure: (failure) => FailureView(
+          failure: failure,
+          onRetry: () => ref.invalidate(skinInsightProvider(skinAnalysisId)),
         ),
+        success: (data) => _Body(insight: data),
       ),
     );
   }
@@ -89,7 +158,6 @@ class _Body extends ConsumerWidget {
             _MetricsCard(metrics: analysis.metrics, changes: insight.changes),
             const SizedBox(height: 22),
           ],
-
           const _SectionTitle('현재 설정된 생활 상태'),
           const SizedBox(height: 10),
           _LifestyleCard(
@@ -101,11 +169,9 @@ class _Body extends ConsumerWidget {
                 ref.invalidate(skinInsightProvider(insight.skinAnalysisId)),
           ),
           const SizedBox(height: 22),
-
           const _SectionTitle('AI 인사이트'),
           const SizedBox(height: 10),
           _SummaryCard(summary: insight.summary),
-
           if (insight.insights.isNotEmpty) ...[
             const SizedBox(height: 22),
             const _SectionTitle('오늘의 우선 관리'),
@@ -118,7 +184,6 @@ class _Body extends ConsumerWidget {
                 const SizedBox(height: 8),
             ],
           ],
-
           if (insight.todayActions.isNotEmpty) ...[
             const SizedBox(height: 22),
             const _SectionTitle('오늘의 행동'),
@@ -131,7 +196,6 @@ class _Body extends ConsumerWidget {
               const SizedBox(height: 6),
             ],
           ],
-
           const SizedBox(height: 18),
           const Text(
             '측정 환경에 따라 결과가 달라질 수 있어요',
@@ -272,6 +336,13 @@ class _MetricRow extends StatelessWidget {
   }
 }
 
+/// ponytail: 게이트가 S10 앞에 서면서 이 카드의 **"미설정" 갈래 전체**가 로그인한
+/// 사용자에게 닿지 않는다 — 습관 네 칸이 다 차야 여기까지 온다. 구체적으로
+/// [_notice] 의 미완료 분기, "생활 상태 설정" 버튼, 거기에 물린 [onProfileChanged]
+/// 와 그 안의 `ref.invalidate` 가 전부 그렇다.
+///
+/// `user == null`(비로그인) 방어용으로만 남겨 둔다. 라우터가 그 상태를 막고 있어
+/// 실제로는 보이지 않는다. 지우려면 넷을 같이 지워야 한다.
 class _LifestyleCard extends StatelessWidget {
   const _LifestyleCard({
     required this.user,

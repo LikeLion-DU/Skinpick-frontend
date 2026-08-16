@@ -1,5 +1,6 @@
 import 'package:camera/camera.dart' show CameraException;
-import 'package:flutter/foundation.dart' show debugPrint, kDebugMode;
+import 'package:flutter/foundation.dart'
+    show TargetPlatform, debugPrint, defaultTargetPlatform, kDebugMode;
 
 /// 카메라 예외를 사용자에게 보여줄 한국어로 바꾼다.
 ///
@@ -26,7 +27,21 @@ String cameraErrorMessage(Object error, String fallback) {
     'CameraAccessDenied' ||
     'CameraAccessDeniedWithoutPrompt' ||
     'CameraAccessRestricted' =>
-      '카메라 권한이 필요해요.\n설정 > 앱 > 권한에서 허용해 주세요.',
+      '카메라 권한이 필요해요.\n$_settingsGuide',
     _ => fallback,
   };
 }
+
+/// 권한을 되돌리러 가는 길. **두 OS 가 서로 없는 경로다** — Android 설정에는 앱
+/// 이름이 최상위로 올라오지 않고, iOS 설정에는 "앱 > 권한" 이 없다. 없는 경로를
+/// 안내하면 사용자는 설정을 뒤지다 포기하고 앱을 지운다.
+///
+/// **iOS 쪽은 메뉴 계단을 적지 않는다.** 서드파티 앱 설정의 위치가 OS 버전마다
+/// 옮겨 다닌다(iOS 18 부터는 설정 > Apps 아래다). 계단을 박아 두면 그 버전에서만
+/// 맞고 나머지에서는 틀린 안내가 되므로, 어느 버전에서도 참인 문장으로 쓴다.
+///
+/// 코드는 양쪽이 같다(`CameraAccessDenied` 셋). 갈라지는 것은 문구뿐이라
+/// 여기서만 나눈다.
+String get _settingsGuide => defaultTargetPlatform == TargetPlatform.iOS
+    ? '설정 앱에서 Skinpick 의 카메라 권한을 켜 주세요.'
+    : '설정 > 앱 > 권한에서 허용해 주세요.';

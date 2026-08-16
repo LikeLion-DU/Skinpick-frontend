@@ -81,6 +81,17 @@ class _PlateResultPageState extends ConsumerState<PlateResultPage> {
           : SafeArea(
               minimum: const EdgeInsets.fromLTRB(
                   AppTheme.pagePadding, 0, AppTheme.pagePadding, 12),
+              // **이 슬롯에 들어오는 위젯은 세로로 늘어나면 안 된다.**
+              // bottomNavigationBar 는 높이가 loose(0~화면높이) 로 내려와서,
+              // 늘어나는 위젯을 넣으면 하단 바가 화면을 통째로 먹고 Scaffold 가
+              // body 를 높이 0 으로 밀어낸다 — 본문이 사라지고 AppBar·상태바 위에
+              // 겹쳐 그려진다. 실기기(iPhone 14 Pro)에서 저장 직후 그렇게 나왔다.
+              //
+              // [_SaveSection] 이 상태별로 다른 위젯을 돌려주므로 분기를 더할 때마다
+              // 확인해야 한다. Column 이면 `mainAxisSize: MainAxisSize.min` 이다.
+              // 여기를 Column 으로 한 겹 싸서 막지 않는 이유 — 그러면 자식이
+              // 무한 높이 제약을 받아, 늘어나는 분기가 들어와도 조용한 붕괴 대신
+              // assertion 으로 바뀔 뿐 면역이 되지는 않는다.
               child: _SaveSection(
                 state: state,
                 onSave: () =>
@@ -251,7 +262,14 @@ class _SaveSection extends StatelessWidget {
       // 뒤로가기 말고는 나갈 방법이 없고, 방금 만든 기록도 보러 갈 수 없다.
       //
       // 둘 다 go 다 — 흐름이 끝났으니 촬영·결과를 스택에 남길 이유가 없다.
+      // **mainAxisSize 를 반드시 min 으로 둔다.** bottomNavigationBar 슬롯은
+      // 높이가 loose(0~화면높이) 로 내려온다. Column 기본값인 max 로 두면 하단
+      // 바가 화면 전체(852)를 차지하고, Scaffold 는 body 를 높이 0 으로 밀어낸다 —
+      // 본문이 통째로 사라지고 이 영역이 AppBar·상태바 위에 겹쳐 그려진다.
+      // 저장 전에는 자식이 버튼 하나(고유 높이)라 드러나지 않고, saved·saveFailed
+      // 로 바뀌는 순간에만 터진다. 실기기(iPhone 14 Pro)에서 렌더 트리로 확인했다.
       PlateRecordStatus.saved => Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -316,7 +334,9 @@ class _SaveFailed extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // 저장 완료 분기와 같은 이유로 min 이다 — 하단 바가 화면을 다 먹으면 안 된다.
     return Column(
+      mainAxisSize: MainAxisSize.min,
       children: [
         Text(
           failure?.message ?? '기록을 저장하지 못했습니다.',

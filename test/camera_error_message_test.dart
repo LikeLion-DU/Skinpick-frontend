@@ -1,4 +1,6 @@
 import 'package:camera/camera.dart' show CameraException;
+import 'package:flutter/foundation.dart'
+    show TargetPlatform, debugDefaultTargetPlatformOverride;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:skinplate/core/camera/camera_error_message.dart';
 
@@ -41,6 +43,35 @@ void main() {
       cameraErrorMessage(StateError('boom'), '촬영에 실패했습니다.'),
       '촬영에 실패했습니다.',
     );
+  });
+
+  /// 두 OS 의 설정 경로는 서로 없는 자리다. 한쪽 문구를 양쪽에 쓰면 사용자는
+  /// 존재하지 않는 메뉴를 찾다가 포기한다.
+  test('권한 안내 경로가 OS 를 따라간다', () {
+    // null 로 되돌리면 이 파일의 나머지 테스트가 호스트 OS(macOS·CI 는 Linux)를
+    // 보게 된다 — 어느 분기도 아니라 조용히 Android 문구로 떨어진다. 이전 값을
+    // 그대로 복원한다.
+    String messageOn(TargetPlatform platform) {
+      final previous = debugDefaultTargetPlatformOverride;
+      debugDefaultTargetPlatformOverride = platform;
+      try {
+        return cameraErrorMessage(
+          CameraException('CameraAccessDenied', 'denied'),
+          '카메라를 열지 못했습니다.',
+        );
+      } finally {
+        debugDefaultTargetPlatformOverride = previous;
+      }
+    }
+
+    // iOS 안내에는 메뉴 계단을 넣지 않는다 — 서드파티 앱 설정의 위치가 OS
+    // 버전마다 옮겨 다녀서(iOS 18+ 는 설정 > Apps 아래), 계단을 박으면 특정
+    // 버전에서만 맞는 안내가 된다.
+    expect(messageOn(TargetPlatform.iOS), contains('Skinpick'));
+    expect(messageOn(TargetPlatform.iOS), isNot(contains('앱 > 권한')));
+    expect(messageOn(TargetPlatform.iOS), isNot(contains('>')),
+        reason: 'iOS 안내에 메뉴 계단이 다시 들어왔다');
+    expect(messageOn(TargetPlatform.android), contains('설정 > 앱 > 권한'));
   });
 
   test('description 이 비어도 죽지 않는다', () {

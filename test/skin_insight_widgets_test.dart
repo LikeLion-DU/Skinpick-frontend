@@ -118,22 +118,70 @@ void main() {
     expect(sleep, lessThan(trouble));
   });
 
-  testWidgets('생활 상태가 비면 미설정으로 표시하고 설정 버튼을 준다', (tester) async {
+  /// 습관이 비어 있으면 **조회를 하지 않고** 먼저 이유를 말한다.
+  ///
+  /// `GET /skin-insights` 는 get-or-create 라, 한 번이라도 부르면 서버가 습관 없이
+  /// 인사이트를 만들어 저장한다 — 그 뒤에 습관을 채워도 생활 관련 주제는 영영
+  /// 안 들어간다. 그래서 "안내를 띄운다" 만으로는 부족하고, **조회가 일어나지
+  /// 않았다는 것까지** 확인해야 이 변경이 의미가 있다.
+  testWidgets('습관이 비면 인사이트를 조회하지 않고 이유부터 말한다', (tester) async {
+    var fetched = 0;
+    final insight = SkinInsightDto.fromJson(data('skin_insight_healthy'))
+        .toEntity();
+
     await tester.binding.setSurfaceSize(designSize);
-    await tester.pumpWidget(host(
-      'skin_insight_healthy',
-      user: const AuthUser(
-        userId: 2,
-        email: 'fresh@skinplate.app',
-        nickname: '새사용자',
+    await tester.pumpWidget(ProviderScope(
+      overrides: [
+        skinInsightProvider(insight.skinAnalysisId).overrideWith((ref) async {
+          fetched++;
+          return Success(insight);
+        }),
+        latestSkinAnalysisProvider
+            .overrideWith((ref) async => Success(analysis)),
+        authNotifierProvider.overrideWith(() => _StubAuth(const AuthUser(
+              userId: 2,
+              email: 'fresh@skinplate.app',
+              nickname: '새사용자',
+            ))),
+      ],
+      child: MaterialApp(
+        theme: AppTheme.light,
+        home: SkinInsightPage(skinAnalysisId: insight.skinAnalysisId),
       ),
     ));
     await tester.pumpAndSettle();
 
-    expect(find.text('미설정'), findsNWidgets(4));
-    expect(find.text('생활 상태 설정'), findsOneWidget);
-    // 저장되지 않은 인사이트다 — 지금 설정하면 이 분석이 다시 만들어진다.
-    expect(find.textContaining('다시 보면 인사이트가 채워져요'), findsOneWidget);
+    expect(fetched, 0, reason: '게이트가 걸렸는데 인사이트를 만들어 버렸다');
+    expect(find.textContaining('생활 습관 정보가 필요해요'), findsOneWidget);
+    expect(find.widgetWithText(ElevatedButton, '생활 습관 입력하기'), findsOneWidget);
+  });
+
+  /// 반대쪽 — 습관을 다 채운 사용자는 안내 없이 곧바로 인사이트를 본다.
+  testWidgets('습관이 차 있으면 게이트 없이 인사이트를 조회한다', (tester) async {
+    var fetched = 0;
+    final insight =
+        SkinInsightDto.fromJson(data('skin_insight_first')).toEntity();
+
+    await tester.binding.setSurfaceSize(designSize);
+    await tester.pumpWidget(ProviderScope(
+      overrides: [
+        skinInsightProvider(insight.skinAnalysisId).overrideWith((ref) async {
+          fetched++;
+          return Success(insight);
+        }),
+        latestSkinAnalysisProvider
+            .overrideWith((ref) async => Success(analysis)),
+        authNotifierProvider.overrideWith(() => _StubAuth(filledUser)),
+      ],
+      child: MaterialApp(
+        theme: AppTheme.light,
+        home: SkinInsightPage(skinAnalysisId: insight.skinAnalysisId),
+      ),
+    ));
+    await tester.pumpAndSettle();
+
+    expect(fetched, 1);
+    expect(find.textContaining('생활 습관 정보가 필요해요'), findsNothing);
   });
 
   testWidgets('저장된 인사이트에는 스냅샷 안내를 띄운다', (tester) async {

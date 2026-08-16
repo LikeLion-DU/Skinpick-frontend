@@ -118,29 +118,23 @@ void main() {
     expect(stackOf(router), [Routes.home]);
   });
 
-  testWidgets('피부: 첫 사용자는 결과 앞에 생활 습관 단계가 낀다', (tester) async {
-    final router = GoRouter(
-      initialLocation: Routes.home,
-      routes: [
-        for (final path in [
-          Routes.home,
-          Routes.skinCapture,
-          Routes.skinLoading,
-          Routes.lifestyle,
-          Routes.skinResult,
-        ])
-          GoRoute(path: path, builder: (_, __) => Text(path)),
-      ],
-    );
+  /// 예전에는 분석과 결과 사이에 생활 습관 강제 단계(S04b)가 끼어 있었다. 지금은
+  /// 습관 게이트가 인사이트(S10) 앞으로 옮겨져서, 촬영 → 로딩 → 결과가 곧장 이어진다.
+  /// 게이트가 어디에 서 있는지는 `skin_lifestyle_gate_test.dart` 가 지킨다.
+  testWidgets('피부: 촬영·로딩은 결과 아래에 남지 않는다', (tester) async {
+    final router = build();
     await pump(tester, router);
 
     router.push(Routes.skinCapture);
     router.pushReplacement(Routes.skinLoading);
-    router.pushReplacement(Routes.lifestyle);
     router.pushReplacement(Routes.skinResult);
     await tester.pumpAndSettle();
 
-    // 강제 단계도 교체라 결과에서 뒤로 가면 습관 화면으로 되돌아가지 않는다.
+    // 전부 교체라 결과에서 뒤로 가면 촬영·로딩이 아니라 홈으로 나간다.
     expect(stackOf(router), [Routes.home, Routes.skinResult]);
+
+    router.pop();
+    await tester.pumpAndSettle();
+    expect(stackOf(router), [Routes.home]);
   });
 }

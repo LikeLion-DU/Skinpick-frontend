@@ -8,10 +8,11 @@ import 'package:skinplate/features/auth/presentation/pages/skin_type_page.dart';
 import 'package:skinplate/features/auth/presentation/providers/auth_notifier.dart';
 import 'package:skinplate/shared/enums/skin_type.dart';
 
-/// 첫 분석 직후의 강제 생활 습관 단계(S04b).
+/// 인사이트(S10)가 습관을 받으러 보내는 화면.
 ///
-/// 인사이트는 서버 DB 의 습관을 읽어 주제를 고른다. 비어 있으면 생활 관련 인사이트가
-/// 하나도 없는 채로 그 분석에 굳으므로, 결과를 보기 전에 네 개를 다 받아야 한다.
+/// 인사이트는 서버 DB 의 습관을 읽어 주제를 고르고, `GET /skin-insights` 가
+/// get-or-create 라 한 번 만들어지면 그 분석에 굳는다. 그래서 **인사이트를 조회하기
+/// 전에** 네 개를 다 받아야 한다 — 피부 분석 결과 자체는 습관 없이도 볼 수 있다.
 void main() {
   const designSize = Size(402, 874);
 
@@ -61,13 +62,12 @@ void main() {
     expect(find.text('(필수)'), findsOneWidget);
   });
 
-  testWidgets('나갈 문이 없다 — 건너뛰기도 뒤로가기도 그리지 않는다', (tester) async {
+  testWidgets('건너뛰기는 없다 — 네 개를 다 받아야 인사이트를 만들 수 있다', (tester) async {
     await tester.binding.setSurfaceSize(designSize);
     await tester.pumpWidget(host(fresh, mode: ProfileFormMode.lifestyle));
     await tester.pumpAndSettle();
 
     expect(find.text('건너뛰기'), findsNothing);
-    expect(find.byType(BackButton), findsNothing);
   });
 
   /// 화면을 붙잡고 있는 PopScope 가 있는가. MaterialApp 내부에도 PopScope 가 있어
@@ -77,23 +77,25 @@ void main() {
       .cast<PopScope>()
       .any((scope) => !scope.canPop);
 
-  testWidgets('하드웨어 백으로도 빠져나갈 수 없다', (tester) async {
-    // 그려지는 문만 없애면 Android 백·엣지 스와이프가 그대로 나간다. 그리고 나가면
-    // 방금 한 분석을 다시 볼 방법이 없다 — 결과로 가는 길이 로딩과 이 화면뿐이다.
-    await tester.binding.setSurfaceSize(designSize);
-    await tester.pumpWidget(host(fresh, mode: ProfileFormMode.lifestyle));
-    await tester.pumpAndSettle();
+  /// 예전에는 이 화면이 분석과 결과 사이에 낀 강제 단계라 뒤로가기를 막았다 —
+  /// 나가면 방금 한 분석을 다시 볼 길이 없었기 때문이다.
+  ///
+  /// 지금은 인사이트(S10)가 습관을 받으러 보내는 화면이고, 결과는 이미 봤다.
+  /// 나가도 잃는 것이 없으므로 가두지 않는다. 다시 막으면 "인사이트는 나중에"를
+  /// 고른 사용자가 앱을 닫는 것 말고는 나갈 방법이 없어진다.
+  ///
+  /// 모드마다 따로 pump 한다. 한 테스트 안에서 이어 붙이면 같은 runtimeType 이라
+  /// Flutter 가 Element 를 그대로 재사용하고 initState 가 다시 돌지 않는다 —
+  /// 두 번째 모드는 새로 마운트된 화면이 아니게 된다.
+  for (final mode in ProfileFormMode.values) {
+    testWidgets('$mode 는 뒤로가기를 막지 않는다', (tester) async {
+      await tester.binding.setSurfaceSize(designSize);
+      await tester.pumpWidget(host(fresh, mode: mode));
+      await tester.pumpAndSettle();
 
-    expect(blocksBack(tester), isTrue);
-  });
-
-  testWidgets('일반 모드는 막지 않는다 — 프로필 수정은 언제든 나갈 수 있다', (tester) async {
-    await tester.binding.setSurfaceSize(designSize);
-    await tester.pumpWidget(host(fresh, mode: ProfileFormMode.full));
-    await tester.pumpAndSettle();
-
-    expect(blocksBack(tester), isFalse);
-  });
+      expect(blocksBack(tester), isFalse, reason: '$mode 가 화면을 붙잡고 있다');
+    });
+  }
 
   testWidgets('네 개를 다 고르기 전에는 완료할 수 없다', (tester) async {
     await tester.binding.setSurfaceSize(designSize);
@@ -129,11 +131,12 @@ void main() {
     }
 
     expect(submitButton(tester).onPressed, isNotNull);
-    expect(find.text('완료하고 결과 보기'), findsOneWidget);
+    // 제출하면 결과가 아니라 불러온 인사이트로 돌아간다. 버튼도 그렇게 말해야 한다.
+    expect(find.text('완료하고 인사이트 보기'), findsOneWidget);
   });
 
-  testWidgets('이미 채운 사용자는 강제 단계를 볼 이유가 없다', (tester) async {
-    // 라우팅 조건과 같은 판정이다. 로딩 화면이 이 값으로 결과와 강제 단계를 가른다.
+  testWidgets('이미 채운 사용자는 이 화면을 볼 이유가 없다', (tester) async {
+    // 게이트 조건과 같은 판정이다. 인사이트 화면이 이 값으로 안내와 조회를 가른다.
     expect(complete.hasIncompleteLifestyle, isFalse);
     expect(fresh.hasIncompleteLifestyle, isTrue);
 

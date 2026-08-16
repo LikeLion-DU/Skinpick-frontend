@@ -10,7 +10,10 @@ class SkinPlateApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return MaterialApp.router(
-      title: 'Skin Plate',
+      // 앱 이름. Android 최근 앱 목록에 이 값이 뜬다 — 홈 화면 이름(매니페스트
+      // android:label · iOS CFBundleDisplayName)과 어긋나면 같은 앱이 두 이름으로
+      // 보인다.
+      title: 'Skinpick',
       theme: AppTheme.light,
       debugShowCheckedModeBanner: false,
       routerConfig: ref.watch(routerProvider),

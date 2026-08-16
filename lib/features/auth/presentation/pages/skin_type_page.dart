@@ -23,7 +23,8 @@ enum ProfileFormMode {
   /// 가입 직후(S01c)와 홈의 "피부 프로필 수정". 타입·고민·습관 전부, 건너뛰기 있음.
   full,
 
-  /// 첫 분석 직후(S04b) 강제 단계. 생활 습관 4종만 묻고 건너뛰기가 없다.
+  /// 인사이트(S10)가 습관을 받으러 보내는 화면. 생활 습관 4종만 묻고 건너뛰기가
+  /// 없다 — 네 개가 다 있어야 인사이트를 만들 수 있다.
   ///
   /// 여기서 타입·고민을 다시 묻지 않는다 — 가입 때 이미 받았고, 다시 그리면
   /// 사용자가 같은 설문을 두 번 하는 것처럼 느낀다.
@@ -127,41 +128,28 @@ class _SkinTypePageState extends ConsumerState<SkinTypePage> {
       return;
     }
 
-    // 강제 단계는 분석과 결과 사이에 낀 화면이다. 저장했으면 결과로 넘긴다 —
-    // pop 하면 로딩 화면으로 돌아가고, 거기는 이미 끝난 분석을 다시 보여준다.
-    if (_lifestyleOnly) {
-      context.pushReplacement(Routes.skinResult);
-      return;
-    }
+    // 습관만 묻는 화면은 인사이트(S10)가 불러서 온 곳이다. 부른 화면으로 그대로
+    // 돌아가면 게이트가 풀린 상태로 다시 그려지고, 그때 인사이트를 처음 조회한다.
     _leave();
   }
 
   /// 온보딩(가입 직후)에서는 쌓인 화면이 없으니 홈으로 간다. 그 외에는 부른 화면으로
-  /// 돌아간다 — `go` 로 통일하면 스택이 통째로 날아가서, 인사이트 화면이 "생활 상태를
-  /// 설정하고 다시 보면 채워져요"라고 시켜서 온 사용자가 그 인사이트로 못 돌아간다.
-  /// 지금 앱에는 과거 분석으로 들어가는 길이 없어 사진을 다시 찍는 수밖에 없어진다.
+  /// 돌아간다 — `go` 로 통일하면 스택이 통째로 날아가서, 인사이트 화면이 습관을
+  /// 받으러 보낸 사용자가 그 인사이트로 못 돌아간다.
   void _leave() =>
       context.canPop() ? context.pop() : context.go(Routes.home);
 
+  /// **뒤로가기를 막지 않는다.** 예전에는 이 화면이 분석과 결과 사이에 낀 강제
+  /// 단계라, 나가면 방금 한 분석을 다시 볼 길이 없어서 붙잡아 두어야 했다.
+  /// 지금은 인사이트(S10)가 부르는 화면이고 결과는 이미 봤으므로, 나가도 잃는
+  /// 것이 없다 — 인사이트를 나중에 보겠다는 선택을 막을 이유가 없다.
   @override
-  Widget build(BuildContext context) {
-    return PopScope(
-      // 그려지는 문만 없애면 하드웨어 백·엣지 스와이프가 그대로 빠져나간다.
-      // 그리고 이 화면에서 나가면 방금 한 분석을 다시 볼 방법이 없다 — 결과로
-      // 가는 길은 로딩과 이 화면 둘뿐이고 홈에는 진입점이 없다. 5~8초 기다린
-      // 분석이 통째로 사라지고, 습관도 비어 있어 사진부터 다시 찍어야 한다.
-      //
-      // 저장이 계속 실패하는 사용자(오프라인)까지 가두지는 않는다.
-      canPop: !_lifestyleOnly || _error != null,
-      child: _form(context),
-    );
-  }
+  Widget build(BuildContext context) => _form(context);
 
   Widget _form(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text(''),
-        automaticallyImplyLeading: !_lifestyleOnly,
         actions: [
           // 건너뛰기는 API 를 호출하지 않는 것이다. declared_skin_type 이 NULL 로
           // 남아야 "아직 안 정함"과 "잘 모르겠어요(UNKNOWN)"가 구분된다.
@@ -177,15 +165,19 @@ class _SkinTypePageState extends ConsumerState<SkinTypePage> {
         padding: const EdgeInsets.fromLTRB(
             AppTheme.pagePadding, 0, AppTheme.pagePadding, 24),
         children: [
+          // 습관 모드 문구는 온보딩 어투를 쓰지 않는다. 예전에는 가입 흐름 안에
+          // 있어서 "거의 다 왔어요!" 가 맞았지만, 지금은 인사이트를 보려다 들른
+          // 화면이라 그 말이 어디에 가까워졌다는 것인지 알 수 없다.
           Text(
               _lifestyleOnly
-                  ? '거의 다 왔어요!'
+                  ? '생활 습관을\n알려주세요'
                   : '피부 프로필을\n설정해 볼까요?',
               style: Theme.of(context).textTheme.titleLarge),
           const SizedBox(height: 8),
           Text(
               _lifestyleOnly
-                  ? '더 정확한 개인화 분석을 위해\n평소 생활 습관을 알려주세요.'
+                  ? '수면·스트레스·운동·수분 네 가지를 알려주시면\n'
+                      '오늘 피부 상태와 함께 인사이트를 만들어 드려요.'
                   : '정확한 분석을 위해 알려주세요',
               style: Theme.of(context).textTheme.bodyMedium),
           const SizedBox(height: 20),
@@ -370,7 +362,9 @@ class _SkinTypePageState extends ConsumerState<SkinTypePage> {
                     child: CircularProgressIndicator(
                         strokeWidth: 2, color: Colors.white),
                   )
-                : Text(_lifestyleOnly ? '완료하고 결과 보기' : '프로필 설정 완료'),
+                // 습관 모드는 인사이트가 불러서 온 화면이다. 제출하면 결과가
+                // 아니라 그 인사이트로 돌아간다 — 버튼도 그렇게 말해야 한다.
+                : Text(_lifestyleOnly ? '완료하고 인사이트 보기' : '프로필 설정 완료'),
           ),
         ],
       ),
