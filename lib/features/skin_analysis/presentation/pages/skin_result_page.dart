@@ -7,9 +7,9 @@ import '../../../../app/router/app_router.dart';
 import '../../../../app/theme/app_colors.dart';
 import '../../../../app/theme/app_theme.dart';
 import '../../../../core/widgets/app_widgets.dart';
-import '../../../../shared/enums/highlight_status.dart';
 import '../../../../shared/enums/metric_band.dart';
 import '../../../../shared/enums/skin_type.dart';
+import '../../../../shared/widgets/highlight_row.dart';
 import '../../../auth/presentation/providers/auth_notifier.dart';
 import '../../domain/entities/skin_analysis.dart';
 import '../providers/skin_analysis_notifier.dart';
@@ -78,7 +78,7 @@ class SkinResultPage extends ConsumerWidget {
               '설정한 프로필을 바탕으로\n사용자의 피부 상태를 분석했어요 : )',
               textAlign: TextAlign.center,
               style: TextStyle(
-                  fontSize: 12, color: Color(0xFF494949), height: 1.5),
+                  fontSize: 12, color: AppColors.textBody, height: 1.5),
             ),
           ),
           const SizedBox(height: 36),
@@ -244,7 +244,7 @@ class _TypeCard extends StatelessWidget {
             Text(
               analysis.summary,
               style: const TextStyle(
-                  fontSize: 12, color: Color(0xFF494949), height: 1.5),
+                  fontSize: 12, color: AppColors.textBody, height: 1.5),
             ),
           ],
 
@@ -253,7 +253,7 @@ class _TypeCard extends StatelessWidget {
             const Divider(height: 1, color: AppColors.borderOnWhite),
             const SizedBox(height: 14),
             for (final highlight in analysis.highlights)
-              _HighlightRow(highlight: highlight),
+              HighlightRow(highlight: highlight),
           ],
         ],
       ),
@@ -261,42 +261,6 @@ class _TypeCard extends StatelessWidget {
   }
 }
 
-/// 요약 하이라이트 한 줄.
-///
-/// 모르는 상태값은 파서가 [HighlightStatus.warn] 으로 떨어뜨린다. 여기서 색을
-/// 초록으로 주면 그 낙하가 "괜찮다"로 뒤집힌다 — 주의색을 유지한다.
-class _HighlightRow extends StatelessWidget {
-  const _HighlightRow({required this.highlight});
-
-  final Highlight highlight;
-
-  @override
-  Widget build(BuildContext context) {
-    final (color, icon) = switch (highlight.status) {
-      HighlightStatus.good => (AppColors.good, Icons.check_circle),
-      HighlightStatus.warn => (AppColors.caution, Icons.info),
-      HighlightStatus.caution => (AppColors.bad, Icons.warning),
-    };
-
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(icon, color: color, size: 16),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              highlight.label,
-              style: const TextStyle(
-                  fontSize: 12, color: Color(0xFF494949), height: 1.4),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
 
 class _Metric extends StatelessWidget {
   const _Metric({
@@ -397,7 +361,7 @@ class _CriteriaCard extends StatelessWidget {
                 style: const TextStyle(
                   fontSize: 10,
                   fontWeight: FontWeight.w500,
-                  color: Color(0xFF494949),
+                  color: AppColors.textBody,
                 )),
             const SizedBox(height: 5),
             Text(
@@ -405,7 +369,7 @@ class _CriteriaCard extends StatelessWidget {
               textAlign: TextAlign.center,
               style: const TextStyle(
                 fontSize: 8.5,
-                color: Color(0xFF494949),
+                color: AppColors.textBody,
                 height: 1.4,
               ),
             ),

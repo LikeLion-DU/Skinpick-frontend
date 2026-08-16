@@ -35,6 +35,12 @@ class AppColors {
   /// 카드 안쪽 본문. 위 회색보다 아주 조금 진하다 — 시안이 둘을 구분해서 쓴다.
   static const textOnCard = Color(0xFF505050);
 
+  /// 흰 배경 위 본문 문장. 피부 요약·하이라이트 줄이 이 색이다. (샘플링)
+  ///
+  /// [textOnCard] 와 한 끗 차이(505050)라 합치고 싶어지는데, 시안이 실제로 두 값을
+  /// 쓰고 있어 두 토큰으로 둔다. 합치려면 디자이너에게 확인받고 한 번에 바꿀 것.
+  static const textBody = Color(0xFF494949);
+
   /// 테두리와 미선택 칩의 윤곽. (샘플링)
   static const outline = Color(0xFF898888);
 

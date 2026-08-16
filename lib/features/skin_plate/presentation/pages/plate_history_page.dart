@@ -13,6 +13,8 @@ import '../../../../shared/widgets/score_badge.dart';
 import '../../data/datasources/plate_image_store.dart';
 import '../../domain/entities/plate_history.dart';
 import '../providers/plate_history_provider.dart';
+import '../providers/weekly_report_provider.dart';
+import '../widgets/weekly_summary_card.dart';
 
 /// S09 — 오늘의 기록. 시안대로 **하루 단위**로 보여주고 ‹ › 로 날짜를 넘긴다.
 ///
@@ -63,6 +65,12 @@ class _PlateHistoryPageState extends ConsumerState<PlateHistoryPage> {
       appBar: AppBar(title: const Text('오늘의 기록')),
       body: Column(
         children: [
+          // 하루씩 넘겨 보는 화면 위에 이번 주 전체를 한 줄로 얹는다.
+          // 기록이 없는 주에는 카드가 스스로 사라진다.
+          const Padding(
+            padding: EdgeInsets.fromLTRB(20, 12, 20, 0),
+            child: WeeklySummaryCard(),
+          ),
           _DateSelector(
             date: _selected,
             canGoBack: _canGoBack,
@@ -73,7 +81,10 @@ class _PlateHistoryPageState extends ConsumerState<PlateHistoryPage> {
             child: RefreshIndicator(
               // invalidate 는 void 라 당기자마자 스피너가 접힌다. 요청이 끝날
               // 때까지 붙잡으려면 새 값을 기다려야 한다.
-              onRefresh: () => ref.refresh(plateHistoryProvider.future),
+              onRefresh: () => Future.wait([
+                ref.refresh(plateHistoryProvider.future),
+                ref.refresh(weeklyReportProvider.future),
+              ]),
               child: history.when(
                 loading: () =>
                     const Center(child: CircularProgressIndicator()),
@@ -264,6 +275,15 @@ class _DeleteButtonState extends ConsumerState<_DeleteButton> {
     // 이미 지워진 카드가 다시 눌린다 — 상세로 들어가면 404, × 를 또 누르면 방금
     // 성공한 삭제에 대해 "지우지 못했어요" 가 뜬다.
     if (result.isSuccess) {
+      // 지운 끼니가 이번 주 평균에 아직 섞여 있다. 카드가 방금 지운 기록을
+      // 포함한 숫자를 들고 있으면 삭제가 안 된 것처럼 보인다.
+      //
+      // **await 앞이어야 한다.** 뒤에 두면 삭제와 목록 재조회(~1초) 사이에
+      // 사용자가 뒤로 나갔을 때 이 위젯이 dispose 된 뒤 ref 를 만지게 되고,
+      // riverpod 이 "Cannot use ref after the widget was disposed" 를 던진다.
+      // 그러면 주간 평균은 지운 끼니를 그대로 안고 있고 실패 안내도 못 뜬다.
+      ref.invalidate(weeklyReportProvider);
+
       // ignore: unused_result — 새 목록 자체가 아니라 "다 받았다"는 시점만 쓴다.
       await ref.refresh(plateHistoryProvider.future);
     }

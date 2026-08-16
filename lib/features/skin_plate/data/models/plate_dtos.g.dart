@@ -268,3 +268,20 @@ Map<String, dynamic> _$$PlateSimulationDtoImplToJson(
       'removedRules': instance.removedRules,
       'summary': instance.summary,
     };
+
+_$PlateReportDtoImpl _$$PlateReportDtoImplFromJson(Map<String, dynamic> json) =>
+    _$PlateReportDtoImpl(
+      from: DateTime.parse(json['from'] as String),
+      to: DateTime.parse(json['to'] as String),
+      averagePlateScore: (json['averagePlateScore'] as num?)?.toInt(),
+      recordCount: (json['recordCount'] as num?)?.toInt() ?? 0,
+    );
+
+Map<String, dynamic> _$$PlateReportDtoImplToJson(
+        _$PlateReportDtoImpl instance) =>
+    <String, dynamic>{
+      'from': instance.from.toIso8601String(),
+      'to': instance.to.toIso8601String(),
+      'averagePlateScore': instance.averagePlateScore,
+      'recordCount': instance.recordCount,
+    };

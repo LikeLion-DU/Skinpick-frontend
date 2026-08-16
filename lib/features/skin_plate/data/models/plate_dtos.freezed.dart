@@ -3082,3 +3082,224 @@ abstract class _PlateSimulationDto implements PlateSimulationDto {
   _$$PlateSimulationDtoImplCopyWith<_$PlateSimulationDtoImpl> get copyWith =>
       throw _privateConstructorUsedError;
 }
+
+PlateReportDto _$PlateReportDtoFromJson(Map<String, dynamic> json) {
+  return _PlateReportDto.fromJson(json);
+}
+
+/// @nodoc
+mixin _$PlateReportDto {
+  DateTime get from => throw _privateConstructorUsedError;
+  DateTime get to => throw _privateConstructorUsedError;
+
+  /// 기간 안에 기록이 하나도 없으면 서버가 키를 뺀다. 0 이 아니다 —
+  /// 0 은 "아주 나쁘게 먹은 주"고 이건 "안 먹은 주"다.
+  int? get averagePlateScore => throw _privateConstructorUsedError;
+  int get recordCount => throw _privateConstructorUsedError;
+
+  /// Serializes this PlateReportDto to a JSON map.
+  Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
+
+  /// Create a copy of PlateReportDto
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  $PlateReportDtoCopyWith<PlateReportDto> get copyWith =>
+      throw _privateConstructorUsedError;
+}
+
+/// @nodoc
+abstract class $PlateReportDtoCopyWith<$Res> {
+  factory $PlateReportDtoCopyWith(
+          PlateReportDto value, $Res Function(PlateReportDto) then) =
+      _$PlateReportDtoCopyWithImpl<$Res, PlateReportDto>;
+  @useResult
+  $Res call(
+      {DateTime from, DateTime to, int? averagePlateScore, int recordCount});
+}
+
+/// @nodoc
+class _$PlateReportDtoCopyWithImpl<$Res, $Val extends PlateReportDto>
+    implements $PlateReportDtoCopyWith<$Res> {
+  _$PlateReportDtoCopyWithImpl(this._value, this._then);
+
+  // ignore: unused_field
+  final $Val _value;
+  // ignore: unused_field
+  final $Res Function($Val) _then;
+
+  /// Create a copy of PlateReportDto
+  /// with the given fields replaced by the non-null parameter values.
+  @pragma('vm:prefer-inline')
+  @override
+  $Res call({
+    Object? from = null,
+    Object? to = null,
+    Object? averagePlateScore = freezed,
+    Object? recordCount = null,
+  }) {
+    return _then(_value.copyWith(
+      from: null == from
+          ? _value.from
+          : from // ignore: cast_nullable_to_non_nullable
+              as DateTime,
+      to: null == to
+          ? _value.to
+          : to // ignore: cast_nullable_to_non_nullable
+              as DateTime,
+      averagePlateScore: freezed == averagePlateScore
+          ? _value.averagePlateScore
+          : averagePlateScore // ignore: cast_nullable_to_non_nullable
+              as int?,
+      recordCount: null == recordCount
+          ? _value.recordCount
+          : recordCount // ignore: cast_nullable_to_non_nullable
+              as int,
+    ) as $Val);
+  }
+}
+
+/// @nodoc
+abstract class _$$PlateReportDtoImplCopyWith<$Res>
+    implements $PlateReportDtoCopyWith<$Res> {
+  factory _$$PlateReportDtoImplCopyWith(_$PlateReportDtoImpl value,
+          $Res Function(_$PlateReportDtoImpl) then) =
+      __$$PlateReportDtoImplCopyWithImpl<$Res>;
+  @override
+  @useResult
+  $Res call(
+      {DateTime from, DateTime to, int? averagePlateScore, int recordCount});
+}
+
+/// @nodoc
+class __$$PlateReportDtoImplCopyWithImpl<$Res>
+    extends _$PlateReportDtoCopyWithImpl<$Res, _$PlateReportDtoImpl>
+    implements _$$PlateReportDtoImplCopyWith<$Res> {
+  __$$PlateReportDtoImplCopyWithImpl(
+      _$PlateReportDtoImpl _value, $Res Function(_$PlateReportDtoImpl) _then)
+      : super(_value, _then);
+
+  /// Create a copy of PlateReportDto
+  /// with the given fields replaced by the non-null parameter values.
+  @pragma('vm:prefer-inline')
+  @override
+  $Res call({
+    Object? from = null,
+    Object? to = null,
+    Object? averagePlateScore = freezed,
+    Object? recordCount = null,
+  }) {
+    return _then(_$PlateReportDtoImpl(
+      from: null == from
+          ? _value.from
+          : from // ignore: cast_nullable_to_non_nullable
+              as DateTime,
+      to: null == to
+          ? _value.to
+          : to // ignore: cast_nullable_to_non_nullable
+              as DateTime,
+      averagePlateScore: freezed == averagePlateScore
+          ? _value.averagePlateScore
+          : averagePlateScore // ignore: cast_nullable_to_non_nullable
+              as int?,
+      recordCount: null == recordCount
+          ? _value.recordCount
+          : recordCount // ignore: cast_nullable_to_non_nullable
+              as int,
+    ));
+  }
+}
+
+/// @nodoc
+@JsonSerializable()
+class _$PlateReportDtoImpl implements _PlateReportDto {
+  const _$PlateReportDtoImpl(
+      {required this.from,
+      required this.to,
+      this.averagePlateScore,
+      this.recordCount = 0});
+
+  factory _$PlateReportDtoImpl.fromJson(Map<String, dynamic> json) =>
+      _$$PlateReportDtoImplFromJson(json);
+
+  @override
+  final DateTime from;
+  @override
+  final DateTime to;
+
+  /// 기간 안에 기록이 하나도 없으면 서버가 키를 뺀다. 0 이 아니다 —
+  /// 0 은 "아주 나쁘게 먹은 주"고 이건 "안 먹은 주"다.
+  @override
+  final int? averagePlateScore;
+  @override
+  @JsonKey()
+  final int recordCount;
+
+  @override
+  String toString() {
+    return 'PlateReportDto(from: $from, to: $to, averagePlateScore: $averagePlateScore, recordCount: $recordCount)';
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return identical(this, other) ||
+        (other.runtimeType == runtimeType &&
+            other is _$PlateReportDtoImpl &&
+            (identical(other.from, from) || other.from == from) &&
+            (identical(other.to, to) || other.to == to) &&
+            (identical(other.averagePlateScore, averagePlateScore) ||
+                other.averagePlateScore == averagePlateScore) &&
+            (identical(other.recordCount, recordCount) ||
+                other.recordCount == recordCount));
+  }
+
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  @override
+  int get hashCode =>
+      Object.hash(runtimeType, from, to, averagePlateScore, recordCount);
+
+  /// Create a copy of PlateReportDto
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  @override
+  @pragma('vm:prefer-inline')
+  _$$PlateReportDtoImplCopyWith<_$PlateReportDtoImpl> get copyWith =>
+      __$$PlateReportDtoImplCopyWithImpl<_$PlateReportDtoImpl>(
+          this, _$identity);
+
+  @override
+  Map<String, dynamic> toJson() {
+    return _$$PlateReportDtoImplToJson(
+      this,
+    );
+  }
+}
+
+abstract class _PlateReportDto implements PlateReportDto {
+  const factory _PlateReportDto(
+      {required final DateTime from,
+      required final DateTime to,
+      final int? averagePlateScore,
+      final int recordCount}) = _$PlateReportDtoImpl;
+
+  factory _PlateReportDto.fromJson(Map<String, dynamic> json) =
+      _$PlateReportDtoImpl.fromJson;
+
+  @override
+  DateTime get from;
+  @override
+  DateTime get to;
+
+  /// 기간 안에 기록이 하나도 없으면 서버가 키를 뺀다. 0 이 아니다 —
+  /// 0 은 "아주 나쁘게 먹은 주"고 이건 "안 먹은 주"다.
+  @override
+  int? get averagePlateScore;
+  @override
+  int get recordCount;
+
+  /// Create a copy of PlateReportDto
+  /// with the given fields replaced by the non-null parameter values.
+  @override
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  _$$PlateReportDtoImplCopyWith<_$PlateReportDtoImpl> get copyWith =>
+      throw _privateConstructorUsedError;
+}

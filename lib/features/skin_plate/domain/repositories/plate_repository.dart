@@ -5,6 +5,7 @@ import '../../../../shared/enums/plate_action_code.dart';
 import '../entities/plate_analysis.dart';
 import '../entities/plate_history.dart';
 import '../entities/skin_plate.dart';
+import '../entities/weekly_report.dart';
 
 abstract interface class PlateRepository {
   /// 음식 사진을 올리고 임시 분석 결과를 받는다. **저장되지 않는다.**
@@ -22,6 +23,9 @@ abstract interface class PlateRepository {
 
   /// 날짜별 식단 기록. from·to 는 둘 다 포함하는 달력일이다.
   Future<Result<List<PlateHistoryDay>>> history(DateTime from, DateTime to);
+
+  /// 주간 피부 식단 리포트. 서버가 센 이번 주에 지난주 비교와 음식 TOP 을 얹는다.
+  Future<Result<WeeklyReport>> weeklyReport();
 
   /// 추천 행동을 실행했다고 가정하고 점수를 다시 계산한다. 서버에 저장되지 않는다.
   ///

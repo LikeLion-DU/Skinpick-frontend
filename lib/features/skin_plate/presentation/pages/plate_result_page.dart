@@ -14,6 +14,7 @@ import '../../domain/entities/skin_plate.dart';
 import '../providers/plate_notifier.dart';
 import '../widgets/plate_score_card.dart';
 import '../widgets/plate_summary_cards.dart';
+import '../widgets/skin_basis_card.dart';
 
 /// S07 — 분석 결과.
 ///
@@ -67,11 +68,26 @@ class _PlateResultPageState extends ConsumerState<PlateResultPage> {
             state: state,
             applied: _applied,
             onToggle: _toggle,
-            onSave: () => ref.read(plateNotifierProvider.notifier).saveRecord(),
-            onRetake: () => context.pushReplacement(Routes.foodCapture),
           ),
         _ => const Center(child: CircularProgressIndicator()),
       },
+
+      // 저장 CTA 를 스크롤 밖에 고정한다. 목록 맨 아래에 두었더니 근거 카드가
+      // 붙으면서 화면 밖으로 밀렸다 — 저장하고 나서도 "저장됐어요" 확인과
+      // 나갈 버튼이 안 보였다. 이 화면의 존재 이유가 기록 확정이라 그건 곧
+      // 화면이 제 일을 못 한다는 뜻이다.
+      bottomNavigationBar: view == null
+          ? null
+          : SafeArea(
+              minimum: const EdgeInsets.fromLTRB(
+                  AppTheme.pagePadding, 0, AppTheme.pagePadding, 12),
+              child: _SaveSection(
+                state: state,
+                onSave: () =>
+                    ref.read(plateNotifierProvider.notifier).saveRecord(),
+                onRetake: () => context.pushReplacement(Routes.foodCapture),
+              ),
+            ),
     );
   }
 }
@@ -82,8 +98,6 @@ class _Content extends ConsumerWidget {
     required this.state,
     required this.applied,
     required this.onToggle,
-    required this.onSave,
-    required this.onRetake,
   });
 
   /// 임시 분석이든 저장된 기록이든 화면은 같은 것을 그린다.
@@ -92,8 +106,6 @@ class _Content extends ConsumerWidget {
   final PlateState state;
   final Set<PlateActionCode> applied;
   final Future<void> Function(PlateActionCode) onToggle;
-  final VoidCallback onSave;
-  final VoidCallback onRetake;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -148,6 +160,8 @@ class _Content extends ConsumerWidget {
         ],
 
         const SizedBox(height: 26),
+        // 점수의 왼쪽 항. 아래 분석 요약(음식 쪽)과 짝이다.
+        SkinBasisCard(skinAnalysisId: plate.skinAnalysisId),
         Text('분석 요약', style: Theme.of(context).textTheme.titleMedium),
         const SizedBox(height: 10),
         PlateSummaryCard(good: plate.good, caution: plate.caution),
@@ -207,8 +221,6 @@ class _Content extends ConsumerWidget {
           ),
         ],
 
-        const SizedBox(height: 28),
-        _SaveSection(state: state, onSave: onSave, onRetake: onRetake),
         const SafetyNotice(),
       ],
     );

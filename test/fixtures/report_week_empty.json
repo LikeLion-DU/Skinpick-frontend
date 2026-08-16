@@ -1,0 +1,12 @@
+{
+    "success": true,
+    "data": {
+        "period": "WEEK",
+        "from": "2026-08-10",
+        "to": "2026-08-16",
+        "skinScoreTrend": [],
+        "recordCount": 0,
+        "penalties": [],
+        "meals": []
+    }
+}
