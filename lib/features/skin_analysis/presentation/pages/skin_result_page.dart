@@ -90,6 +90,14 @@ class SkinResultPage extends ConsumerWidget {
           const SizedBox(height: 36),
 
           _TypeCard(analysis: analysis, headlineType: headlineType),
+
+          // 서버가 못 냈으면(예전 분석이거나 응답을 못 믿을 때) 키 자체가 없다.
+          // 그때는 카드를 숨긴다 — 빈 값으로 그리면 없는 데이터를 보여주는 셈이다.
+          if (analysis.skinAge != null) ...[
+            const SizedBox(height: 22),
+            _SkinAgeCard(skinAge: analysis.skinAge!),
+          ],
+
           const SizedBox(height: 22),
           const _CriteriaCard(),
 
@@ -140,6 +148,16 @@ class _TypeCard extends StatelessWidget {
   final SkinAnalysis analysis;
   final SkinType? headlineType;
 
+  /// 서버가 조합해 준 문구를 먼저 쓴다 — "건성 · 민감 경향" 처럼 경향까지 담겨 있고,
+  /// 앱이 타입과 경향을 이어 붙이기 시작하면 조합 규칙이 두 곳에 생긴다.
+  /// 예전 분석이면 서버가 키를 생략하므로 기존 문구로 떨어진다.
+  String _headline() {
+    final label = analysis.aiSkinType?.label ?? '';
+    if (label.isNotEmpty) return '$label 피부';
+
+    return headlineType == null ? '오늘의 피부' : '${headlineType!.label} 피부';
+  }
+
   @override
   Widget build(BuildContext context) {
     final metrics = analysis.metrics;
@@ -159,7 +177,7 @@ class _TypeCard extends StatelessWidget {
             children: [
               Flexible(
                 child: Text(
-                  headlineType == null ? '오늘의 피부' : '${headlineType!.label} 피부',
+                  _headline(),
                   style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
@@ -305,6 +323,85 @@ class _Metric extends StatelessWidget {
                 fontWeight: FontWeight.w600,
                 color: band.color,
               )),
+        ],
+      ),
+    );
+  }
+}
+
+/// AI 추정 피부 나이 카드.
+///
+/// 실제 나이를 맞히는 것이 아니라 사진 기반 외관 추정이라, 보조 문구를 항상 같이
+/// 띄운다. 숫자만 크게 놓으면 측정값으로 읽힌다.
+///
+/// 설명 문장은 서버가 만든다 — 앱이 짓거나 고치지 않는다.
+class _SkinAgeCard extends StatelessWidget {
+  const _SkinAgeCard({required this.skinAge});
+
+  final SkinAge skinAge;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(18, 18, 18, 20),
+      decoration: BoxDecoration(
+        color: AppColors.background,
+        border: Border.all(color: AppColors.primary, width: 0.6),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Text(
+                'AI 추정 피부 나이',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+              const Spacer(),
+              Text.rich(
+                TextSpan(
+                  children: [
+                    TextSpan(
+                      text: '${skinAge.estimatedSkinAge}',
+                      style: const TextStyle(
+                        fontSize: 26,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.textPrimary,
+                        height: 1,
+                      ),
+                    ),
+                    const TextSpan(
+                      text: '세',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                        color: AppColors.textPrimary,
+                        height: 1,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          if (skinAge.assessment.isNotEmpty) ...[
+            const SizedBox(height: 14),
+            Text(
+              skinAge.assessment,
+              style: const TextStyle(
+                  fontSize: 12, color: AppColors.textBody, height: 1.5),
+            ),
+          ],
+          const SizedBox(height: 12),
+          const Text(
+            '사진 속 피부결, 주름, 탄력, 피부톤 등을 종합한 AI 추정값입니다.',
+            style: TextStyle(fontSize: 10, color: AppColors.textBody, height: 1.4),
+          ),
         ],
       ),
     );

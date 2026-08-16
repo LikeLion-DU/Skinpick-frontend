@@ -618,6 +618,618 @@ abstract class _SkinTypeGapDto implements SkinTypeGapDto {
       throw _privateConstructorUsedError;
 }
 
+ScoredItemDto _$ScoredItemDtoFromJson(Map<String, dynamic> json) {
+  return _ScoredItemDto.fromJson(json);
+}
+
+/// @nodoc
+mixin _$ScoredItemDto {
+  String get key => throw _privateConstructorUsedError;
+  int get score => throw _privateConstructorUsedError;
+  String get level => throw _privateConstructorUsedError;
+  List<String> get evidence => throw _privateConstructorUsedError;
+
+  /// Serializes this ScoredItemDto to a JSON map.
+  Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
+
+  /// Create a copy of ScoredItemDto
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  $ScoredItemDtoCopyWith<ScoredItemDto> get copyWith =>
+      throw _privateConstructorUsedError;
+}
+
+/// @nodoc
+abstract class $ScoredItemDtoCopyWith<$Res> {
+  factory $ScoredItemDtoCopyWith(
+          ScoredItemDto value, $Res Function(ScoredItemDto) then) =
+      _$ScoredItemDtoCopyWithImpl<$Res, ScoredItemDto>;
+  @useResult
+  $Res call({String key, int score, String level, List<String> evidence});
+}
+
+/// @nodoc
+class _$ScoredItemDtoCopyWithImpl<$Res, $Val extends ScoredItemDto>
+    implements $ScoredItemDtoCopyWith<$Res> {
+  _$ScoredItemDtoCopyWithImpl(this._value, this._then);
+
+  // ignore: unused_field
+  final $Val _value;
+  // ignore: unused_field
+  final $Res Function($Val) _then;
+
+  /// Create a copy of ScoredItemDto
+  /// with the given fields replaced by the non-null parameter values.
+  @pragma('vm:prefer-inline')
+  @override
+  $Res call({
+    Object? key = null,
+    Object? score = null,
+    Object? level = null,
+    Object? evidence = null,
+  }) {
+    return _then(_value.copyWith(
+      key: null == key
+          ? _value.key
+          : key // ignore: cast_nullable_to_non_nullable
+              as String,
+      score: null == score
+          ? _value.score
+          : score // ignore: cast_nullable_to_non_nullable
+              as int,
+      level: null == level
+          ? _value.level
+          : level // ignore: cast_nullable_to_non_nullable
+              as String,
+      evidence: null == evidence
+          ? _value.evidence
+          : evidence // ignore: cast_nullable_to_non_nullable
+              as List<String>,
+    ) as $Val);
+  }
+}
+
+/// @nodoc
+abstract class _$$ScoredItemDtoImplCopyWith<$Res>
+    implements $ScoredItemDtoCopyWith<$Res> {
+  factory _$$ScoredItemDtoImplCopyWith(
+          _$ScoredItemDtoImpl value, $Res Function(_$ScoredItemDtoImpl) then) =
+      __$$ScoredItemDtoImplCopyWithImpl<$Res>;
+  @override
+  @useResult
+  $Res call({String key, int score, String level, List<String> evidence});
+}
+
+/// @nodoc
+class __$$ScoredItemDtoImplCopyWithImpl<$Res>
+    extends _$ScoredItemDtoCopyWithImpl<$Res, _$ScoredItemDtoImpl>
+    implements _$$ScoredItemDtoImplCopyWith<$Res> {
+  __$$ScoredItemDtoImplCopyWithImpl(
+      _$ScoredItemDtoImpl _value, $Res Function(_$ScoredItemDtoImpl) _then)
+      : super(_value, _then);
+
+  /// Create a copy of ScoredItemDto
+  /// with the given fields replaced by the non-null parameter values.
+  @pragma('vm:prefer-inline')
+  @override
+  $Res call({
+    Object? key = null,
+    Object? score = null,
+    Object? level = null,
+    Object? evidence = null,
+  }) {
+    return _then(_$ScoredItemDtoImpl(
+      key: null == key
+          ? _value.key
+          : key // ignore: cast_nullable_to_non_nullable
+              as String,
+      score: null == score
+          ? _value.score
+          : score // ignore: cast_nullable_to_non_nullable
+              as int,
+      level: null == level
+          ? _value.level
+          : level // ignore: cast_nullable_to_non_nullable
+              as String,
+      evidence: null == evidence
+          ? _value._evidence
+          : evidence // ignore: cast_nullable_to_non_nullable
+              as List<String>,
+    ));
+  }
+}
+
+/// @nodoc
+@JsonSerializable()
+class _$ScoredItemDtoImpl implements _ScoredItemDto {
+  const _$ScoredItemDtoImpl(
+      {required this.key,
+      required this.score,
+      this.level = '',
+      final List<String> evidence = const <String>[]})
+      : _evidence = evidence;
+
+  factory _$ScoredItemDtoImpl.fromJson(Map<String, dynamic> json) =>
+      _$$ScoredItemDtoImplFromJson(json);
+
+  @override
+  final String key;
+  @override
+  final int score;
+  @override
+  @JsonKey()
+  final String level;
+  final List<String> _evidence;
+  @override
+  @JsonKey()
+  List<String> get evidence {
+    if (_evidence is EqualUnmodifiableListView) return _evidence;
+    // ignore: implicit_dynamic_type
+    return EqualUnmodifiableListView(_evidence);
+  }
+
+  @override
+  String toString() {
+    return 'ScoredItemDto(key: $key, score: $score, level: $level, evidence: $evidence)';
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return identical(this, other) ||
+        (other.runtimeType == runtimeType &&
+            other is _$ScoredItemDtoImpl &&
+            (identical(other.key, key) || other.key == key) &&
+            (identical(other.score, score) || other.score == score) &&
+            (identical(other.level, level) || other.level == level) &&
+            const DeepCollectionEquality().equals(other._evidence, _evidence));
+  }
+
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  @override
+  int get hashCode => Object.hash(runtimeType, key, score, level,
+      const DeepCollectionEquality().hash(_evidence));
+
+  /// Create a copy of ScoredItemDto
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  @override
+  @pragma('vm:prefer-inline')
+  _$$ScoredItemDtoImplCopyWith<_$ScoredItemDtoImpl> get copyWith =>
+      __$$ScoredItemDtoImplCopyWithImpl<_$ScoredItemDtoImpl>(this, _$identity);
+
+  @override
+  Map<String, dynamic> toJson() {
+    return _$$ScoredItemDtoImplToJson(
+      this,
+    );
+  }
+}
+
+abstract class _ScoredItemDto implements ScoredItemDto {
+  const factory _ScoredItemDto(
+      {required final String key,
+      required final int score,
+      final String level,
+      final List<String> evidence}) = _$ScoredItemDtoImpl;
+
+  factory _ScoredItemDto.fromJson(Map<String, dynamic> json) =
+      _$ScoredItemDtoImpl.fromJson;
+
+  @override
+  String get key;
+  @override
+  int get score;
+  @override
+  String get level;
+  @override
+  List<String> get evidence;
+
+  /// Create a copy of ScoredItemDto
+  /// with the given fields replaced by the non-null parameter values.
+  @override
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  _$$ScoredItemDtoImplCopyWith<_$ScoredItemDtoImpl> get copyWith =>
+      throw _privateConstructorUsedError;
+}
+
+AiSkinTypeDto _$AiSkinTypeDtoFromJson(Map<String, dynamic> json) {
+  return _AiSkinTypeDto.fromJson(json);
+}
+
+/// @nodoc
+mixin _$AiSkinTypeDto {
+  String? get primary => throw _privateConstructorUsedError;
+  List<String> get traits => throw _privateConstructorUsedError;
+  String get label => throw _privateConstructorUsedError;
+
+  /// Serializes this AiSkinTypeDto to a JSON map.
+  Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
+
+  /// Create a copy of AiSkinTypeDto
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  $AiSkinTypeDtoCopyWith<AiSkinTypeDto> get copyWith =>
+      throw _privateConstructorUsedError;
+}
+
+/// @nodoc
+abstract class $AiSkinTypeDtoCopyWith<$Res> {
+  factory $AiSkinTypeDtoCopyWith(
+          AiSkinTypeDto value, $Res Function(AiSkinTypeDto) then) =
+      _$AiSkinTypeDtoCopyWithImpl<$Res, AiSkinTypeDto>;
+  @useResult
+  $Res call({String? primary, List<String> traits, String label});
+}
+
+/// @nodoc
+class _$AiSkinTypeDtoCopyWithImpl<$Res, $Val extends AiSkinTypeDto>
+    implements $AiSkinTypeDtoCopyWith<$Res> {
+  _$AiSkinTypeDtoCopyWithImpl(this._value, this._then);
+
+  // ignore: unused_field
+  final $Val _value;
+  // ignore: unused_field
+  final $Res Function($Val) _then;
+
+  /// Create a copy of AiSkinTypeDto
+  /// with the given fields replaced by the non-null parameter values.
+  @pragma('vm:prefer-inline')
+  @override
+  $Res call({
+    Object? primary = freezed,
+    Object? traits = null,
+    Object? label = null,
+  }) {
+    return _then(_value.copyWith(
+      primary: freezed == primary
+          ? _value.primary
+          : primary // ignore: cast_nullable_to_non_nullable
+              as String?,
+      traits: null == traits
+          ? _value.traits
+          : traits // ignore: cast_nullable_to_non_nullable
+              as List<String>,
+      label: null == label
+          ? _value.label
+          : label // ignore: cast_nullable_to_non_nullable
+              as String,
+    ) as $Val);
+  }
+}
+
+/// @nodoc
+abstract class _$$AiSkinTypeDtoImplCopyWith<$Res>
+    implements $AiSkinTypeDtoCopyWith<$Res> {
+  factory _$$AiSkinTypeDtoImplCopyWith(
+          _$AiSkinTypeDtoImpl value, $Res Function(_$AiSkinTypeDtoImpl) then) =
+      __$$AiSkinTypeDtoImplCopyWithImpl<$Res>;
+  @override
+  @useResult
+  $Res call({String? primary, List<String> traits, String label});
+}
+
+/// @nodoc
+class __$$AiSkinTypeDtoImplCopyWithImpl<$Res>
+    extends _$AiSkinTypeDtoCopyWithImpl<$Res, _$AiSkinTypeDtoImpl>
+    implements _$$AiSkinTypeDtoImplCopyWith<$Res> {
+  __$$AiSkinTypeDtoImplCopyWithImpl(
+      _$AiSkinTypeDtoImpl _value, $Res Function(_$AiSkinTypeDtoImpl) _then)
+      : super(_value, _then);
+
+  /// Create a copy of AiSkinTypeDto
+  /// with the given fields replaced by the non-null parameter values.
+  @pragma('vm:prefer-inline')
+  @override
+  $Res call({
+    Object? primary = freezed,
+    Object? traits = null,
+    Object? label = null,
+  }) {
+    return _then(_$AiSkinTypeDtoImpl(
+      primary: freezed == primary
+          ? _value.primary
+          : primary // ignore: cast_nullable_to_non_nullable
+              as String?,
+      traits: null == traits
+          ? _value._traits
+          : traits // ignore: cast_nullable_to_non_nullable
+              as List<String>,
+      label: null == label
+          ? _value.label
+          : label // ignore: cast_nullable_to_non_nullable
+              as String,
+    ));
+  }
+}
+
+/// @nodoc
+@JsonSerializable()
+class _$AiSkinTypeDtoImpl implements _AiSkinTypeDto {
+  const _$AiSkinTypeDtoImpl(
+      {this.primary,
+      final List<String> traits = const <String>[],
+      this.label = ''})
+      : _traits = traits;
+
+  factory _$AiSkinTypeDtoImpl.fromJson(Map<String, dynamic> json) =>
+      _$$AiSkinTypeDtoImplFromJson(json);
+
+  @override
+  final String? primary;
+  final List<String> _traits;
+  @override
+  @JsonKey()
+  List<String> get traits {
+    if (_traits is EqualUnmodifiableListView) return _traits;
+    // ignore: implicit_dynamic_type
+    return EqualUnmodifiableListView(_traits);
+  }
+
+  @override
+  @JsonKey()
+  final String label;
+
+  @override
+  String toString() {
+    return 'AiSkinTypeDto(primary: $primary, traits: $traits, label: $label)';
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return identical(this, other) ||
+        (other.runtimeType == runtimeType &&
+            other is _$AiSkinTypeDtoImpl &&
+            (identical(other.primary, primary) || other.primary == primary) &&
+            const DeepCollectionEquality().equals(other._traits, _traits) &&
+            (identical(other.label, label) || other.label == label));
+  }
+
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  @override
+  int get hashCode => Object.hash(runtimeType, primary,
+      const DeepCollectionEquality().hash(_traits), label);
+
+  /// Create a copy of AiSkinTypeDto
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  @override
+  @pragma('vm:prefer-inline')
+  _$$AiSkinTypeDtoImplCopyWith<_$AiSkinTypeDtoImpl> get copyWith =>
+      __$$AiSkinTypeDtoImplCopyWithImpl<_$AiSkinTypeDtoImpl>(this, _$identity);
+
+  @override
+  Map<String, dynamic> toJson() {
+    return _$$AiSkinTypeDtoImplToJson(
+      this,
+    );
+  }
+}
+
+abstract class _AiSkinTypeDto implements AiSkinTypeDto {
+  const factory _AiSkinTypeDto(
+      {final String? primary,
+      final List<String> traits,
+      final String label}) = _$AiSkinTypeDtoImpl;
+
+  factory _AiSkinTypeDto.fromJson(Map<String, dynamic> json) =
+      _$AiSkinTypeDtoImpl.fromJson;
+
+  @override
+  String? get primary;
+  @override
+  List<String> get traits;
+  @override
+  String get label;
+
+  /// Create a copy of AiSkinTypeDto
+  /// with the given fields replaced by the non-null parameter values.
+  @override
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  _$$AiSkinTypeDtoImplCopyWith<_$AiSkinTypeDtoImpl> get copyWith =>
+      throw _privateConstructorUsedError;
+}
+
+SkinAgeDto _$SkinAgeDtoFromJson(Map<String, dynamic> json) {
+  return _SkinAgeDto.fromJson(json);
+}
+
+/// @nodoc
+mixin _$SkinAgeDto {
+  int get estimatedSkinAge => throw _privateConstructorUsedError;
+  List<ScoredItemDto> get axes => throw _privateConstructorUsedError;
+  String get assessment => throw _privateConstructorUsedError;
+
+  /// Serializes this SkinAgeDto to a JSON map.
+  Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
+
+  /// Create a copy of SkinAgeDto
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  $SkinAgeDtoCopyWith<SkinAgeDto> get copyWith =>
+      throw _privateConstructorUsedError;
+}
+
+/// @nodoc
+abstract class $SkinAgeDtoCopyWith<$Res> {
+  factory $SkinAgeDtoCopyWith(
+          SkinAgeDto value, $Res Function(SkinAgeDto) then) =
+      _$SkinAgeDtoCopyWithImpl<$Res, SkinAgeDto>;
+  @useResult
+  $Res call(
+      {int estimatedSkinAge, List<ScoredItemDto> axes, String assessment});
+}
+
+/// @nodoc
+class _$SkinAgeDtoCopyWithImpl<$Res, $Val extends SkinAgeDto>
+    implements $SkinAgeDtoCopyWith<$Res> {
+  _$SkinAgeDtoCopyWithImpl(this._value, this._then);
+
+  // ignore: unused_field
+  final $Val _value;
+  // ignore: unused_field
+  final $Res Function($Val) _then;
+
+  /// Create a copy of SkinAgeDto
+  /// with the given fields replaced by the non-null parameter values.
+  @pragma('vm:prefer-inline')
+  @override
+  $Res call({
+    Object? estimatedSkinAge = null,
+    Object? axes = null,
+    Object? assessment = null,
+  }) {
+    return _then(_value.copyWith(
+      estimatedSkinAge: null == estimatedSkinAge
+          ? _value.estimatedSkinAge
+          : estimatedSkinAge // ignore: cast_nullable_to_non_nullable
+              as int,
+      axes: null == axes
+          ? _value.axes
+          : axes // ignore: cast_nullable_to_non_nullable
+              as List<ScoredItemDto>,
+      assessment: null == assessment
+          ? _value.assessment
+          : assessment // ignore: cast_nullable_to_non_nullable
+              as String,
+    ) as $Val);
+  }
+}
+
+/// @nodoc
+abstract class _$$SkinAgeDtoImplCopyWith<$Res>
+    implements $SkinAgeDtoCopyWith<$Res> {
+  factory _$$SkinAgeDtoImplCopyWith(
+          _$SkinAgeDtoImpl value, $Res Function(_$SkinAgeDtoImpl) then) =
+      __$$SkinAgeDtoImplCopyWithImpl<$Res>;
+  @override
+  @useResult
+  $Res call(
+      {int estimatedSkinAge, List<ScoredItemDto> axes, String assessment});
+}
+
+/// @nodoc
+class __$$SkinAgeDtoImplCopyWithImpl<$Res>
+    extends _$SkinAgeDtoCopyWithImpl<$Res, _$SkinAgeDtoImpl>
+    implements _$$SkinAgeDtoImplCopyWith<$Res> {
+  __$$SkinAgeDtoImplCopyWithImpl(
+      _$SkinAgeDtoImpl _value, $Res Function(_$SkinAgeDtoImpl) _then)
+      : super(_value, _then);
+
+  /// Create a copy of SkinAgeDto
+  /// with the given fields replaced by the non-null parameter values.
+  @pragma('vm:prefer-inline')
+  @override
+  $Res call({
+    Object? estimatedSkinAge = null,
+    Object? axes = null,
+    Object? assessment = null,
+  }) {
+    return _then(_$SkinAgeDtoImpl(
+      estimatedSkinAge: null == estimatedSkinAge
+          ? _value.estimatedSkinAge
+          : estimatedSkinAge // ignore: cast_nullable_to_non_nullable
+              as int,
+      axes: null == axes
+          ? _value._axes
+          : axes // ignore: cast_nullable_to_non_nullable
+              as List<ScoredItemDto>,
+      assessment: null == assessment
+          ? _value.assessment
+          : assessment // ignore: cast_nullable_to_non_nullable
+              as String,
+    ));
+  }
+}
+
+/// @nodoc
+@JsonSerializable()
+class _$SkinAgeDtoImpl implements _SkinAgeDto {
+  const _$SkinAgeDtoImpl(
+      {required this.estimatedSkinAge,
+      final List<ScoredItemDto> axes = const <ScoredItemDto>[],
+      this.assessment = ''})
+      : _axes = axes;
+
+  factory _$SkinAgeDtoImpl.fromJson(Map<String, dynamic> json) =>
+      _$$SkinAgeDtoImplFromJson(json);
+
+  @override
+  final int estimatedSkinAge;
+  final List<ScoredItemDto> _axes;
+  @override
+  @JsonKey()
+  List<ScoredItemDto> get axes {
+    if (_axes is EqualUnmodifiableListView) return _axes;
+    // ignore: implicit_dynamic_type
+    return EqualUnmodifiableListView(_axes);
+  }
+
+  @override
+  @JsonKey()
+  final String assessment;
+
+  @override
+  String toString() {
+    return 'SkinAgeDto(estimatedSkinAge: $estimatedSkinAge, axes: $axes, assessment: $assessment)';
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return identical(this, other) ||
+        (other.runtimeType == runtimeType &&
+            other is _$SkinAgeDtoImpl &&
+            (identical(other.estimatedSkinAge, estimatedSkinAge) ||
+                other.estimatedSkinAge == estimatedSkinAge) &&
+            const DeepCollectionEquality().equals(other._axes, _axes) &&
+            (identical(other.assessment, assessment) ||
+                other.assessment == assessment));
+  }
+
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  @override
+  int get hashCode => Object.hash(runtimeType, estimatedSkinAge,
+      const DeepCollectionEquality().hash(_axes), assessment);
+
+  /// Create a copy of SkinAgeDto
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  @override
+  @pragma('vm:prefer-inline')
+  _$$SkinAgeDtoImplCopyWith<_$SkinAgeDtoImpl> get copyWith =>
+      __$$SkinAgeDtoImplCopyWithImpl<_$SkinAgeDtoImpl>(this, _$identity);
+
+  @override
+  Map<String, dynamic> toJson() {
+    return _$$SkinAgeDtoImplToJson(
+      this,
+    );
+  }
+}
+
+abstract class _SkinAgeDto implements SkinAgeDto {
+  const factory _SkinAgeDto(
+      {required final int estimatedSkinAge,
+      final List<ScoredItemDto> axes,
+      final String assessment}) = _$SkinAgeDtoImpl;
+
+  factory _SkinAgeDto.fromJson(Map<String, dynamic> json) =
+      _$SkinAgeDtoImpl.fromJson;
+
+  @override
+  int get estimatedSkinAge;
+  @override
+  List<ScoredItemDto> get axes;
+  @override
+  String get assessment;
+
+  /// Create a copy of SkinAgeDto
+  /// with the given fields replaced by the non-null parameter values.
+  @override
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  _$$SkinAgeDtoImplCopyWith<_$SkinAgeDtoImpl> get copyWith =>
+      throw _privateConstructorUsedError;
+}
+
 SkinAnalysisDto _$SkinAnalysisDtoFromJson(Map<String, dynamic> json) {
   return _SkinAnalysisDto.fromJson(json);
 }
@@ -626,7 +1238,13 @@ SkinAnalysisDto _$SkinAnalysisDtoFromJson(Map<String, dynamic> json) {
 mixin _$SkinAnalysisDto {
   int get skinAnalysisId => throw _privateConstructorUsedError;
   int get skinScore => throw _privateConstructorUsedError;
-  SkinMetricsDto get metrics => throw _privateConstructorUsedError;
+  SkinMetricsDto get metrics =>
+      throw _privateConstructorUsedError; // 같은 5개에 등급과 근거를 붙인 것. 이 기능 이전에 저장된 분석이면 근거가 비어 있다.
+  List<ScoredItemDto> get metricDetails => throw _privateConstructorUsedError;
+  AiSkinTypeDto? get skinType =>
+      throw _privateConstructorUsedError; // 예전 분석이면 서버가 키를 생략한다
+  SkinAgeDto? get skinAge =>
+      throw _privateConstructorUsedError; // 예전 분석이면 서버가 키를 생략한다
   String get summary => throw _privateConstructorUsedError;
   List<HighlightDto> get highlights => throw _privateConstructorUsedError;
   SkinTypeGapDto? get skinTypeGap =>
@@ -653,12 +1271,17 @@ abstract class $SkinAnalysisDtoCopyWith<$Res> {
       {int skinAnalysisId,
       int skinScore,
       SkinMetricsDto metrics,
+      List<ScoredItemDto> metricDetails,
+      AiSkinTypeDto? skinType,
+      SkinAgeDto? skinAge,
       String summary,
       List<HighlightDto> highlights,
       SkinTypeGapDto? skinTypeGap,
       DateTime analyzedAt});
 
   $SkinMetricsDtoCopyWith<$Res> get metrics;
+  $AiSkinTypeDtoCopyWith<$Res>? get skinType;
+  $SkinAgeDtoCopyWith<$Res>? get skinAge;
   $SkinTypeGapDtoCopyWith<$Res>? get skinTypeGap;
 }
 
@@ -680,6 +1303,9 @@ class _$SkinAnalysisDtoCopyWithImpl<$Res, $Val extends SkinAnalysisDto>
     Object? skinAnalysisId = null,
     Object? skinScore = null,
     Object? metrics = null,
+    Object? metricDetails = null,
+    Object? skinType = freezed,
+    Object? skinAge = freezed,
     Object? summary = null,
     Object? highlights = null,
     Object? skinTypeGap = freezed,
@@ -698,6 +1324,18 @@ class _$SkinAnalysisDtoCopyWithImpl<$Res, $Val extends SkinAnalysisDto>
           ? _value.metrics
           : metrics // ignore: cast_nullable_to_non_nullable
               as SkinMetricsDto,
+      metricDetails: null == metricDetails
+          ? _value.metricDetails
+          : metricDetails // ignore: cast_nullable_to_non_nullable
+              as List<ScoredItemDto>,
+      skinType: freezed == skinType
+          ? _value.skinType
+          : skinType // ignore: cast_nullable_to_non_nullable
+              as AiSkinTypeDto?,
+      skinAge: freezed == skinAge
+          ? _value.skinAge
+          : skinAge // ignore: cast_nullable_to_non_nullable
+              as SkinAgeDto?,
       summary: null == summary
           ? _value.summary
           : summary // ignore: cast_nullable_to_non_nullable
@@ -731,6 +1369,34 @@ class _$SkinAnalysisDtoCopyWithImpl<$Res, $Val extends SkinAnalysisDto>
   /// with the given fields replaced by the non-null parameter values.
   @override
   @pragma('vm:prefer-inline')
+  $AiSkinTypeDtoCopyWith<$Res>? get skinType {
+    if (_value.skinType == null) {
+      return null;
+    }
+
+    return $AiSkinTypeDtoCopyWith<$Res>(_value.skinType!, (value) {
+      return _then(_value.copyWith(skinType: value) as $Val);
+    });
+  }
+
+  /// Create a copy of SkinAnalysisDto
+  /// with the given fields replaced by the non-null parameter values.
+  @override
+  @pragma('vm:prefer-inline')
+  $SkinAgeDtoCopyWith<$Res>? get skinAge {
+    if (_value.skinAge == null) {
+      return null;
+    }
+
+    return $SkinAgeDtoCopyWith<$Res>(_value.skinAge!, (value) {
+      return _then(_value.copyWith(skinAge: value) as $Val);
+    });
+  }
+
+  /// Create a copy of SkinAnalysisDto
+  /// with the given fields replaced by the non-null parameter values.
+  @override
+  @pragma('vm:prefer-inline')
   $SkinTypeGapDtoCopyWith<$Res>? get skinTypeGap {
     if (_value.skinTypeGap == null) {
       return null;
@@ -754,6 +1420,9 @@ abstract class _$$SkinAnalysisDtoImplCopyWith<$Res>
       {int skinAnalysisId,
       int skinScore,
       SkinMetricsDto metrics,
+      List<ScoredItemDto> metricDetails,
+      AiSkinTypeDto? skinType,
+      SkinAgeDto? skinAge,
       String summary,
       List<HighlightDto> highlights,
       SkinTypeGapDto? skinTypeGap,
@@ -761,6 +1430,10 @@ abstract class _$$SkinAnalysisDtoImplCopyWith<$Res>
 
   @override
   $SkinMetricsDtoCopyWith<$Res> get metrics;
+  @override
+  $AiSkinTypeDtoCopyWith<$Res>? get skinType;
+  @override
+  $SkinAgeDtoCopyWith<$Res>? get skinAge;
   @override
   $SkinTypeGapDtoCopyWith<$Res>? get skinTypeGap;
 }
@@ -781,6 +1454,9 @@ class __$$SkinAnalysisDtoImplCopyWithImpl<$Res>
     Object? skinAnalysisId = null,
     Object? skinScore = null,
     Object? metrics = null,
+    Object? metricDetails = null,
+    Object? skinType = freezed,
+    Object? skinAge = freezed,
     Object? summary = null,
     Object? highlights = null,
     Object? skinTypeGap = freezed,
@@ -799,6 +1475,18 @@ class __$$SkinAnalysisDtoImplCopyWithImpl<$Res>
           ? _value.metrics
           : metrics // ignore: cast_nullable_to_non_nullable
               as SkinMetricsDto,
+      metricDetails: null == metricDetails
+          ? _value._metricDetails
+          : metricDetails // ignore: cast_nullable_to_non_nullable
+              as List<ScoredItemDto>,
+      skinType: freezed == skinType
+          ? _value.skinType
+          : skinType // ignore: cast_nullable_to_non_nullable
+              as AiSkinTypeDto?,
+      skinAge: freezed == skinAge
+          ? _value.skinAge
+          : skinAge // ignore: cast_nullable_to_non_nullable
+              as SkinAgeDto?,
       summary: null == summary
           ? _value.summary
           : summary // ignore: cast_nullable_to_non_nullable
@@ -826,11 +1514,15 @@ class _$SkinAnalysisDtoImpl implements _SkinAnalysisDto {
       {required this.skinAnalysisId,
       required this.skinScore,
       required this.metrics,
+      final List<ScoredItemDto> metricDetails = const <ScoredItemDto>[],
+      this.skinType,
+      this.skinAge,
       this.summary = '',
       final List<HighlightDto> highlights = const <HighlightDto>[],
       this.skinTypeGap,
       required this.analyzedAt})
-      : _highlights = highlights;
+      : _metricDetails = metricDetails,
+        _highlights = highlights;
 
   factory _$SkinAnalysisDtoImpl.fromJson(Map<String, dynamic> json) =>
       _$$SkinAnalysisDtoImplFromJson(json);
@@ -841,6 +1533,23 @@ class _$SkinAnalysisDtoImpl implements _SkinAnalysisDto {
   final int skinScore;
   @override
   final SkinMetricsDto metrics;
+// 같은 5개에 등급과 근거를 붙인 것. 이 기능 이전에 저장된 분석이면 근거가 비어 있다.
+  final List<ScoredItemDto> _metricDetails;
+// 같은 5개에 등급과 근거를 붙인 것. 이 기능 이전에 저장된 분석이면 근거가 비어 있다.
+  @override
+  @JsonKey()
+  List<ScoredItemDto> get metricDetails {
+    if (_metricDetails is EqualUnmodifiableListView) return _metricDetails;
+    // ignore: implicit_dynamic_type
+    return EqualUnmodifiableListView(_metricDetails);
+  }
+
+  @override
+  final AiSkinTypeDto? skinType;
+// 예전 분석이면 서버가 키를 생략한다
+  @override
+  final SkinAgeDto? skinAge;
+// 예전 분석이면 서버가 키를 생략한다
   @override
   @JsonKey()
   final String summary;
@@ -861,7 +1570,7 @@ class _$SkinAnalysisDtoImpl implements _SkinAnalysisDto {
 
   @override
   String toString() {
-    return 'SkinAnalysisDto(skinAnalysisId: $skinAnalysisId, skinScore: $skinScore, metrics: $metrics, summary: $summary, highlights: $highlights, skinTypeGap: $skinTypeGap, analyzedAt: $analyzedAt)';
+    return 'SkinAnalysisDto(skinAnalysisId: $skinAnalysisId, skinScore: $skinScore, metrics: $metrics, metricDetails: $metricDetails, skinType: $skinType, skinAge: $skinAge, summary: $summary, highlights: $highlights, skinTypeGap: $skinTypeGap, analyzedAt: $analyzedAt)';
   }
 
   @override
@@ -874,6 +1583,11 @@ class _$SkinAnalysisDtoImpl implements _SkinAnalysisDto {
             (identical(other.skinScore, skinScore) ||
                 other.skinScore == skinScore) &&
             (identical(other.metrics, metrics) || other.metrics == metrics) &&
+            const DeepCollectionEquality()
+                .equals(other._metricDetails, _metricDetails) &&
+            (identical(other.skinType, skinType) ||
+                other.skinType == skinType) &&
+            (identical(other.skinAge, skinAge) || other.skinAge == skinAge) &&
             (identical(other.summary, summary) || other.summary == summary) &&
             const DeepCollectionEquality()
                 .equals(other._highlights, _highlights) &&
@@ -890,6 +1604,9 @@ class _$SkinAnalysisDtoImpl implements _SkinAnalysisDto {
       skinAnalysisId,
       skinScore,
       metrics,
+      const DeepCollectionEquality().hash(_metricDetails),
+      skinType,
+      skinAge,
       summary,
       const DeepCollectionEquality().hash(_highlights),
       skinTypeGap,
@@ -917,6 +1634,9 @@ abstract class _SkinAnalysisDto implements SkinAnalysisDto {
       {required final int skinAnalysisId,
       required final int skinScore,
       required final SkinMetricsDto metrics,
+      final List<ScoredItemDto> metricDetails,
+      final AiSkinTypeDto? skinType,
+      final SkinAgeDto? skinAge,
       final String summary,
       final List<HighlightDto> highlights,
       final SkinTypeGapDto? skinTypeGap,
@@ -930,7 +1650,14 @@ abstract class _SkinAnalysisDto implements SkinAnalysisDto {
   @override
   int get skinScore;
   @override
-  SkinMetricsDto get metrics;
+  SkinMetricsDto
+      get metrics; // 같은 5개에 등급과 근거를 붙인 것. 이 기능 이전에 저장된 분석이면 근거가 비어 있다.
+  @override
+  List<ScoredItemDto> get metricDetails;
+  @override
+  AiSkinTypeDto? get skinType; // 예전 분석이면 서버가 키를 생략한다
+  @override
+  SkinAgeDto? get skinAge; // 예전 분석이면 서버가 키를 생략한다
   @override
   String get summary;
   @override
