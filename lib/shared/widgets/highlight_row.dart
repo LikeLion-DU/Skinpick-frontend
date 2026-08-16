@@ -35,7 +35,7 @@ class HighlightRow extends StatelessWidget {
             child: Text(
               highlight.label,
               style: const TextStyle(
-                  fontSize: 12, color: Color(0xFF494949), height: 1.4),
+                  fontSize: 12, color: AppColors.textBody, height: 1.4),
             ),
           ),
         ],

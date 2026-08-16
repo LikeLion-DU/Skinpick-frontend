@@ -58,8 +58,16 @@ class PlateRepositoryImpl implements PlateRepository {
         final lastWeekFrom = DateTime(
             report.from.year, report.from.month, report.from.day - 7);
 
-        final days =
-            (await _remote.history(lastWeekFrom, report.to)).toEntity();
+        // 기록 조회가 실패해도 이미 받은 리포트는 버리지 않는다. 카드가 크게
+        // 보여주는 평균·기록 수는 위에서 이미 왔고, 기록이 필요한 것은 지난주
+        // 비교와 음식 TOP 뿐이다 — 그 셋은 없으면 화면이 알아서 접힌다.
+        // 둘을 한 덩어리로 실패시키면 부가 정보 하나 때문에 본문이 사라진다.
+        List<PlateHistoryDay> days;
+        try {
+          days = (await _remote.history(lastWeekFrom, report.to)).toEntity();
+        } on Exception {
+          days = const <PlateHistoryDay>[];
+        }
 
         return WeeklyReport.assemble(report: report, days: days);
       });

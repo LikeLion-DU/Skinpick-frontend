@@ -12,9 +12,12 @@ import '../providers/weekly_report_provider.dart';
 /// 위젯 하나를 두 곳에서 쓴다. 각자 그리면 한쪽만 고쳐지고, 같은 주가 두 화면에서
 /// 다르게 보이는 순간 사용자는 두 숫자를 다 의심한다.
 ///
-/// **불러오는 중이거나 실패했거나 이번 주 기록이 0건이면 아무것도 그리지 않는다.**
-/// 리포트는 부가 정보라 이것 때문에 홈이 스피너를 띄우거나 오류를 보여줄 이유가
-/// 없다. 기록이 쌓이면 카드가 저절로 나타난다.
+/// **불러오는 중이거나 이번 주 기록이 0건이면 아무것도 그리지 않는다.** 리포트는
+/// 부가 정보라 그것 때문에 홈이 스피너를 띄울 이유가 없다.
+///
+/// **실패는 숨기지 않는다.** 이 카드가 리포트 화면으로 가는 **유일한 문**이라,
+/// 실패에 사라지면 리포트 화면의 재시도 버튼에 영영 닿을 수 없다. 카드 자리에
+/// 다시 시도를 둔다.
 class WeeklySummaryCard extends ConsumerWidget {
   const WeeklySummaryCard({super.key});
 
@@ -22,54 +25,102 @@ class WeeklySummaryCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     // valueOrNull 이다. `.value` 는 에러 상태에서 예외를 **되던진다** — 리포트를
     // 못 불러왔다는 이유로 홈 전체가 빨간 화면이 된다.
-    final report = ref.watch(weeklyReportProvider).valueOrNull?.dataOrNull;
-    if (report == null || report.isEmpty) return const SizedBox.shrink();
+    final async = ref.watch(weeklyReportProvider);
+    final loaded = async.valueOrNull;
+    final report = loaded?.dataOrNull;
 
-    return GestureDetector(
-      onTap: () => context.push(Routes.weeklyReport),
-      child: Container(
-        padding: const EdgeInsets.fromLTRB(18, 16, 14, 16),
-        decoration: BoxDecoration(
-          color: AppColors.surfaceCard,
-          border: Border.all(color: AppColors.borderOnCream),
-          borderRadius: BorderRadius.circular(AppTheme.cardRadius),
-        ),
+    if (async.hasError || (loaded != null && !loaded.isSuccess)) {
+      return _CardShell(
+        onTap: () => ref.invalidate(weeklyReportProvider),
         child: Row(
           children: [
             Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    '이번 주 피부 식단',
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.textOnCard,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.baseline,
-                    textBaseline: TextBaseline.alphabetic,
-                    children: [
-                      Text(
-                        '평균 ${report.averageScore ?? 'OO'}점',
-                        style: const TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.textPrimary,
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      const ScoreDeltaLabel.compact(),
-                    ],
-                  ),
-                ],
-              ),
+              child: Text('이번 주 피부 식단을 불러오지 못했어요.',
+                  style: Theme.of(context).textTheme.bodySmall),
             ),
-            const Icon(Icons.chevron_right, color: AppColors.textSecondary),
+            const Text('다시 시도',
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.primary,
+                )),
           ],
+        ),
+      );
+    }
+
+    if (report == null || report.isEmpty) return const SizedBox.shrink();
+
+    return _CardShell(
+      onTap: () => context.push(Routes.weeklyReport),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  '이번 주 피부 식단',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textOnCard,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.baseline,
+                  textBaseline: TextBaseline.alphabetic,
+                  children: [
+                    Text(
+                      '평균 ${report.averageScore ?? 'OO'}점',
+                      style: const TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    const ScoreDeltaLabel.compact(),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          const Icon(Icons.chevron_right, color: AppColors.textSecondary),
+        ],
+      ),
+    );
+  }
+}
+
+/// 누를 수 있는 카드 껍데기.
+///
+/// `GestureDetector` 가 아니라 [InkWell] 이다 — 저쪽은 잉크 반응도, **버튼
+/// 시맨틱도 없어서** 스크린 리더가 "누르면 이동한다"를 읽어 주지 못한다.
+class _CardShell extends StatelessWidget {
+  const _CardShell({required this.onTap, required this.child});
+
+  final VoidCallback onTap;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final radius = BorderRadius.circular(AppTheme.cardRadius);
+
+    return Material(
+      color: AppColors.surfaceCard,
+      borderRadius: radius,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: radius,
+        child: Container(
+          padding: const EdgeInsets.fromLTRB(18, 16, 14, 16),
+          decoration: BoxDecoration(
+            border: Border.all(color: AppColors.borderOnCream),
+            borderRadius: radius,
+          ),
+          child: child,
         ),
       ),
     );

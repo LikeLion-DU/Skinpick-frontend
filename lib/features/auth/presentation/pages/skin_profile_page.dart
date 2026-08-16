@@ -41,6 +41,10 @@ class SkinProfilePage extends ConsumerWidget {
       body: RefreshIndicator(
         onRefresh: () => ref.refresh(latestSkinAnalysisProvider.future),
         child: ListView(
+          // 분석이 없거나 못 불러온 상태는 내용이 화면보다 짧아 스크롤 여지가
+          // 없다. 그러면 당겨도 오버스크롤이 안 잡혀 새로고침이 먹지 않는다 —
+          // 리포트 화면과 같은 이유다.
+          physics: const AlwaysScrollableScrollPhysics(),
           padding: const EdgeInsets.fromLTRB(
               AppTheme.pagePadding, 14, AppTheme.pagePadding, 32),
           children: [

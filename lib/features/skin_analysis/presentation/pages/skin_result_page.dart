@@ -78,7 +78,7 @@ class SkinResultPage extends ConsumerWidget {
               '설정한 프로필을 바탕으로\n사용자의 피부 상태를 분석했어요 : )',
               textAlign: TextAlign.center,
               style: TextStyle(
-                  fontSize: 12, color: Color(0xFF494949), height: 1.5),
+                  fontSize: 12, color: AppColors.textBody, height: 1.5),
             ),
           ),
           const SizedBox(height: 36),
@@ -244,7 +244,7 @@ class _TypeCard extends StatelessWidget {
             Text(
               analysis.summary,
               style: const TextStyle(
-                  fontSize: 12, color: Color(0xFF494949), height: 1.5),
+                  fontSize: 12, color: AppColors.textBody, height: 1.5),
             ),
           ],
 
@@ -361,7 +361,7 @@ class _CriteriaCard extends StatelessWidget {
                 style: const TextStyle(
                   fontSize: 10,
                   fontWeight: FontWeight.w500,
-                  color: Color(0xFF494949),
+                  color: AppColors.textBody,
                 )),
             const SizedBox(height: 5),
             Text(
@@ -369,7 +369,7 @@ class _CriteriaCard extends StatelessWidget {
               textAlign: TextAlign.center,
               style: const TextStyle(
                 fontSize: 8.5,
-                color: Color(0xFF494949),
+                color: AppColors.textBody,
                 height: 1.4,
               ),
             ),

@@ -275,11 +275,17 @@ class _DeleteButtonState extends ConsumerState<_DeleteButton> {
     // 이미 지워진 카드가 다시 눌린다 — 상세로 들어가면 404, × 를 또 누르면 방금
     // 성공한 삭제에 대해 "지우지 못했어요" 가 뜬다.
     if (result.isSuccess) {
+      // 지운 끼니가 이번 주 평균에 아직 섞여 있다. 카드가 방금 지운 기록을
+      // 포함한 숫자를 들고 있으면 삭제가 안 된 것처럼 보인다.
+      //
+      // **await 앞이어야 한다.** 뒤에 두면 삭제와 목록 재조회(~1초) 사이에
+      // 사용자가 뒤로 나갔을 때 이 위젯이 dispose 된 뒤 ref 를 만지게 되고,
+      // riverpod 이 "Cannot use ref after the widget was disposed" 를 던진다.
+      // 그러면 주간 평균은 지운 끼니를 그대로 안고 있고 실패 안내도 못 뜬다.
+      ref.invalidate(weeklyReportProvider);
+
       // ignore: unused_result — 새 목록 자체가 아니라 "다 받았다"는 시점만 쓴다.
       await ref.refresh(plateHistoryProvider.future);
-      // 지운 끼니가 이번 주 평균에 아직 섞여 있다. 화면 위쪽 카드가 방금 지운
-      // 기록을 포함한 숫자를 그대로 들고 있으면 삭제가 안 된 것처럼 보인다.
-      ref.invalidate(weeklyReportProvider);
     }
 
     if (!mounted) return;
