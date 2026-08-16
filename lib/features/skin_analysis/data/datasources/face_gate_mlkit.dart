@@ -39,6 +39,12 @@ class MlKitFaceGate implements FaceGate {
   ///
   /// roll 도 미러링에서 부호가 뒤집히지만 판정은 `roll.abs()` 만 보므로 결과가
   /// 같다. pitch 는 좌우 반전과 무관하다. 건드리는 값을 늘리지 않는다.
+  ///
+  /// **[_camera] 가 진짜 카메라일 때만 의미가 있다.** 촬영 화면은 카메라를 열기
+  /// 전에 `_stillOnlyCamera`(전면으로 선언된 자리표시자)로 이 게이트를 만든다 —
+  /// 그 인스턴스는 iOS 에서 -1 을 갖지만 [check] 에 프레임이 들어오지 않아 쓰이지
+  /// 않는다(카메라가 열리면 진짜 CameraDescription 으로 다시 만든다).
+  /// 자리표시자 게이트로 라이브 프레임을 보게 고치면 좌/우가 뒤집힌다.
   late final double _yawSign = isMirroredStream(_camera) ? -1.0 : 1.0;
 
 
@@ -51,10 +57,6 @@ class MlKitFaceGate implements FaceGate {
     final faces = await _detector.processImage(input);
     final face = faces.isEmpty ? null : faces.first;
 
-    // 거울상으로 들어온 프레임이면 여기서 사용자 기준으로 되돌린다. 정지 이미지
-    // 경로는 뒤집히지 않으므로 그쪽에는 곱하지 않는다.
-    final yaw = face?.headEulerAngleY;
-
     // 센서가 90/270도 돌아 있으면 ML Kit 좌표계는 가로세로가 바뀐 상태다.
     // 여기서 안 맞추면 얼굴 크기 비율이 통째로 틀어져 "조금 더 가까이"만 계속 뜬다.
     final rotation = rotationDegreesOf(_camera);
@@ -66,7 +68,11 @@ class MlKitFaceGate implements FaceGate {
       faceCount: faces.length,
       faceBox: face?.boundingBox,
       frameHeight: orientedHeight,
-      yaw: yaw == null ? null : yaw * _yawSign,
+      // 거울상으로 들어온 프레임이면 **여기서** 사용자 기준으로 되돌린다.
+      // 정지 이미지 경로(prepareSkinPhoto)는 뒤집히지 않아 곱하지 않는다.
+      yaw: face?.headEulerAngleY == null
+          ? null
+          : face!.headEulerAngleY! * _yawSign,
       pitch: face?.headEulerAngleX,
       roll: face?.headEulerAngleZ,
       // boundingBox 는 회전된 좌표계인데 plane.bytes 는 센서 좌표계다.
@@ -114,17 +120,18 @@ class MlKitFaceGate implements FaceGate {
       // 사본을 쓰면 부수효과가 하나 더 있다. ML Kit 이 돌려주는 좌표계가
       // [photo] 와 **같은 버퍼**가 되어, 크롭이 어긋날 여지가 사라진다.
       // 예전에는 "ML Kit 은 EXIF 를 적용한 좌표를 준다"는 전제에 기대고 있었다.
-      final uprightPath =
-          '${File(original.path).parent.path}/upright_${original.name}';
-      final upright = File(uprightPath);
-      await upright.writeAsBytes(img.encodeJpg(photo, quality: 90));
+      final upright =
+          File('${File(original.path).parent.path}/upright_${original.name}');
 
       final List<Face> faces;
       try {
-        faces = await still.processImage(InputImage.fromFilePath(uprightPath));
+        // 쓰기도 try 안에 둔다. 밖에 두면 쓰다 실패했을 때(디스크 부족·샌드박스)
+        // 반쪽짜리 파일이 남고, 그게 촬영할 때마다 하나씩 쌓인다.
+        await upright.writeAsBytes(img.encodeJpg(photo, quality: 90));
+        faces = await still.processImage(InputImage.fromFilePath(upright.path));
       } finally {
-        // 검출에만 쓰는 중간 파일이다. 남겨두면 촬영할 때마다 하나씩 쌓인다.
-        if (await upright.exists()) await upright.delete();
+        // 검출에만 쓰는 중간 파일이다. 없으면 없는 대로 넘어간다.
+        upright.delete().ignore();
       }
 
       final face = faces.isEmpty ? null : faces.first;

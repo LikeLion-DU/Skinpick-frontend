@@ -83,16 +83,19 @@ void main() {
   /// 지금은 인사이트(S10)가 습관을 받으러 보내는 화면이고, 결과는 이미 봤다.
   /// 나가도 잃는 것이 없으므로 가두지 않는다. 다시 막으면 "인사이트는 나중에"를
   /// 고른 사용자가 앱을 닫는 것 말고는 나갈 방법이 없어진다.
-  testWidgets('어느 모드에서도 뒤로가기를 막지 않는다', (tester) async {
-    await tester.binding.setSurfaceSize(designSize);
-
-    for (final mode in ProfileFormMode.values) {
+  ///
+  /// 모드마다 따로 pump 한다. 한 테스트 안에서 이어 붙이면 같은 runtimeType 이라
+  /// Flutter 가 Element 를 그대로 재사용하고 initState 가 다시 돌지 않는다 —
+  /// 두 번째 모드는 새로 마운트된 화면이 아니게 된다.
+  for (final mode in ProfileFormMode.values) {
+    testWidgets('$mode 는 뒤로가기를 막지 않는다', (tester) async {
+      await tester.binding.setSurfaceSize(designSize);
       await tester.pumpWidget(host(fresh, mode: mode));
       await tester.pumpAndSettle();
 
       expect(blocksBack(tester), isFalse, reason: '$mode 가 화면을 붙잡고 있다');
-    }
-  });
+    });
+  }
 
   testWidgets('네 개를 다 고르기 전에는 완료할 수 없다', (tester) async {
     await tester.binding.setSurfaceSize(designSize);
@@ -128,11 +131,12 @@ void main() {
     }
 
     expect(submitButton(tester).onPressed, isNotNull);
-    expect(find.text('완료하고 결과 보기'), findsOneWidget);
+    // 제출하면 결과가 아니라 불러온 인사이트로 돌아간다. 버튼도 그렇게 말해야 한다.
+    expect(find.text('완료하고 인사이트 보기'), findsOneWidget);
   });
 
-  testWidgets('이미 채운 사용자는 강제 단계를 볼 이유가 없다', (tester) async {
-    // 라우팅 조건과 같은 판정이다. 로딩 화면이 이 값으로 결과와 강제 단계를 가른다.
+  testWidgets('이미 채운 사용자는 이 화면을 볼 이유가 없다', (tester) async {
+    // 게이트 조건과 같은 판정이다. 인사이트 화면이 이 값으로 안내와 조회를 가른다.
     expect(complete.hasIncompleteLifestyle, isFalse);
     expect(fresh.hasIncompleteLifestyle, isTrue);
 

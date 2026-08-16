@@ -336,6 +336,13 @@ class _MetricRow extends StatelessWidget {
   }
 }
 
+/// ponytail: 게이트가 S10 앞에 서면서 이 카드의 **"미설정" 갈래 전체**가 로그인한
+/// 사용자에게 닿지 않는다 — 습관 네 칸이 다 차야 여기까지 온다. 구체적으로
+/// [_notice] 의 미완료 분기, "생활 상태 설정" 버튼, 거기에 물린 [onProfileChanged]
+/// 와 그 안의 `ref.invalidate` 가 전부 그렇다.
+///
+/// `user == null`(비로그인) 방어용으로만 남겨 둔다. 라우터가 그 상태를 막고 있어
+/// 실제로는 보이지 않는다. 지우려면 넷을 같이 지워야 한다.
 class _LifestyleCard extends StatelessWidget {
   const _LifestyleCard({
     required this.user,
@@ -363,9 +370,6 @@ class _LifestyleCard extends StatelessWidget {
       return '이 인사이트는 처음 확인한 시점의 생활 상태를 기준으로 만들어졌어요.'
           ' 바꾼 내용은 다음 피부 분석부터 반영돼요.';
     }
-    // ponytail: 게이트가 S10 앞에 서면서 이 분기는 로그인한 사용자에게 닿지
-    // 않는다 — 네 칸이 다 차야 여기까지 온다. `user == null`(비로그인) 방어용으로만
-    // 남겨 둔다. 라우터가 그 상태를 막고 있어 실제로는 보이지 않는다.
     if (user?.hasIncompleteLifestyle ?? true) {
       return '생활 상태를 설정하고 다시 보면 인사이트가 채워져요';
     }

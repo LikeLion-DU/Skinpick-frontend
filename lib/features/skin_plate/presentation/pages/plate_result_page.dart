@@ -81,6 +81,17 @@ class _PlateResultPageState extends ConsumerState<PlateResultPage> {
           : SafeArea(
               minimum: const EdgeInsets.fromLTRB(
                   AppTheme.pagePadding, 0, AppTheme.pagePadding, 12),
+              // **이 슬롯에 들어오는 위젯은 세로로 늘어나면 안 된다.**
+              // bottomNavigationBar 는 높이가 loose(0~화면높이) 로 내려와서,
+              // 늘어나는 위젯을 넣으면 하단 바가 화면을 통째로 먹고 Scaffold 가
+              // body 를 높이 0 으로 밀어낸다 — 본문이 사라지고 AppBar·상태바 위에
+              // 겹쳐 그려진다. 실기기(iPhone 14 Pro)에서 저장 직후 그렇게 나왔다.
+              //
+              // [_SaveSection] 이 상태별로 다른 위젯을 돌려주므로 분기를 더할 때마다
+              // 확인해야 한다. Column 이면 `mainAxisSize: MainAxisSize.min` 이다.
+              // 여기를 Column 으로 한 겹 싸서 막지 않는 이유 — 그러면 자식이
+              // 무한 높이 제약을 받아, 늘어나는 분기가 들어와도 조용한 붕괴 대신
+              // assertion 으로 바뀔 뿐 면역이 되지는 않는다.
               child: _SaveSection(
                 state: state,
                 onSave: () =>
