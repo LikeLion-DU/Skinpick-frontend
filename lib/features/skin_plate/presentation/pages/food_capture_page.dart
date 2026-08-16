@@ -386,7 +386,12 @@ class _FoodCapturePageState extends ConsumerState<FoodCapturePage>
         CameraPreviewBox(_controller!),
 
         // 시안의 코너 브래킷 프레임. 촬영 영역을 안내만 하고 자르지는 않는다.
-        const Center(child: _BracketFrame()),
+        // 게이트가 음식을 잡으면 초록으로 바뀐다 — 문구만으로는 프레임 안을 보고
+        // 있는 사용자의 눈에 안 들어온다.
+        Center(
+          child: _BracketFrame(
+              detected: _state == FoodDetectionState.foodDetected),
+        ),
 
         if (kDebugMode)
           Positioned(top: 48, left: 8, child: _DebugOverlay(_lastObservation)),
@@ -397,21 +402,15 @@ class _FoodCapturePageState extends ConsumerState<FoodCapturePage>
               _BackButton(onTap: () => context.pop()),
 
               // 안내 문구. 게이트 상태에 따라 문장이 바뀌지만 촬영은 항상 열려 있다.
+              //
+              // 예전에는 notFood 만 상태 문구를 쓰고 나머지는 고정 문구였다. 그래서
+              // 음식을 잡은 순간에도 "잘 보이도록 촬영해 주세요"가 그대로 남아,
+              // AI 가 알아봤는지 사용자가 알 수 없었다 — 셔터를 누를 확신이 안 선다.
               Align(
                 alignment: const Alignment(0, -0.1),
                 child: Padding(
                   padding: const EdgeInsets.only(top: 120),
-                  child: Text(
-                    switch (_state) {
-                      FoodDetectionState.notFood => _state.guide,
-                      _ => '음식이 잘 보이도록 촬영해 주세요',
-                    },
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
+                  child: _GuideBanner(state: _state),
                 ),
               ),
 
@@ -462,27 +461,74 @@ class _BackButton extends StatelessWidget {
 }
 
 /// 시안의 촬영 영역 브래킷 — 308px 사각의 네 모서리에 44px L 자.
+/// 게이트가 음식을 잡았다는 것을 문구와 색 둘로 알린다.
+///
+/// 문구만 바꾸면 프레임 안을 들여다보는 사용자는 못 읽는다. 반대로 색만 바꾸면
+/// 무슨 뜻인지 배워야 한다. 둘을 같이 바꾸면 어느 쪽을 보고 있든 전달된다.
+class _GuideBanner extends StatelessWidget {
+  const _GuideBanner({required this.state});
+
+  final FoodDetectionState state;
+
+  @override
+  Widget build(BuildContext context) {
+    final detected = state == FoodDetectionState.foodDetected;
+
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 180),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+      decoration: BoxDecoration(
+        color: detected ? AppColors.good : Colors.transparent,
+        borderRadius: BorderRadius.circular(100),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (detected) ...[
+            const Icon(Icons.check_circle, size: 16, color: Colors.white),
+            const SizedBox(width: 6),
+          ],
+          Text(
+            state.guide,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 16,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _BracketFrame extends StatelessWidget {
-  const _BracketFrame();
+  const _BracketFrame({required this.detected});
+
+  final bool detected;
 
   @override
   Widget build(BuildContext context) {
     return SizedBox(
       width: 308,
       height: 308,
-      child: CustomPaint(painter: _BracketPainter()),
+      child: CustomPaint(painter: _BracketPainter(detected: detected)),
     );
   }
 }
 
 class _BracketPainter extends CustomPainter {
+  const _BracketPainter({required this.detected});
+
+  final bool detected;
+
   static const _arm = 44.0;
   static const _stroke = 5.0;
 
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = Colors.white
+      ..color = detected ? AppColors.good : Colors.white
       ..style = PaintingStyle.stroke
       ..strokeWidth = _stroke
       ..strokeCap = StrokeCap.round;
@@ -518,7 +564,8 @@ class _BracketPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(_BracketPainter oldDelegate) => false;
+  bool shouldRepaint(_BracketPainter oldDelegate) =>
+      oldDelegate.detected != detected;
 }
 
 /// 시안의 셔터 — 흰 원 위에 오렌지 링.
