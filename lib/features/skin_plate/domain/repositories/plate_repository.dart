@@ -16,6 +16,10 @@ abstract interface class PlateRepository {
 
   Future<Result<SkinPlate>> getById(int id);
 
+  /// 기록 하나를 지운다. 되돌릴 수 없다 — 화면이 확인 창을 한 번 띄운 뒤 부른다.
+  /// 서버 기록과 함께 기기에 남은 사진도 지운다.
+  Future<Result<void>> deleteRecord(int plateId);
+
   /// 날짜별 식단 기록. from·to 는 둘 다 포함하는 달력일이다.
   Future<Result<List<PlateHistoryDay>>> history(DateTime from, DateTime to);
 

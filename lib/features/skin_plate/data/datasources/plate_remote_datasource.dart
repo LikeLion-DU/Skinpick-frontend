@@ -47,6 +47,9 @@ class PlateRemoteDataSource {
     return SkinPlateDto.fromJson(requireEnvelopeData(response));
   }
 
+  /// 204 라 본문이 없다. 되돌릴 수 없으므로 화면이 확인 창을 한 번 띄운 뒤 부른다.
+  Future<void> delete(int id) => _dio.delete<dynamic>('/plates/$id');
+
   /// from·to 는 둘 다 필수이고 to 도 포함하는 달력일이다(서버가 KST 로 해석한다).
   Future<PlateHistoryDto> history(DateTime from, DateTime to) async {
     final response = await _dio.get<dynamic>(
