@@ -48,7 +48,10 @@ void main() {
     ));
 
     expect(find.text('72'), findsOneWidget);
-    expect(find.text('보통'), findsOneWidget); // 72 는 보통 구간이다
+    // 72 는 서버 기준으로 GOOD(61~80) 이라 '좋음'이다. 앱이 75/60 경계를
+    // 따로 쓰던 시절에는 '보통'이었는데, 그래서 같은 점수가 리포트와
+    // 홈에서 다른 등급으로 떴다. (skin_level_test 가 경계를 고정한다)
+    expect(find.text('좋음'), findsOneWidget);
     expect(find.text('목표 80점'), findsOneWidget);
   });
 

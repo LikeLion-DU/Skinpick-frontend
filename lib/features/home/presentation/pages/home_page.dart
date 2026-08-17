@@ -10,8 +10,6 @@ import '../../../../shared/widgets/app_bottom_nav.dart';
 import '../../../auth/presentation/providers/auth_notifier.dart';
 import '../../../skin_analysis/presentation/providers/skin_analysis_notifier.dart';
 import '../../../skin_plate/presentation/providers/plate_history_provider.dart';
-import '../../../skin_plate/presentation/providers/weekly_report_provider.dart';
-import '../../../skin_plate/presentation/widgets/weekly_summary_card.dart';
 import '../providers/today_provider.dart';
 import '../widgets/daily_score_card.dart';
 import '../widgets/today_records_card.dart';
@@ -78,10 +76,12 @@ class HomePage extends ConsumerWidget {
         child: RefreshIndicator(
           // invalidate 는 void 라 당기자마자 스피너가 접힌다. 새 값을 기다려야
           // 요청이 끝날 때까지 스피너가 붙어 있다(기록 화면과 같은 이유).
+          // 주간 리포트는 여기서 부르지 않는다. 서버가 그 응답에 AI 문장을
+          // 같이 만들어 붙이느라 최대 ~27초가 걸리는데, 홈은 촬영을 마치고
+          // 매번 돌아오는 화면이라 그 지연이 그대로 홈의 지연이 된다.
           onRefresh: () => Future.wait([
             ref.refresh(latestSkinAnalysisProvider.future),
             ref.refresh(plateHistoryProvider.future),
-            ref.refresh(weeklyReportProvider.future),
           ]),
           child: ListView(
             padding: const EdgeInsets.fromLTRB(
@@ -120,9 +120,22 @@ class HomePage extends ConsumerWidget {
                 _DailyCommentCard(comment: today!.aiComment!),
               ],
               const SizedBox(height: 21),
-              Text('오늘의 기록',
-                  style: Theme.of(context).textTheme.titleMedium),
-              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: Text('오늘의 기록',
+                        style: Theme.of(context).textTheme.titleMedium),
+                  ),
+                  // 기록 화면으로 가는 **유일한 문**이다. 하단 네비에서 기록
+                  // 자리를 리포트에 내주었으므로 이 줄이 없으면 저장된 기록을
+                  // 날짜별로 넘겨 보는 화면에 닿을 방법이 사라진다.
+                  TextButton(
+                    onPressed: () => context.push(Routes.plateHistory),
+                    child: const Text('전체 기록 보기'),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 4),
               TodayRecordsCard(
                 items: today?.plates ?? const [],
                 imageDirectory: imageDirectory,
@@ -130,10 +143,6 @@ class HomePage extends ConsumerWidget {
                 onItemTap: (item) =>
                     context.push('${Routes.plateResult}/${item.plateId}'),
               ),
-              // 이번 주 기록이 0건이면 카드가 스스로 사라진다. 첫 사용자에게
-              // "평균 OO점" 빈 카드를 보여 줄 이유가 없다.
-              const SizedBox(height: 21),
-              const WeeklySummaryCard(),
             ],
           ),
         ),
@@ -142,7 +151,7 @@ class HomePage extends ConsumerWidget {
         current: AppTab.home,
         onCapture: capture,
         onTabSelected: (tab) {
-          if (tab == AppTab.records) context.push(Routes.plateHistory);
+          if (tab == AppTab.report) context.push(Routes.report);
         },
       ),
     );

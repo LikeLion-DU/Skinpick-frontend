@@ -10,6 +10,7 @@ import '../../features/auth/presentation/pages/splash_page.dart';
 import '../../features/auth/presentation/providers/auth_notifier.dart';
 import '../../features/home/presentation/pages/home_page.dart';
 import '../../features/recommendation/presentation/pages/recommendation_page.dart';
+import '../../features/report/presentation/pages/report_page.dart';
 import '../../features/skin_plate/presentation/pages/plate_detail_page.dart';
 import '../../features/skin_analysis/presentation/pages/skin_capture_page.dart';
 import '../../features/skin_analysis/presentation/pages/skin_insight_page.dart';
@@ -18,7 +19,6 @@ import '../../features/skin_analysis/presentation/pages/skin_result_page.dart';
 import '../../features/skin_plate/presentation/pages/food_capture_page.dart';
 import '../../features/skin_plate/presentation/pages/plate_history_page.dart';
 import '../../features/skin_plate/presentation/pages/plate_result_page.dart';
-import '../../features/skin_plate/presentation/pages/weekly_report_page.dart';
 
 /// 경로를 문자열 리터럴로 흩뿌리면 오타가 런타임까지 살아남는다.
 class Routes {
@@ -42,9 +42,12 @@ class Routes {
   static const foodCapture = '/plate/capture'; // S06
   static const plateResult = '/plate/result';  // S07
   static const recommendations = '/recommendations'; // S08
-  static const plateHistory = '/plate/history'; // S09
+  static const plateHistory = '/plate/history'; // S09 — 기록 열람(하단 네비 밖)
   static const skinInsight = '/skin/insight'; // S10
-  static const weeklyReport = '/plate/report'; // S11 — 주간 피부 식단 리포트
+  // S11 — 리포트. 하단 네비의 세 번째 자리다. 일일·주간을 탭으로 갖는다.
+  // 경로가 `/plate/*` 아래가 아닌 이유는 음식 기록만의 화면이 아니기 때문이다 —
+  // 피부 고민별 점수도 여기서 본다.
+  static const report = '/report';
   static const skinProfile = '/profile';       // S12 — 나의 피부 프로필
 }
 
@@ -124,7 +127,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         ),
       ),
       GoRoute(path: Routes.plateHistory, builder: (_, __) => const PlateHistoryPage()),
-      GoRoute(path: Routes.weeklyReport, builder: (_, __) => const WeeklyReportPage()),
+      GoRoute(path: Routes.report, builder: (_, __) => const ReportPage()),
       GoRoute(path: Routes.skinProfile, builder: (_, __) => const SkinProfilePage()),
       GoRoute(
         path: '${Routes.recommendations}/:skinAnalysisId',

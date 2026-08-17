@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:skinplate/features/auth/data/models/auth_dtos.dart';
 import 'package:skinplate/features/auth/domain/entities/skin_profile.dart';
 import 'package:skinplate/features/recommendation/data/models/recommendation_dtos.dart';
+import 'package:skinplate/features/report/data/models/report_dtos.dart';
 import 'package:skinplate/features/skin_analysis/data/models/skin_dtos.dart';
 import 'package:skinplate/features/skin_analysis/data/models/skin_insight_dtos.dart';
 import 'package:skinplate/features/skin_plate/data/models/plate_dtos.dart';
@@ -14,7 +15,9 @@ import 'package:skinplate/shared/enums/highlight_status.dart';
 import 'package:skinplate/shared/enums/ingredient_tag.dart';
 import 'package:skinplate/shared/enums/insight_category.dart';
 import 'package:skinplate/shared/enums/meal_type.dart';
+import 'package:skinplate/shared/enums/nutrient_status.dart';
 import 'package:skinplate/shared/enums/plate_action_code.dart';
+import 'package:skinplate/shared/enums/skin_level.dart';
 import 'package:skinplate/shared/enums/skin_type.dart';
 
 /// 실제로 돌아가는 서버가 준 응답을 그대로 파싱한다.
@@ -327,33 +330,151 @@ void main() {
     expect(daily.recommend.every((food) => food.reason.isNotEmpty), isTrue);
   });
 
-  test('GET /reports?period=WEEK — 서버가 센 이번 주', () {
-    final json = data('report_week');
-    final report = PlateReportDto.fromJson(json).toEntity();
+  test('GET /reports/daily — 점수·영양·고민·끼니가 한 벌로 온다', () {
+    final report = DailyReportDto.fromJson(data('report_daily')).toEntity();
 
-    // lastDays(7) 이라 오늘을 포함한 7일이다. 달력 주가 아니다.
-    expect(report.from, DateTime(2026, 8, 10));
-    expect(report.to, DateTime(2026, 8, 16));
-    expect(report.recordCount, 7);
-    expect(report.averageScore, 75);
+    expect(report.dailyScore, 60);
+    // 등급은 서버가 정한다. 앱이 60 점에서 다시 계산하지 않는다 —
+    // 서버는 60 을 NORMAL 로 보고, 앱의 ScoreGrade 는 60 을 '보통'으로 본다.
+    expect(report.grade, SkinLevel.normal);
+    expect(report.recordCount, 3);
 
-    // 앱이 안 읽는 필드가 응답에 남아 있어도 파싱이 깨지지 않아야 한다.
-    expect(json.containsKey('skinScoreTrend'), isTrue);
-    expect(json.containsKey('penalties'), isTrue);
+    // 영양 항목을 앱이 고르지 않는다 — 서버가 준 순서와 개수를 그대로 쓴다.
+    expect(report.nutrition.length, 6);
+    expect(report.nutrition.first.label, '칼로리');
+    expect(report.nutrition.first.unit, 'kcal');
+    expect(report.nutrition.first.amount, 1560.0);
+
+    // 방향이 반대인 항목. 단백질만 부족이 문제라 155% 여도 경고가 아니고,
+    // 나트륨은 초과가 문제라 278% 가 경고다. 둘을 같은 색으로 칠하면
+    // 화면이 거짓말을 한다.
+    final protein = report.nutrition[2];
+    expect(protein.higherIsWorse, isFalse);
+    expect(protein.status, NutrientStatus.high);
+    expect(protein.isWarning, isFalse);
+
+    final sodium = report.nutrition[4];
+    expect(sodium.higherIsWorse, isTrue);
+    expect(sodium.status, NutrientStatus.high);
+    expect(sodium.isWarning, isTrue);
+    // 기준을 넘긴 항목은 100% 를 넘겨 온다. 막대가 이걸 잘라야 한다.
+    expect(sodium.percent, 278);
+
+    // 일일에는 변화량이 없다. 서버가 키를 통째로 뺀다.
+    expect(report.concerns.first.change, isNull);
+    expect(report.concerns.first.status, SkinLevel.good);
+    // 다크서클을 골랐어도 식단 룰이 없어 응답에서 통째로 빠진다.
+    expect(report.concerns.any((item) => item.concern == 'DARK_CIRCLE'), isFalse);
+
+    // 끼니는 서버가 정해서 보낸다. 앱이 recordedAt 으로 다시 계산하지 않는다.
+    // recordedAt 에 마이크로초가 붙어 있어도 파싱이 깨지면 안 된다.
+    expect(report.meals.length, 3);
+    expect(report.meals.first.mealType, MealType.lunch);
+    expect(report.meals.first.recordedAt.microsecond, isNot(0));
+
+    // 그룹은 앱이 만든다. 같은 끼니는 한 묶음이다.
+    expect(report.byMealType.length, 1);
+    expect(report.byMealType.first.key, MealType.lunch);
+    expect(report.byMealType.first.value.length, 3);
+
+    expect(report.aiComment, isNotNull);
+    expect(report.improvePoints, isNotEmpty);
   });
 
-  test('기록이 0건인 주는 averagePlateScore 키가 통째로 빠진다', () {
-    final json = data('report_week_empty');
+  test('기록이 0건인 날은 dailyScore·grade·aiComment 키가 통째로 빠진다', () {
+    final json = data('report_daily_empty');
 
-    // 여기가 이 계약에서 유일하게 위험한 지점이다. required 로 받으면 파싱이
-    // 죽고, @Default(0) 으로 받으면 화면이 "평균 0점"을 그린다 — 0 점은
-    // "아주 나쁘게 먹은 주"고 이건 "안 먹은 주"다.
-    expect(json.containsKey('averagePlateScore'), isFalse);
-    expect(json.containsKey('latestSkinScore'), isFalse);
+    // required 로 받으면 파싱이 죽고, @Default(0) 으로 받으면 화면이 "0점"을
+    // 그린다 — 0 점은 "아주 나쁘게 먹었다"고 이건 "아직 안 찍었다"다.
+    expect(json.containsKey('dailyScore'), isFalse);
+    expect(json.containsKey('grade'), isFalse);
+    expect(json.containsKey('aiComment'), isFalse);
 
-    final report = PlateReportDto.fromJson(json).toEntity();
-    expect(report.averageScore, isNull);
-    expect(report.recordCount, 0);
+    final report = DailyReportDto.fromJson(json).toEntity();
+    expect(report.dailyScore, isNull);
+    expect(report.grade, isNull);
+    expect(report.aiComment, isNull);
+    expect(report.isEmpty, isTrue);
+    expect(report.nutrition, isEmpty);
+    expect(report.concerns, isEmpty);
+  });
+
+  test('GET /reports/weekly — 하루만 기록한 주는 변화량 키가 빠지고 BEST=WORST 다', () {
+    final report = WeeklyReportDto.fromJson(data('report_weekly')).toEntity();
+
+    // 분모는 7이 아니라 기록한 날이다. 안 찍은 날을 0 으로 세지 않는다.
+    expect(report.totalDays, 7);
+    expect(report.recordedDays, 1);
+    expect(report.dailyScores.length, 1);
+
+    // 축은 기간 폭에서 나온다. 월간으로 넓혀도 같은 코드가 돈다.
+    expect(report.axis.length, 7);
+    expect(report.scoreOn(DateTime(2026, 8, 13)), isNull);
+
+    // 비교할 이전 기록일이 없으면 서버가 change 키를 통째로 뺀다.
+    // 앱이 여기서 0 을 만들면 "변화 없음"이라는 없는 사실이 생긴다.
+    expect(report.concerns, isNotEmpty);
+    expect(report.concerns.every((item) => item.change == null), isTrue);
+
+    // 하루뿐이면 BEST 와 WORST 가 같은 날이다. 서버가 정한 결과 그대로 그린다.
+    expect(report.bestDay?.date, report.worstDay?.date);
+
+    expect(report.aiComment?.goodPoint, isNotNull);
+    expect(report.aiComment?.nextWeek, isNotNull);
+    expect(report.aiComment?.isEmpty, isFalse);
+  });
+
+  test('여러 날 기록한 주 — 빈 날은 목록에 없고 변화량이 붙는다', () {
+    // 로컬 DB 에 과거 기록이 없어 서버로 만들 수 없는 상태다. 실제 응답에서
+    // 날짜·점수·변화량만 늘렸고 필드 모양은 그대로다.
+    final report =
+        WeeklyReportDto.fromJson(data('report_weekly_multiday')).toEntity();
+
+    expect(report.averageDailyScore, 76);
+    expect(report.recordedDays, 5);
+    expect(report.dailyScores.length, 5);
+
+    // 기록이 없는 날(8/13·8/16)은 목록에 아예 없다 — 0 점으로 채우지 않는다.
+    expect(report.scoreOn(DateTime(2026, 8, 13)), isNull);
+    expect(report.scoreOn(DateTime(2026, 8, 14))?.dailyScore, 91);
+    expect(report.dailyScores.every((score) => score.dailyScore > 0), isTrue);
+
+    // 동점 처리까지 서버가 정한 결과다. 앱이 다시 고르지 않는다.
+    expect(report.bestDay?.dailyScore, 91);
+    expect(report.worstDay?.dailyScore, 64);
+
+    expect(report.concerns.first.change, 8);
+    expect(report.concerns[1].change, -3);
+  });
+
+  test('AI 생성이 실패하면 aiComment 키만 빠진다 — 숫자는 그대로 온다', () {
+    final json = data('report_weekly_no_ai');
+    expect(json.containsKey('aiComment'), isFalse);
+
+    final report = WeeklyReportDto.fromJson(json).toEntity();
+
+    // 문장 하나 때문에 화면 전체가 비면 안 된다.
+    expect(report.aiComment, isNull);
+    expect(report.averageDailyScore, isNotNull);
+    expect(report.dailyScores, isNotEmpty);
+    expect(report.nutrition, isNotEmpty);
+    expect(report.bestDay, isNotNull);
+  });
+
+  test('기록이 0건인 주는 평균·BEST DAY·aiComment 키가 통째로 빠진다', () {
+    final json = data('report_weekly_empty');
+    expect(json.containsKey('averageDailyScore'), isFalse);
+    expect(json.containsKey('bestDay'), isFalse);
+    expect(json.containsKey('aiComment'), isFalse);
+
+    final report = WeeklyReportDto.fromJson(json).toEntity();
+    expect(report.averageDailyScore, isNull);
+    expect(report.grade, isNull);
+    expect(report.bestDay, isNull);
+    expect(report.worstDay, isNull);
+    expect(report.isEmpty, isTrue);
+    // 축은 남아 있어야 한다. 빈 주에도 7칸짜리 그래프 자리가 그려진다.
+    expect(report.axis.length, 7);
   });
 
   test('실패 응답에는 data 키 자체가 없다', () {

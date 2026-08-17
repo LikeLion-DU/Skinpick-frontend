@@ -1,0 +1,13 @@
+{
+    "success": true,
+    "data": {
+        "from": "2026-07-28",
+        "to": "2026-08-03",
+        "totalDays": 7,
+        "recordedDays": 0,
+        "recordCount": 0,
+        "dailyScores": [],
+        "nutrition": [],
+        "concerns": []
+    }
+}

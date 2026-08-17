@@ -7,6 +7,9 @@ import '../../features/auth/domain/repositories/auth_repository.dart';
 import '../../features/recommendation/data/datasources/recommendation_remote_datasource.dart';
 import '../../features/recommendation/data/repositories/recommendation_repository_impl.dart';
 import '../../features/recommendation/domain/repositories/recommendation_repository.dart';
+import '../../features/report/data/datasources/report_remote_datasource.dart';
+import '../../features/report/data/repositories/report_repository_impl.dart';
+import '../../features/report/domain/repositories/report_repository.dart';
 import '../../features/skin_analysis/data/datasources/skin_remote_datasource.dart';
 import '../../features/skin_analysis/data/repositories/skin_repository_impl.dart';
 import '../../features/skin_analysis/domain/entities/skin_analysis.dart';
@@ -78,6 +81,12 @@ final skinAnalysisByIdProvider =
 
 final plateRepositoryProvider = Provider<PlateRepository>(
   (ref) => PlateRepositoryImpl(PlateRemoteDataSource(ref.watch(dioProvider))),
+);
+
+// ---------- report ----------
+
+final reportRepositoryProvider = Provider<ReportRepository>(
+  (ref) => ReportRepositoryImpl(ReportRemoteDataSource(ref.watch(dioProvider))),
 );
 
 // ---------- recommendation ----------

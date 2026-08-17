@@ -21,14 +21,16 @@ void main() {
         ),
       );
 
-  testWidgets('점수 카드 — 58점은 주의 배지, 기준 문구가 함께 나온다', (tester) async {
+  testWidgets('점수 카드 — 58점은 보통 배지, 기준 문구가 함께 나온다', (tester) async {
     await tester.binding.setSurfaceSize(designSize);
     await tester.pumpWidget(host(
       const PlateScoreCard(score: 58, basisLabel: '민감성 피부 기준'),
     ));
 
     expect(find.text('58'), findsOneWidget);
-    expect(find.text('주의'), findsOneWidget);
+    // 서버 기준으로 41~60 이 NORMAL 이다. 앱이 쓰던 75/60 경계에서는
+    // '주의'였지만, 등급표는 이제 서버 것 하나뿐이다.
+    expect(find.text('보통'), findsOneWidget);
     expect(find.text('민감성 피부 기준'), findsOneWidget);
   });
 
