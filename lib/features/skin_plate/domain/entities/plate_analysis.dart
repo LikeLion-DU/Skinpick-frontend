@@ -1,3 +1,4 @@
+import '../../../../shared/enums/skin_basis.dart';
 import 'skin_plate.dart';
 
 /// 저장 전 **임시** 분석 결과. 서버에 아무것도 남지 않은 상태다.
@@ -12,6 +13,8 @@ class PlateAnalysis implements PlateView {
   const PlateAnalysis({
     required this.analysisToken,
     required this.skinAnalysisId,
+    this.skinBasis,
+    this.skinMeasuredAt,
     required this.plateScore,
     this.baseScore = 70,
     required this.summary,
@@ -29,6 +32,14 @@ class PlateAnalysis implements PlateView {
 
   @override
   final int skinAnalysisId;
+
+  /// 아직 저장 전이라 **기준일이 오늘**이다. [SkinBasis.today] 를 "오늘 피부 기준"
+  /// 으로 그대로 써도 된다 — 저장된 기록([SkinPlate])과 갈리는 지점이다.
+  @override
+  final SkinBasis? skinBasis;
+  @override
+  final DateTime? skinMeasuredAt;
+
   @override
   final int plateScore;
   @override

@@ -1,9 +1,11 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
 
 import '../../../../shared/enums/cooking_method.dart';
+import '../../../../shared/enums/food_traits.dart';
 import '../../../../shared/enums/ingredient_tag.dart';
 import '../../../../shared/enums/meal_type.dart';
 import '../../../../shared/enums/plate_action_code.dart';
+import '../../../../shared/enums/skin_basis.dart';
 import '../../domain/entities/plate_analysis.dart' as domain;
 import '../../domain/entities/plate_history.dart' as domain;
 import '../../domain/entities/skin_plate.dart' as domain;
@@ -47,6 +49,16 @@ class FoodAnalysisDto with _$FoodAnalysisDto {
     String? foodCategory,
     @Default('ETC') String cookingMethod,
     @Default(false) bool spicy,
+
+    /// 음식 특성 5종. **서버는 "모른다"를 null 이 아니라 `UNKNOWN`(foodGroup 은
+    /// `ETC`) 문자열로 내려보낸다.** nullable 로 받아 null 체크만 하면 화면에
+    /// UNKNOWN 이 그대로 뜬다 — 숨김은 [FoodGroup] 쪽 enum 이 맡는다.
+    /// 기본값은 이 필드가 없던 시절(V7 이전) 기록용이다.
+    @Default('ETC') String foodGroup,
+    @Default('UNKNOWN') String portionSize,
+    @Default('UNKNOWN') String spiciness,
+    @Default('UNKNOWN') String oiliness,
+    @Default('UNKNOWN') String processingLevel,
     @Default(<IngredientDto>[]) List<IngredientDto> ingredients,
     required NutritionDto nutrition,
   }) = _FoodAnalysisDto;
@@ -59,6 +71,13 @@ class FoodAnalysisDto with _$FoodAnalysisDto {
 class FeedbackDto with _$FeedbackDto {
   const factory FeedbackDto({
     required String message,
+
+    /// 지금 피부 상태와 음식 특성을 잇는 설명. [message] 는 짧은 제목이고 이쪽이
+    /// 그 아래 보조 문장이다. V8 이전 기록에는 키가 아예 없다.
+    ///
+    /// **[ActionDto] 에는 이 필드가 없다.** 행동 카드는 문구 자체가 설명이라
+    /// 서버가 만들지 않는다 — 거기서 파싱을 시도하면 항상 비어 있다.
+    String? reason,
     @Default(0) int scoreDelta,
     String? ruleCode,
   }) = _FeedbackDto;
@@ -103,6 +122,14 @@ class PlateAnalysisDto with _$PlateAnalysisDto {
   const factory PlateAnalysisDto({
     required String analysisToken,
     required int skinAnalysisId,
+
+    /// 어느 날 피부로 계산했는지. 신규 필드라 옛 응답에는 키가 없다.
+    ///
+    /// **분석(`/plates/analyze`)의 `TODAY` 는 오늘이고, 저장된 기록의 `TODAY` 는
+    /// 그 기록을 저장한 날이다.** 서버가 저장 시점에 굳혀 두기 때문에 8/15 기록을
+    /// 8/17 에 열어도 `TODAY` 가 온다 — 화면 문구가 갈리는 이유가 이것이다.
+    String? skinBasis,
+    DateTime? skinMeasuredAt,
     required int plateScore,
     @Default(70) int baseScore,
     @Default('') String summary,
@@ -126,6 +153,11 @@ class SkinPlateDto with _$SkinPlateDto {
     /// 추천이 뜬다. 서버가 응답에 실어 준다.
     required int skinAnalysisId,
 
+    /// 이 기록을 **저장한 날**의 피부인지. [PlateAnalysisDto.skinBasis] 참고 —
+    /// 여기서의 `TODAY` 는 "오늘"이 아니라 "기록 당일"이다.
+    String? skinBasis,
+    DateTime? skinMeasuredAt,
+
     required int plateScore,
     @Default(70) int baseScore,
     @Default('') String summary,
@@ -148,6 +180,8 @@ extension PlateAnalysisDtoX on PlateAnalysisDto {
   domain.PlateAnalysis toEntity() => domain.PlateAnalysis(
         analysisToken: analysisToken,
         skinAnalysisId: skinAnalysisId,
+        skinBasis: SkinBasis.fromJson(skinBasis),
+        skinMeasuredAt: skinMeasuredAt,
         plateScore: plateScore,
         baseScore: baseScore,
         summary: summary,
@@ -163,6 +197,8 @@ extension SkinPlateDtoX on SkinPlateDto {
   domain.SkinPlate toEntity() => domain.SkinPlate(
         id: plateId,
         skinAnalysisId: skinAnalysisId,
+        skinBasis: SkinBasis.fromJson(skinBasis),
+        skinMeasuredAt: skinMeasuredAt,
         plateScore: plateScore,
         baseScore: baseScore,
         summary: summary,
@@ -179,6 +215,7 @@ extension SkinPlateDtoX on SkinPlateDto {
 extension FeedbackDtoX on FeedbackDto {
   domain.PlateFeedback toEntity() => domain.PlateFeedback(
         message: message,
+        reason: reason,
         scoreDelta: scoreDelta,
         ruleCode: ruleCode,
       );
@@ -199,6 +236,11 @@ extension FoodAnalysisDtoX on FoodAnalysisDto {
         foodCategory: foodCategory,
         cookingMethod: CookingMethod.fromJson(cookingMethod),
         spicy: spicy,
+        foodGroup: FoodGroup.fromJson(foodGroup),
+        portionSize: PortionSize.fromJson(portionSize),
+        spiciness: Spiciness.fromJson(spiciness),
+        oiliness: Oiliness.fromJson(oiliness),
+        processingLevel: ProcessingLevel.fromJson(processingLevel),
         ingredients: ingredients
             .map((i) => domain.Ingredient(
                   name: i.name,

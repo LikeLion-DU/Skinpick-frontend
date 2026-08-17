@@ -207,7 +207,7 @@ class _Body extends StatelessWidget {
           title: '주간 영양 밸런스',
           // 합계가 아니라는 것을 반드시 적는다. 안 적으면 사용자가 하루
           // 기준값과 견주는 막대를 주간 합계로 읽는다.
-          subtitle: '기록한 날의 하루 평균이에요',
+          subtitle: '기록한 날의 하루 평균이에요 · 섭취량 반영 추정치',
           child: NutritionBars(items: report.nutrition),
         ),
         const SizedBox(height: 28),

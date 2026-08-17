@@ -11,12 +11,14 @@ import 'package:skinplate/features/skin_analysis/data/models/skin_insight_dtos.d
 import 'package:skinplate/features/skin_plate/data/models/plate_dtos.dart';
 import 'package:skinplate/features/skin_plate/domain/entities/skin_plate.dart';
 import 'package:skinplate/shared/enums/cooking_method.dart';
+import 'package:skinplate/shared/enums/food_traits.dart';
 import 'package:skinplate/shared/enums/highlight_status.dart';
 import 'package:skinplate/shared/enums/ingredient_tag.dart';
 import 'package:skinplate/shared/enums/insight_category.dart';
 import 'package:skinplate/shared/enums/meal_type.dart';
 import 'package:skinplate/shared/enums/nutrient_status.dart';
 import 'package:skinplate/shared/enums/plate_action_code.dart';
+import 'package:skinplate/shared/enums/skin_basis.dart';
 import 'package:skinplate/shared/enums/skin_level.dart';
 import 'package:skinplate/shared/enums/skin_type.dart';
 
@@ -207,6 +209,143 @@ void main() {
 
     // 저장된 기록과 같은 화면을 그린다. 위젯을 두 벌 만들지 않기 위한 계약이다.
     expect(analysis, isA<PlateView>());
+  });
+
+  test('POST /plates/analyze — 피부 기준·음식 특성·판정 이유가 함께 온다', () {
+    final json = data('plate_analyze_v8');
+
+    // 키가 실제로 이 이름인지부터 못 박는다. 파서는 모르는 키를 조용히 null 로
+    // 두므로, 손으로 쓴 fixture 는 필드명이 틀려도 초록이다.
+    expect(json.containsKey('skinBasis'), isTrue);
+    expect(json.containsKey('skinMeasuredAt'), isTrue);
+
+    final analysis = PlateAnalysisDto.fromJson(json).toEntity();
+
+    // 오늘 찍은 피부로 계산됐다. 저장 전 화면은 이걸 "오늘 피부 기준"으로 쓴다.
+    expect(analysis.skinBasis, SkinBasis.today);
+    expect(analysis.skinMeasuredAt, DateTime(2026, 8, 17));
+
+    // 서버가 UNKNOWN 을 안 보낸 정상 케이스. 셋 다 화면에 칩으로 나간다.
+    expect(analysis.food.spiciness, Spiciness.medium);
+    expect(analysis.food.oiliness, Oiliness.medium);
+    expect(analysis.food.portionSize, PortionSize.medium);
+    // 화면에 안 내는 두 개도 받아만 둔다 — 나중에 서버 작업 없이 붙는다.
+    expect(analysis.food.foodGroup, FoodGroup.soupStew);
+    expect(analysis.food.processingLevel, ProcessingLevel.minimallyProcessed);
+
+    // 제목 아래 설명. 제목과 다른 문장이어야 두 줄로 쓸 값이 된다.
+    expect(analysis.good.every((item) => item.reason != null), isTrue);
+    expect(analysis.caution.every((item) => item.reason != null), isTrue);
+    expect(analysis.caution.first.reason, isNot(analysis.caution.first.message));
+
+    // **행동 카드에는 reason 이 없다.** ActionDto 에 필드 자체가 없으므로
+    // 파싱을 시도하면 항상 비어 있다 — 키가 없다는 것을 여기서 못 박는다.
+    final rawActions =
+        (json['feedbacks'] as Map<String, dynamic>)['action'] as List<dynamic>;
+    expect((rawActions.first as Map<String, dynamic>).containsKey('reason'),
+        isFalse);
+  });
+
+  test('GET /plates/{id} — V7·V8 이전 기록: 특성은 UNKNOWN, 이유는 키가 없다', () {
+    // 실제로 마이그레이션 전에 저장된 행을 조회한 응답이다. 여기가 이 작업에서
+    // 가장 깨지기 쉬운 자리다 — 두 가지가 **서로 다른 방식으로** 비어 있다.
+    final json = data('plate_legacy_traits');
+    final food = json['food'] as Map<String, dynamic>;
+
+    // 특성은 키가 있고 값이 "UNKNOWN" 이다. null 체크만 하면 화면에 UNKNOWN 이 뜬다.
+    expect(food['spiciness'], 'UNKNOWN');
+    expect(food['foodGroup'], 'ETC');
+    // 이유는 반대로 키 자체가 없다(non_null 직렬화).
+    final good = (json['feedbacks'] as Map<String, dynamic>)['good'] as List<dynamic>;
+    expect((good.first as Map<String, dynamic>).containsKey('reason'), isFalse);
+
+    final plate = SkinPlateDto.fromJson(json).toEntity();
+
+    // 화면이 칩을 숨기는 판단이 label == null 하나에 걸려 있다.
+    expect(plate.food.spiciness.label, isNull);
+    expect(plate.food.oiliness.label, isNull);
+    // 섭취량은 화면에 안 내지만 파싱은 살아 있어야 한다 — 서버가 저장·리포트
+    // 환산에 계속 쓰고, 나중에 표시를 되살릴 때 서버 작업 없이 붙는다.
+    expect(plate.food.portionSize, PortionSize.unknown);
+    expect(plate.food.foodGroup, FoodGroup.etc);
+    expect(plate.good.every((item) => item.reason == null), isTrue);
+
+    // skinBasis 는 컬럼이 아니라 파생값이라 옛 행에도 붙는다. 이 기록은 8/17 에
+    // 저장됐는데 기준 피부는 8/15 측정이라 RECENT 다 — 화면이 측정일을 함께 낸다.
+    expect(plate.skinBasis, SkinBasis.recent);
+    expect(plate.skinMeasuredAt, DateTime(2026, 8, 15));
+  });
+
+  test('신규 필드가 없던 시절의 응답도 그대로 파싱된다', () {
+    // #49 이전 서버는 이 키들을 아예 만들지 않았다. required 로 받았으면 여기서
+    // 죽고, 배포 경계의 구 analysisToken 하나에 앱이 멎는다.
+    final json = data('plate_analyze');
+    expect(json.containsKey('skinBasis'), isFalse);
+    expect((json['food'] as Map<String, dynamic>).containsKey('spiciness'),
+        isFalse);
+
+    final analysis = PlateAnalysisDto.fromJson(json).toEntity();
+
+    // null 이어야 화면이 문구를 지어내지 않고 자리째 비운다.
+    expect(analysis.skinBasis, isNull);
+    expect(analysis.skinMeasuredAt, isNull);
+    expect(analysis.good.every((item) => item.reason == null), isTrue);
+    // 키가 없을 때도 UNKNOWN 과 같은 자리로 떨어져야 화면 분기가 하나로 끝난다.
+    expect(analysis.food.spiciness, Spiciness.unknown);
+    expect(analysis.food.portionSize, PortionSize.unknown);
+    expect(analysis.food.foodGroup, FoodGroup.etc);
+  });
+
+  test('R10 고열량 — 새 룰과 짝 없는 주의(R07)를 함께 처리한다', () {
+    // **손으로 쓴 응답이다.** AI_MOCK 픽스처(김치찌개 520kcal)로는 R10(900kcal
+    // 초과)도, 튀김이 아닌 기름진 음식의 R07 도 만들 수 없다. 실물이 필요해지면
+    // 백엔드에 요청한다.
+    final analysis = PlateAnalysisDto.fromJson({
+      'analysisToken': 'token',
+      'skinAnalysisId': 54,
+      'plateScore': 48,
+      'food': {
+        'foodName': '삼겹살 구이 정식',
+        'oiliness': 'HIGH',
+        'portionSize': 'LARGE',
+        'nutrition': {'caloriesKcal': 980},
+      },
+      'feedbacks': {
+        'caution': [
+          {'message': '기름진 음식', 'scoreDelta': -6, 'ruleCode': 'R07'},
+          {'message': '고열량', 'scoreDelta': -6, 'ruleCode': 'R10'},
+        ],
+        'action': [
+          // 서버 RuleConstants.GAIN_LESS_RICE 와 같은 5 다. 단언하는 값은 아니지만
+          // 손으로 쓴 JSON 에 없는 숫자를 박아 두면 다음 사람이 그걸 계약으로 읽는다.
+          {'message': '밥 양을 줄여보세요.', 'expectedGain': 5, 'ruleCode': 'R10'},
+        ],
+      },
+      'appliedRules': ['R07', 'R10'],
+    }).toEntity();
+
+    expect(PlateActionCode.forRuleCode('R10'), PlateActionCode.lessRice);
+
+    // **주의 2건에 행동은 1건이다.** R07 이 튀김이 아닌 음식에서 걸리면
+    // "튀김옷을 제거하세요"가 성립하지 않아 짝이 없다 — 1:1 을 가정하면 깨진다.
+    expect(analysis.caution.length, 2);
+    expect(analysis.actions.length, 1);
+    expect(analysis.actions.map((a) => a.ruleCode), isNot(contains('R07')));
+    expect(analysis.food.oiliness.label, '기름진 편');
+  });
+
+  test('모르는 enum 값은 예외 없이 UNKNOWN·ETC 로 떨어진다', () {
+    // 서버가 값을 늘려도 앱이 죽지 않는다. 서버와 같은 fallback 이라 화면도 일관된다.
+    expect(FoodGroup.fromJson('KOREAN_FOOD'), FoodGroup.etc);
+    expect(Spiciness.fromJson('VERY_HOT'), Spiciness.unknown);
+    expect(Oiliness.fromJson(null), Oiliness.unknown);
+    expect(ProcessingLevel.fromJson('CANNED'), ProcessingLevel.unknown);
+    expect(PortionSize.fromJson('HUGE'), PortionSize.unknown);
+
+    // 기준 시점만은 null 이다. unknown 을 today 로 떨어뜨리면 사흘 전 피부로
+    // 계산된 점수가 "오늘 피부 기준"으로 둔갑한다.
+    expect(SkinBasis.fromJson('YESTERDAY'), isNull);
+    expect(SkinBasis.fromJson(null), isNull);
   });
 
   test('GET /plates/{id} — 60점과 피드백 3종', () {

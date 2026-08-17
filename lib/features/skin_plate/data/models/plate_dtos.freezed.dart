@@ -457,6 +457,16 @@ mixin _$FoodAnalysisDto {
   String? get foodCategory => throw _privateConstructorUsedError;
   String get cookingMethod => throw _privateConstructorUsedError;
   bool get spicy => throw _privateConstructorUsedError;
+
+  /// 음식 특성 5종. **서버는 "모른다"를 null 이 아니라 `UNKNOWN`(foodGroup 은
+  /// `ETC`) 문자열로 내려보낸다.** nullable 로 받아 null 체크만 하면 화면에
+  /// UNKNOWN 이 그대로 뜬다 — 숨김은 [FoodGroup] 쪽 enum 이 맡는다.
+  /// 기본값은 이 필드가 없던 시절(V7 이전) 기록용이다.
+  String get foodGroup => throw _privateConstructorUsedError;
+  String get portionSize => throw _privateConstructorUsedError;
+  String get spiciness => throw _privateConstructorUsedError;
+  String get oiliness => throw _privateConstructorUsedError;
+  String get processingLevel => throw _privateConstructorUsedError;
   List<IngredientDto> get ingredients => throw _privateConstructorUsedError;
   NutritionDto get nutrition => throw _privateConstructorUsedError;
 
@@ -482,6 +492,11 @@ abstract class $FoodAnalysisDtoCopyWith<$Res> {
       String? foodCategory,
       String cookingMethod,
       bool spicy,
+      String foodGroup,
+      String portionSize,
+      String spiciness,
+      String oiliness,
+      String processingLevel,
       List<IngredientDto> ingredients,
       NutritionDto nutrition});
 
@@ -508,6 +523,11 @@ class _$FoodAnalysisDtoCopyWithImpl<$Res, $Val extends FoodAnalysisDto>
     Object? foodCategory = freezed,
     Object? cookingMethod = null,
     Object? spicy = null,
+    Object? foodGroup = null,
+    Object? portionSize = null,
+    Object? spiciness = null,
+    Object? oiliness = null,
+    Object? processingLevel = null,
     Object? ingredients = null,
     Object? nutrition = null,
   }) {
@@ -532,6 +552,26 @@ class _$FoodAnalysisDtoCopyWithImpl<$Res, $Val extends FoodAnalysisDto>
           ? _value.spicy
           : spicy // ignore: cast_nullable_to_non_nullable
               as bool,
+      foodGroup: null == foodGroup
+          ? _value.foodGroup
+          : foodGroup // ignore: cast_nullable_to_non_nullable
+              as String,
+      portionSize: null == portionSize
+          ? _value.portionSize
+          : portionSize // ignore: cast_nullable_to_non_nullable
+              as String,
+      spiciness: null == spiciness
+          ? _value.spiciness
+          : spiciness // ignore: cast_nullable_to_non_nullable
+              as String,
+      oiliness: null == oiliness
+          ? _value.oiliness
+          : oiliness // ignore: cast_nullable_to_non_nullable
+              as String,
+      processingLevel: null == processingLevel
+          ? _value.processingLevel
+          : processingLevel // ignore: cast_nullable_to_non_nullable
+              as String,
       ingredients: null == ingredients
           ? _value.ingredients
           : ingredients // ignore: cast_nullable_to_non_nullable
@@ -568,6 +608,11 @@ abstract class _$$FoodAnalysisDtoImplCopyWith<$Res>
       String? foodCategory,
       String cookingMethod,
       bool spicy,
+      String foodGroup,
+      String portionSize,
+      String spiciness,
+      String oiliness,
+      String processingLevel,
       List<IngredientDto> ingredients,
       NutritionDto nutrition});
 
@@ -593,6 +638,11 @@ class __$$FoodAnalysisDtoImplCopyWithImpl<$Res>
     Object? foodCategory = freezed,
     Object? cookingMethod = null,
     Object? spicy = null,
+    Object? foodGroup = null,
+    Object? portionSize = null,
+    Object? spiciness = null,
+    Object? oiliness = null,
+    Object? processingLevel = null,
     Object? ingredients = null,
     Object? nutrition = null,
   }) {
@@ -617,6 +667,26 @@ class __$$FoodAnalysisDtoImplCopyWithImpl<$Res>
           ? _value.spicy
           : spicy // ignore: cast_nullable_to_non_nullable
               as bool,
+      foodGroup: null == foodGroup
+          ? _value.foodGroup
+          : foodGroup // ignore: cast_nullable_to_non_nullable
+              as String,
+      portionSize: null == portionSize
+          ? _value.portionSize
+          : portionSize // ignore: cast_nullable_to_non_nullable
+              as String,
+      spiciness: null == spiciness
+          ? _value.spiciness
+          : spiciness // ignore: cast_nullable_to_non_nullable
+              as String,
+      oiliness: null == oiliness
+          ? _value.oiliness
+          : oiliness // ignore: cast_nullable_to_non_nullable
+              as String,
+      processingLevel: null == processingLevel
+          ? _value.processingLevel
+          : processingLevel // ignore: cast_nullable_to_non_nullable
+              as String,
       ingredients: null == ingredients
           ? _value._ingredients
           : ingredients // ignore: cast_nullable_to_non_nullable
@@ -638,6 +708,11 @@ class _$FoodAnalysisDtoImpl implements _FoodAnalysisDto {
       this.foodCategory,
       this.cookingMethod = 'ETC',
       this.spicy = false,
+      this.foodGroup = 'ETC',
+      this.portionSize = 'UNKNOWN',
+      this.spiciness = 'UNKNOWN',
+      this.oiliness = 'UNKNOWN',
+      this.processingLevel = 'UNKNOWN',
       final List<IngredientDto> ingredients = const <IngredientDto>[],
       required this.nutrition})
       : _ingredients = ingredients;
@@ -659,6 +734,26 @@ class _$FoodAnalysisDtoImpl implements _FoodAnalysisDto {
   @override
   @JsonKey()
   final bool spicy;
+
+  /// 음식 특성 5종. **서버는 "모른다"를 null 이 아니라 `UNKNOWN`(foodGroup 은
+  /// `ETC`) 문자열로 내려보낸다.** nullable 로 받아 null 체크만 하면 화면에
+  /// UNKNOWN 이 그대로 뜬다 — 숨김은 [FoodGroup] 쪽 enum 이 맡는다.
+  /// 기본값은 이 필드가 없던 시절(V7 이전) 기록용이다.
+  @override
+  @JsonKey()
+  final String foodGroup;
+  @override
+  @JsonKey()
+  final String portionSize;
+  @override
+  @JsonKey()
+  final String spiciness;
+  @override
+  @JsonKey()
+  final String oiliness;
+  @override
+  @JsonKey()
+  final String processingLevel;
   final List<IngredientDto> _ingredients;
   @override
   @JsonKey()
@@ -673,7 +768,7 @@ class _$FoodAnalysisDtoImpl implements _FoodAnalysisDto {
 
   @override
   String toString() {
-    return 'FoodAnalysisDto(foodAnalysisId: $foodAnalysisId, foodName: $foodName, foodCategory: $foodCategory, cookingMethod: $cookingMethod, spicy: $spicy, ingredients: $ingredients, nutrition: $nutrition)';
+    return 'FoodAnalysisDto(foodAnalysisId: $foodAnalysisId, foodName: $foodName, foodCategory: $foodCategory, cookingMethod: $cookingMethod, spicy: $spicy, foodGroup: $foodGroup, portionSize: $portionSize, spiciness: $spiciness, oiliness: $oiliness, processingLevel: $processingLevel, ingredients: $ingredients, nutrition: $nutrition)';
   }
 
   @override
@@ -690,6 +785,16 @@ class _$FoodAnalysisDtoImpl implements _FoodAnalysisDto {
             (identical(other.cookingMethod, cookingMethod) ||
                 other.cookingMethod == cookingMethod) &&
             (identical(other.spicy, spicy) || other.spicy == spicy) &&
+            (identical(other.foodGroup, foodGroup) ||
+                other.foodGroup == foodGroup) &&
+            (identical(other.portionSize, portionSize) ||
+                other.portionSize == portionSize) &&
+            (identical(other.spiciness, spiciness) ||
+                other.spiciness == spiciness) &&
+            (identical(other.oiliness, oiliness) ||
+                other.oiliness == oiliness) &&
+            (identical(other.processingLevel, processingLevel) ||
+                other.processingLevel == processingLevel) &&
             const DeepCollectionEquality()
                 .equals(other._ingredients, _ingredients) &&
             (identical(other.nutrition, nutrition) ||
@@ -705,6 +810,11 @@ class _$FoodAnalysisDtoImpl implements _FoodAnalysisDto {
       foodCategory,
       cookingMethod,
       spicy,
+      foodGroup,
+      portionSize,
+      spiciness,
+      oiliness,
+      processingLevel,
       const DeepCollectionEquality().hash(_ingredients),
       nutrition);
 
@@ -732,6 +842,11 @@ abstract class _FoodAnalysisDto implements FoodAnalysisDto {
       final String? foodCategory,
       final String cookingMethod,
       final bool spicy,
+      final String foodGroup,
+      final String portionSize,
+      final String spiciness,
+      final String oiliness,
+      final String processingLevel,
       final List<IngredientDto> ingredients,
       required final NutritionDto nutrition}) = _$FoodAnalysisDtoImpl;
 
@@ -750,6 +865,21 @@ abstract class _FoodAnalysisDto implements FoodAnalysisDto {
   String get cookingMethod;
   @override
   bool get spicy;
+
+  /// 음식 특성 5종. **서버는 "모른다"를 null 이 아니라 `UNKNOWN`(foodGroup 은
+  /// `ETC`) 문자열로 내려보낸다.** nullable 로 받아 null 체크만 하면 화면에
+  /// UNKNOWN 이 그대로 뜬다 — 숨김은 [FoodGroup] 쪽 enum 이 맡는다.
+  /// 기본값은 이 필드가 없던 시절(V7 이전) 기록용이다.
+  @override
+  String get foodGroup;
+  @override
+  String get portionSize;
+  @override
+  String get spiciness;
+  @override
+  String get oiliness;
+  @override
+  String get processingLevel;
   @override
   List<IngredientDto> get ingredients;
   @override
@@ -770,6 +900,13 @@ FeedbackDto _$FeedbackDtoFromJson(Map<String, dynamic> json) {
 /// @nodoc
 mixin _$FeedbackDto {
   String get message => throw _privateConstructorUsedError;
+
+  /// 지금 피부 상태와 음식 특성을 잇는 설명. [message] 는 짧은 제목이고 이쪽이
+  /// 그 아래 보조 문장이다. V8 이전 기록에는 키가 아예 없다.
+  ///
+  /// **[ActionDto] 에는 이 필드가 없다.** 행동 카드는 문구 자체가 설명이라
+  /// 서버가 만들지 않는다 — 거기서 파싱을 시도하면 항상 비어 있다.
+  String? get reason => throw _privateConstructorUsedError;
   int get scoreDelta => throw _privateConstructorUsedError;
   String? get ruleCode => throw _privateConstructorUsedError;
 
@@ -789,7 +926,7 @@ abstract class $FeedbackDtoCopyWith<$Res> {
           FeedbackDto value, $Res Function(FeedbackDto) then) =
       _$FeedbackDtoCopyWithImpl<$Res, FeedbackDto>;
   @useResult
-  $Res call({String message, int scoreDelta, String? ruleCode});
+  $Res call({String message, String? reason, int scoreDelta, String? ruleCode});
 }
 
 /// @nodoc
@@ -808,6 +945,7 @@ class _$FeedbackDtoCopyWithImpl<$Res, $Val extends FeedbackDto>
   @override
   $Res call({
     Object? message = null,
+    Object? reason = freezed,
     Object? scoreDelta = null,
     Object? ruleCode = freezed,
   }) {
@@ -816,6 +954,10 @@ class _$FeedbackDtoCopyWithImpl<$Res, $Val extends FeedbackDto>
           ? _value.message
           : message // ignore: cast_nullable_to_non_nullable
               as String,
+      reason: freezed == reason
+          ? _value.reason
+          : reason // ignore: cast_nullable_to_non_nullable
+              as String?,
       scoreDelta: null == scoreDelta
           ? _value.scoreDelta
           : scoreDelta // ignore: cast_nullable_to_non_nullable
@@ -836,7 +978,7 @@ abstract class _$$FeedbackDtoImplCopyWith<$Res>
       __$$FeedbackDtoImplCopyWithImpl<$Res>;
   @override
   @useResult
-  $Res call({String message, int scoreDelta, String? ruleCode});
+  $Res call({String message, String? reason, int scoreDelta, String? ruleCode});
 }
 
 /// @nodoc
@@ -853,6 +995,7 @@ class __$$FeedbackDtoImplCopyWithImpl<$Res>
   @override
   $Res call({
     Object? message = null,
+    Object? reason = freezed,
     Object? scoreDelta = null,
     Object? ruleCode = freezed,
   }) {
@@ -861,6 +1004,10 @@ class __$$FeedbackDtoImplCopyWithImpl<$Res>
           ? _value.message
           : message // ignore: cast_nullable_to_non_nullable
               as String,
+      reason: freezed == reason
+          ? _value.reason
+          : reason // ignore: cast_nullable_to_non_nullable
+              as String?,
       scoreDelta: null == scoreDelta
           ? _value.scoreDelta
           : scoreDelta // ignore: cast_nullable_to_non_nullable
@@ -877,13 +1024,21 @@ class __$$FeedbackDtoImplCopyWithImpl<$Res>
 @JsonSerializable()
 class _$FeedbackDtoImpl implements _FeedbackDto {
   const _$FeedbackDtoImpl(
-      {required this.message, this.scoreDelta = 0, this.ruleCode});
+      {required this.message, this.reason, this.scoreDelta = 0, this.ruleCode});
 
   factory _$FeedbackDtoImpl.fromJson(Map<String, dynamic> json) =>
       _$$FeedbackDtoImplFromJson(json);
 
   @override
   final String message;
+
+  /// 지금 피부 상태와 음식 특성을 잇는 설명. [message] 는 짧은 제목이고 이쪽이
+  /// 그 아래 보조 문장이다. V8 이전 기록에는 키가 아예 없다.
+  ///
+  /// **[ActionDto] 에는 이 필드가 없다.** 행동 카드는 문구 자체가 설명이라
+  /// 서버가 만들지 않는다 — 거기서 파싱을 시도하면 항상 비어 있다.
+  @override
+  final String? reason;
   @override
   @JsonKey()
   final int scoreDelta;
@@ -892,7 +1047,7 @@ class _$FeedbackDtoImpl implements _FeedbackDto {
 
   @override
   String toString() {
-    return 'FeedbackDto(message: $message, scoreDelta: $scoreDelta, ruleCode: $ruleCode)';
+    return 'FeedbackDto(message: $message, reason: $reason, scoreDelta: $scoreDelta, ruleCode: $ruleCode)';
   }
 
   @override
@@ -901,6 +1056,7 @@ class _$FeedbackDtoImpl implements _FeedbackDto {
         (other.runtimeType == runtimeType &&
             other is _$FeedbackDtoImpl &&
             (identical(other.message, message) || other.message == message) &&
+            (identical(other.reason, reason) || other.reason == reason) &&
             (identical(other.scoreDelta, scoreDelta) ||
                 other.scoreDelta == scoreDelta) &&
             (identical(other.ruleCode, ruleCode) ||
@@ -909,7 +1065,8 @@ class _$FeedbackDtoImpl implements _FeedbackDto {
 
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
-  int get hashCode => Object.hash(runtimeType, message, scoreDelta, ruleCode);
+  int get hashCode =>
+      Object.hash(runtimeType, message, reason, scoreDelta, ruleCode);
 
   /// Create a copy of FeedbackDto
   /// with the given fields replaced by the non-null parameter values.
@@ -930,6 +1087,7 @@ class _$FeedbackDtoImpl implements _FeedbackDto {
 abstract class _FeedbackDto implements FeedbackDto {
   const factory _FeedbackDto(
       {required final String message,
+      final String? reason,
       final int scoreDelta,
       final String? ruleCode}) = _$FeedbackDtoImpl;
 
@@ -938,6 +1096,14 @@ abstract class _FeedbackDto implements FeedbackDto {
 
   @override
   String get message;
+
+  /// 지금 피부 상태와 음식 특성을 잇는 설명. [message] 는 짧은 제목이고 이쪽이
+  /// 그 아래 보조 문장이다. V8 이전 기록에는 키가 아예 없다.
+  ///
+  /// **[ActionDto] 에는 이 필드가 없다.** 행동 카드는 문구 자체가 설명이라
+  /// 서버가 만들지 않는다 — 거기서 파싱을 시도하면 항상 비어 있다.
+  @override
+  String? get reason;
   @override
   int get scoreDelta;
   @override
@@ -1367,6 +1533,14 @@ PlateAnalysisDto _$PlateAnalysisDtoFromJson(Map<String, dynamic> json) {
 mixin _$PlateAnalysisDto {
   String get analysisToken => throw _privateConstructorUsedError;
   int get skinAnalysisId => throw _privateConstructorUsedError;
+
+  /// 어느 날 피부로 계산했는지. 신규 필드라 옛 응답에는 키가 없다.
+  ///
+  /// **분석(`/plates/analyze`)의 `TODAY` 는 오늘이고, 저장된 기록의 `TODAY` 는
+  /// 그 기록을 저장한 날이다.** 서버가 저장 시점에 굳혀 두기 때문에 8/15 기록을
+  /// 8/17 에 열어도 `TODAY` 가 온다 — 화면 문구가 갈리는 이유가 이것이다.
+  String? get skinBasis => throw _privateConstructorUsedError;
+  DateTime? get skinMeasuredAt => throw _privateConstructorUsedError;
   int get plateScore => throw _privateConstructorUsedError;
   int get baseScore => throw _privateConstructorUsedError;
   String get summary => throw _privateConstructorUsedError;
@@ -1393,6 +1567,8 @@ abstract class $PlateAnalysisDtoCopyWith<$Res> {
   $Res call(
       {String analysisToken,
       int skinAnalysisId,
+      String? skinBasis,
+      DateTime? skinMeasuredAt,
       int plateScore,
       int baseScore,
       String summary,
@@ -1421,6 +1597,8 @@ class _$PlateAnalysisDtoCopyWithImpl<$Res, $Val extends PlateAnalysisDto>
   $Res call({
     Object? analysisToken = null,
     Object? skinAnalysisId = null,
+    Object? skinBasis = freezed,
+    Object? skinMeasuredAt = freezed,
     Object? plateScore = null,
     Object? baseScore = null,
     Object? summary = null,
@@ -1437,6 +1615,14 @@ class _$PlateAnalysisDtoCopyWithImpl<$Res, $Val extends PlateAnalysisDto>
           ? _value.skinAnalysisId
           : skinAnalysisId // ignore: cast_nullable_to_non_nullable
               as int,
+      skinBasis: freezed == skinBasis
+          ? _value.skinBasis
+          : skinBasis // ignore: cast_nullable_to_non_nullable
+              as String?,
+      skinMeasuredAt: freezed == skinMeasuredAt
+          ? _value.skinMeasuredAt
+          : skinMeasuredAt // ignore: cast_nullable_to_non_nullable
+              as DateTime?,
       plateScore: null == plateScore
           ? _value.plateScore
           : plateScore // ignore: cast_nullable_to_non_nullable
@@ -1496,6 +1682,8 @@ abstract class _$$PlateAnalysisDtoImplCopyWith<$Res>
   $Res call(
       {String analysisToken,
       int skinAnalysisId,
+      String? skinBasis,
+      DateTime? skinMeasuredAt,
       int plateScore,
       int baseScore,
       String summary,
@@ -1524,6 +1712,8 @@ class __$$PlateAnalysisDtoImplCopyWithImpl<$Res>
   $Res call({
     Object? analysisToken = null,
     Object? skinAnalysisId = null,
+    Object? skinBasis = freezed,
+    Object? skinMeasuredAt = freezed,
     Object? plateScore = null,
     Object? baseScore = null,
     Object? summary = null,
@@ -1540,6 +1730,14 @@ class __$$PlateAnalysisDtoImplCopyWithImpl<$Res>
           ? _value.skinAnalysisId
           : skinAnalysisId // ignore: cast_nullable_to_non_nullable
               as int,
+      skinBasis: freezed == skinBasis
+          ? _value.skinBasis
+          : skinBasis // ignore: cast_nullable_to_non_nullable
+              as String?,
+      skinMeasuredAt: freezed == skinMeasuredAt
+          ? _value.skinMeasuredAt
+          : skinMeasuredAt // ignore: cast_nullable_to_non_nullable
+              as DateTime?,
       plateScore: null == plateScore
           ? _value.plateScore
           : plateScore // ignore: cast_nullable_to_non_nullable
@@ -1574,6 +1772,8 @@ class _$PlateAnalysisDtoImpl implements _PlateAnalysisDto {
   const _$PlateAnalysisDtoImpl(
       {required this.analysisToken,
       required this.skinAnalysisId,
+      this.skinBasis,
+      this.skinMeasuredAt,
       required this.plateScore,
       this.baseScore = 70,
       this.summary = '',
@@ -1589,6 +1789,16 @@ class _$PlateAnalysisDtoImpl implements _PlateAnalysisDto {
   final String analysisToken;
   @override
   final int skinAnalysisId;
+
+  /// 어느 날 피부로 계산했는지. 신규 필드라 옛 응답에는 키가 없다.
+  ///
+  /// **분석(`/plates/analyze`)의 `TODAY` 는 오늘이고, 저장된 기록의 `TODAY` 는
+  /// 그 기록을 저장한 날이다.** 서버가 저장 시점에 굳혀 두기 때문에 8/15 기록을
+  /// 8/17 에 열어도 `TODAY` 가 온다 — 화면 문구가 갈리는 이유가 이것이다.
+  @override
+  final String? skinBasis;
+  @override
+  final DateTime? skinMeasuredAt;
   @override
   final int plateScore;
   @override
@@ -1612,7 +1822,7 @@ class _$PlateAnalysisDtoImpl implements _PlateAnalysisDto {
 
   @override
   String toString() {
-    return 'PlateAnalysisDto(analysisToken: $analysisToken, skinAnalysisId: $skinAnalysisId, plateScore: $plateScore, baseScore: $baseScore, summary: $summary, food: $food, feedbacks: $feedbacks, appliedRules: $appliedRules)';
+    return 'PlateAnalysisDto(analysisToken: $analysisToken, skinAnalysisId: $skinAnalysisId, skinBasis: $skinBasis, skinMeasuredAt: $skinMeasuredAt, plateScore: $plateScore, baseScore: $baseScore, summary: $summary, food: $food, feedbacks: $feedbacks, appliedRules: $appliedRules)';
   }
 
   @override
@@ -1624,6 +1834,10 @@ class _$PlateAnalysisDtoImpl implements _PlateAnalysisDto {
                 other.analysisToken == analysisToken) &&
             (identical(other.skinAnalysisId, skinAnalysisId) ||
                 other.skinAnalysisId == skinAnalysisId) &&
+            (identical(other.skinBasis, skinBasis) ||
+                other.skinBasis == skinBasis) &&
+            (identical(other.skinMeasuredAt, skinMeasuredAt) ||
+                other.skinMeasuredAt == skinMeasuredAt) &&
             (identical(other.plateScore, plateScore) ||
                 other.plateScore == plateScore) &&
             (identical(other.baseScore, baseScore) ||
@@ -1642,6 +1856,8 @@ class _$PlateAnalysisDtoImpl implements _PlateAnalysisDto {
       runtimeType,
       analysisToken,
       skinAnalysisId,
+      skinBasis,
+      skinMeasuredAt,
       plateScore,
       baseScore,
       summary,
@@ -1670,6 +1886,8 @@ abstract class _PlateAnalysisDto implements PlateAnalysisDto {
   const factory _PlateAnalysisDto(
       {required final String analysisToken,
       required final int skinAnalysisId,
+      final String? skinBasis,
+      final DateTime? skinMeasuredAt,
       required final int plateScore,
       final int baseScore,
       final String summary,
@@ -1684,6 +1902,16 @@ abstract class _PlateAnalysisDto implements PlateAnalysisDto {
   String get analysisToken;
   @override
   int get skinAnalysisId;
+
+  /// 어느 날 피부로 계산했는지. 신규 필드라 옛 응답에는 키가 없다.
+  ///
+  /// **분석(`/plates/analyze`)의 `TODAY` 는 오늘이고, 저장된 기록의 `TODAY` 는
+  /// 그 기록을 저장한 날이다.** 서버가 저장 시점에 굳혀 두기 때문에 8/15 기록을
+  /// 8/17 에 열어도 `TODAY` 가 온다 — 화면 문구가 갈리는 이유가 이것이다.
+  @override
+  String? get skinBasis;
+  @override
+  DateTime? get skinMeasuredAt;
   @override
   int get plateScore;
   @override
@@ -1717,6 +1945,11 @@ mixin _$SkinPlateDto {
   /// 앱이 "최신 피부 분석"을 대신 쓰면 과거 Plate 를 열었을 때 엉뚱한 날짜의
   /// 추천이 뜬다. 서버가 응답에 실어 준다.
   int get skinAnalysisId => throw _privateConstructorUsedError;
+
+  /// 이 기록을 **저장한 날**의 피부인지. [PlateAnalysisDto.skinBasis] 참고 —
+  /// 여기서의 `TODAY` 는 "오늘"이 아니라 "기록 당일"이다.
+  String? get skinBasis => throw _privateConstructorUsedError;
+  DateTime? get skinMeasuredAt => throw _privateConstructorUsedError;
   int get plateScore => throw _privateConstructorUsedError;
   int get baseScore => throw _privateConstructorUsedError;
   String get summary => throw _privateConstructorUsedError;
@@ -1747,6 +1980,8 @@ abstract class $SkinPlateDtoCopyWith<$Res> {
   $Res call(
       {int plateId,
       int skinAnalysisId,
+      String? skinBasis,
+      DateTime? skinMeasuredAt,
       int plateScore,
       int baseScore,
       String summary,
@@ -1777,6 +2012,8 @@ class _$SkinPlateDtoCopyWithImpl<$Res, $Val extends SkinPlateDto>
   $Res call({
     Object? plateId = null,
     Object? skinAnalysisId = null,
+    Object? skinBasis = freezed,
+    Object? skinMeasuredAt = freezed,
     Object? plateScore = null,
     Object? baseScore = null,
     Object? summary = null,
@@ -1795,6 +2032,14 @@ class _$SkinPlateDtoCopyWithImpl<$Res, $Val extends SkinPlateDto>
           ? _value.skinAnalysisId
           : skinAnalysisId // ignore: cast_nullable_to_non_nullable
               as int,
+      skinBasis: freezed == skinBasis
+          ? _value.skinBasis
+          : skinBasis // ignore: cast_nullable_to_non_nullable
+              as String?,
+      skinMeasuredAt: freezed == skinMeasuredAt
+          ? _value.skinMeasuredAt
+          : skinMeasuredAt // ignore: cast_nullable_to_non_nullable
+              as DateTime?,
       plateScore: null == plateScore
           ? _value.plateScore
           : plateScore // ignore: cast_nullable_to_non_nullable
@@ -1862,6 +2107,8 @@ abstract class _$$SkinPlateDtoImplCopyWith<$Res>
   $Res call(
       {int plateId,
       int skinAnalysisId,
+      String? skinBasis,
+      DateTime? skinMeasuredAt,
       int plateScore,
       int baseScore,
       String summary,
@@ -1892,6 +2139,8 @@ class __$$SkinPlateDtoImplCopyWithImpl<$Res>
   $Res call({
     Object? plateId = null,
     Object? skinAnalysisId = null,
+    Object? skinBasis = freezed,
+    Object? skinMeasuredAt = freezed,
     Object? plateScore = null,
     Object? baseScore = null,
     Object? summary = null,
@@ -1910,6 +2159,14 @@ class __$$SkinPlateDtoImplCopyWithImpl<$Res>
           ? _value.skinAnalysisId
           : skinAnalysisId // ignore: cast_nullable_to_non_nullable
               as int,
+      skinBasis: freezed == skinBasis
+          ? _value.skinBasis
+          : skinBasis // ignore: cast_nullable_to_non_nullable
+              as String?,
+      skinMeasuredAt: freezed == skinMeasuredAt
+          ? _value.skinMeasuredAt
+          : skinMeasuredAt // ignore: cast_nullable_to_non_nullable
+              as DateTime?,
       plateScore: null == plateScore
           ? _value.plateScore
           : plateScore // ignore: cast_nullable_to_non_nullable
@@ -1952,6 +2209,8 @@ class _$SkinPlateDtoImpl implements _SkinPlateDto {
   const _$SkinPlateDtoImpl(
       {required this.plateId,
       required this.skinAnalysisId,
+      this.skinBasis,
+      this.skinMeasuredAt,
       required this.plateScore,
       this.baseScore = 70,
       this.summary = '',
@@ -1973,6 +2232,13 @@ class _$SkinPlateDtoImpl implements _SkinPlateDto {
   /// 추천이 뜬다. 서버가 응답에 실어 준다.
   @override
   final int skinAnalysisId;
+
+  /// 이 기록을 **저장한 날**의 피부인지. [PlateAnalysisDto.skinBasis] 참고 —
+  /// 여기서의 `TODAY` 는 "오늘"이 아니라 "기록 당일"이다.
+  @override
+  final String? skinBasis;
+  @override
+  final DateTime? skinMeasuredAt;
   @override
   final int plateScore;
   @override
@@ -2002,7 +2268,7 @@ class _$SkinPlateDtoImpl implements _SkinPlateDto {
 
   @override
   String toString() {
-    return 'SkinPlateDto(plateId: $plateId, skinAnalysisId: $skinAnalysisId, plateScore: $plateScore, baseScore: $baseScore, summary: $summary, food: $food, feedbacks: $feedbacks, appliedRules: $appliedRules, aiTip: $aiTip, createdAt: $createdAt)';
+    return 'SkinPlateDto(plateId: $plateId, skinAnalysisId: $skinAnalysisId, skinBasis: $skinBasis, skinMeasuredAt: $skinMeasuredAt, plateScore: $plateScore, baseScore: $baseScore, summary: $summary, food: $food, feedbacks: $feedbacks, appliedRules: $appliedRules, aiTip: $aiTip, createdAt: $createdAt)';
   }
 
   @override
@@ -2013,6 +2279,10 @@ class _$SkinPlateDtoImpl implements _SkinPlateDto {
             (identical(other.plateId, plateId) || other.plateId == plateId) &&
             (identical(other.skinAnalysisId, skinAnalysisId) ||
                 other.skinAnalysisId == skinAnalysisId) &&
+            (identical(other.skinBasis, skinBasis) ||
+                other.skinBasis == skinBasis) &&
+            (identical(other.skinMeasuredAt, skinMeasuredAt) ||
+                other.skinMeasuredAt == skinMeasuredAt) &&
             (identical(other.plateScore, plateScore) ||
                 other.plateScore == plateScore) &&
             (identical(other.baseScore, baseScore) ||
@@ -2034,6 +2304,8 @@ class _$SkinPlateDtoImpl implements _SkinPlateDto {
       runtimeType,
       plateId,
       skinAnalysisId,
+      skinBasis,
+      skinMeasuredAt,
       plateScore,
       baseScore,
       summary,
@@ -2063,6 +2335,8 @@ abstract class _SkinPlateDto implements SkinPlateDto {
   const factory _SkinPlateDto(
       {required final int plateId,
       required final int skinAnalysisId,
+      final String? skinBasis,
+      final DateTime? skinMeasuredAt,
       required final int plateScore,
       final int baseScore,
       final String summary,
@@ -2083,6 +2357,13 @@ abstract class _SkinPlateDto implements SkinPlateDto {
   /// 추천이 뜬다. 서버가 응답에 실어 준다.
   @override
   int get skinAnalysisId;
+
+  /// 이 기록을 **저장한 날**의 피부인지. [PlateAnalysisDto.skinBasis] 참고 —
+  /// 여기서의 `TODAY` 는 "오늘"이 아니라 "기록 당일"이다.
+  @override
+  String? get skinBasis;
+  @override
+  DateTime? get skinMeasuredAt;
   @override
   int get plateScore;
   @override
