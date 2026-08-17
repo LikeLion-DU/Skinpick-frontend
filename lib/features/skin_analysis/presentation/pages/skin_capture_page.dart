@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:math' as math;
 import 'dart:typed_data' show Uint8List;
+import 'dart:ui' show lerpDouble;
 
 import 'package:camera/camera.dart';
 import 'package:flutter/foundation.dart'
@@ -327,8 +328,7 @@ class _SkinCapturePageState extends ConsumerState<SkinCapturePage>
     if (next == null) return null;
     final previous = _smoothFaceHeight;
     if (previous == null) return next;
-    return previous +
-        (next - previous) * FaceGateConfig.faceBoxSmoothing;
+    return lerpDouble(previous, next, FaceGateConfig.faceBoxSmoothing);
   }
 
   Future<void> _capture() async {
@@ -418,7 +418,11 @@ class _SkinCapturePageState extends ConsumerState<SkinCapturePage>
       _pending = null;
       _busy = true;
     });
-    await _accept(confirmed.file);
+    // **`_stage` 가 아니라 찍을 때의 단계로 저장한다.** 둘은 지금 같지만 같다는
+    // 보장이 없다 — `_stage` 는 모아둔 장수에서 유도하는 값이라, 확인 화면이 떠
+    // 있는 동안 `_shots` 를 건드리는 경로가 하나라도 생기면 정면 사진이 왼쪽
+    // 자리에 저장되어 그대로 업로드된다. 서버는 세 파트를 받을 뿐이라 안 보인다.
+    await _accept(confirmed.stage, confirmed.file);
   }
 
   /// 갤러리도 게이트를 지난다. 실시간 검사를 거치지 않은 경로라 4개 조건을 전부 본다.
@@ -464,16 +468,15 @@ class _SkinCapturePageState extends ConsumerState<SkinCapturePage>
 
       // 갤러리는 확인 화면을 거치지 않는다. 사용자가 방금 피커에서 그 사진을 직접
       // 골랐고, 이 경로는 4개 조건을 전부 다시 보는 fullGate 를 이미 통과했다.
-      // 자기가 고른 사진을 한 번 더 확인시키면 단계만 늘어난다.
-      await _accept(prepared.file!);
+      await _accept(stage, prepared.file!);
     } on Object catch (e) {
       await _recover(cameraErrorMessage(e, '사진을 불러오지 못했습니다.'));
     }
   }
 
   /// 한 단계를 통과했다. 세 장이 다 모였으면 업로드하고, 아니면 다음 방향으로 넘어간다.
-  Future<void> _accept(XFile file) async {
-    _shots[_stage] = file;
+  Future<void> _accept(FacePhotoType stage, XFile file) async {
+    _shots[stage] = file;
 
     final photos = SkinPhotoSet.tryFrom(_shots);
     if (photos == null) {
@@ -712,29 +715,39 @@ class _SkinCapturePageState extends ConsumerState<SkinCapturePage>
               ],
             ),
           ),
+          // **사진과 항목은 스크롤에 넣고 버튼은 밖에 둔다.** 글자 크기를 키운
+          // 기기에서 항목이 전부 경고로 뜨면 문구가 몇 줄씩 늘어나는데, 전부
+          // 고정 높이로 쌓으면 Column 이 넘쳐 [다시 촬영]·[다음] 이 화면 밖으로
+          // 밀린다 — 사용자가 확인 화면에서 나갈 방법이 없어진다.
+          // (같은 유형을 피부 타입 카드에서 한 번 겪었다 — 3b15057)
           Expanded(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(16),
-                // 업로드되는 것과 **같은 이미지**다 — 얼굴만 잘라낸 결과물이라
-                // 프리뷰에서 보던 화면 전체와 다르게 보이는 게 정상이다.
-                child: Image.memory(shot.bytes, fit: BoxFit.contain),
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(24, 0, 24, 8),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  ConstrainedBox(
+                    // 세로로 긴 크롭이 화면을 다 먹지 않게 잡아 둔다. 항목이
+                    // 한 줄도 안 보이면 확인 화면의 뜻이 없다.
+                    constraints: BoxConstraints(
+                        maxHeight: MediaQuery.sizeOf(context).height * 0.45),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(16),
+                      // 업로드되는 것과 **같은 이미지**다 — 얼굴만 잘라낸
+                      // 결과물이라 프리뷰에서 보던 화면 전체와 다르게 보이는 게
+                      // 정상이다.
+                      child: Image.memory(shot.bytes, fit: BoxFit.contain),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  for (final check in shot.checks) _CheckRow(check),
+                  const SizedBox(height: 10),
+                  // 확인 못 하는 것을 조용히 빼면 사용자는 목록이 전부인 줄 안다.
+                  const Text(capturedPhotoBlindSpots,
+                      style: TextStyle(
+                          color: Colors.white38, fontSize: 11, height: 1.5)),
+                ],
               ),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                for (final check in shot.checks) _CheckRow(check),
-                const SizedBox(height: 10),
-                // 확인 못 하는 것을 조용히 빼면 사용자는 목록이 전부인 줄 안다.
-                const Text(capturedPhotoBlindSpots,
-                    style: TextStyle(
-                        color: Colors.white38, fontSize: 11, height: 1.5)),
-              ],
             ),
           ),
           Padding(
@@ -1178,9 +1191,8 @@ class _NoseGuidePainter extends CustomPainter {
     // 안 잡으면 방향 표시가 통째로 사라진다 — 에뮬레이터에서 실제로 그랬다.
     // 방향을 알려주는 표시라 자리가 조금 밀려도 뜻은 그대로다.
     const margin = 16.0;
-    final limit = math.max(margin + width / 2, size.width - margin - width / 2);
     final x = (center.dx + sign * reach * 0.6)
-        .clamp(math.min(margin + width / 2, limit), limit)
+        .clamp(margin + width / 2, size.width - margin - width / 2)
         .toDouble();
 
     // 볼록한 쪽이 돌아갈 방향을 향한다. 캔버스 각도는 3시 방향이 0이고

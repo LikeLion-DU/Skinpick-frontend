@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:skinplate/features/skin_analysis/domain/captured_image_validator.dart';
 import 'package:skinplate/features/skin_analysis/domain/entities/face_gate_result.dart';
 import 'package:skinplate/features/skin_analysis/domain/face_gate_config.dart';
+import 'package:skinplate/features/skin_analysis/domain/face_gate_rules.dart';
 
 /// 촬영본 확인 화면에 늘어놓는 항목들. **관문이 아니다** — 여기 경고가 있어도
 /// 업로드는 사용자가 [다음] 을 누르면 그대로 진행된다.
@@ -116,8 +117,31 @@ void main() {
           PhotoCheckState.warn);
     });
 
-    test('각도를 못 읽으면 확인 불가다 — ✓ 로 그리지 않는다', () {
+    test('돌아간 정도를 못 읽으면 확인 불가다 — ✓ 로 그리지 않는다', () {
       expect(of(run(yaw: null), '얼굴 각도').state, PhotoCheckState.unknown);
+      expect(of(run(yaw: null, roll: null), '얼굴 각도').state,
+          PhotoCheckState.unknown);
+    });
+
+    test('yaw 를 못 읽어도 기울기는 말해준다 — 읽을 수 있는 값을 버리지 않는다', () {
+      final result =
+          of(run(yaw: null, roll: FaceGateConfig.frontMaxRoll + 10), '얼굴 각도');
+      expect(result.state, PhotoCheckState.warn);
+      expect(result.note, contains('기울'));
+    });
+
+    // 같은 판정을 두 곳에 복사해 두면 한쪽만 고쳐진다 (CLAUDE.md 절대 금지).
+    test('실시간 게이트와 같은 판정 함수를 쓴다', () {
+      const turned =
+          (FaceGateConfig.sideMinYaw + 5) * FaceGateConfig.userLeftYawSign;
+      expect(faceOrientationIssue(FacePhotoType.left, turned, 0, null), isNull);
+      expect(of(run(type: FacePhotoType.left, yaw: turned), '얼굴 각도').state,
+          PhotoCheckState.ok);
+
+      expect(faceOrientationIssue(FacePhotoType.left, 0, 0, null),
+          FaceOrientationIssue.turnMore);
+      expect(of(run(type: FacePhotoType.left, yaw: 0), '얼굴 각도').state,
+          PhotoCheckState.warn);
     });
   });
 

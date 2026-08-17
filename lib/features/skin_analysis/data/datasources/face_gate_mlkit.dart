@@ -185,25 +185,8 @@ class MlKitFaceGate implements FaceGate {
           // 사진에 얼굴이 정확히 하나인지만 다시 확인하고 크롭한다.
           : _faceCountOnly(faces, face);
 
-      // 확인 화면에 늘어놓을 항목. **막는 데 쓰지 않는다** — 아래 gate 가 통과면
-      // 파일은 그대로 만들어지고, 경고를 보고 다시 찍을지는 사용자가 정한다.
-      //
-      // 휘도는 여기서 한 번 더 잰다. 카메라 경로의 gate(_faceCountOnly)는 얼굴
-      // 개수만 보느라 밝기를 계산하지 않는데, 확인 화면에서는 보여줘야 한다.
-      // 촬영 한 장당 한 번이고 8픽셀 간격 샘플링이라 프리뷰 FPS 와 무관하다.
-      final checks = reviewCapturedPhoto(
-        photoType: photoType,
-        faceCount: faces.length,
-        faceBox: face?.boundingBox,
-        photoSize: Size(photo.width.toDouble(), photo.height.toDouble()),
-        yaw: face?.headEulerAngleY,
-        roll: face?.headEulerAngleZ,
-        luminance:
-            face == null ? null : _stillLuminance(photo, face.boundingBox),
-      );
-
       // 통과하지 못하면 파일을 만들지 않는다 — 올릴 수 있는 경로 자체를 없앤다.
-      if (gate is! FaceGateOk) return PreparedPhoto(null, gate, checks: checks);
+      if (gate is! FaceGateOk) return PreparedPhoto(null, gate);
 
       final cropped = _crop(photo, gate.faceRect);
       // 크롭만으로도 얼굴의 실효 해상도는 크게 올라간다 — 전체 프레임을 보내면
@@ -224,6 +207,25 @@ class MlKitFaceGate implements FaceGate {
 
       final path = '${File(original.path).parent.path}/skin_${original.name}';
       await File(path).writeAsBytes(img.encodeJpg(resized, quality: 80));
+
+      // 확인 화면은 **카메라 경로에서만** 뜬다. 갤러리는 사용자가 방금 피커에서
+      // 고른 사진이라 확인 단계를 거치지 않으므로, 여기서 계산하면 아무도 안 보는
+      // 목록을 만들자고 원본 전체를 한 번 더 훑게 된다(갤러리 경로는 게이트가
+      // 이미 휘도를 쟀다). 막힌 경우에도 마찬가지라 통과한 뒤에만 만든다.
+      final checks = fullGate
+          ? const <PhotoCheck>[]
+          : reviewCapturedPhoto(
+              photoType: photoType,
+              faceCount: faces.length,
+              faceBox: face?.boundingBox,
+              photoSize: Size(photo.width.toDouble(), photo.height.toDouble()),
+              yaw: face?.headEulerAngleY,
+              roll: face?.headEulerAngleZ,
+              luminance: face == null
+                  ? null
+                  : _stillLuminance(photo, face.boundingBox),
+            );
+
       return PreparedPhoto(XFile(path), gate, checks: checks);
     } finally {
       // 기다리지 않으면 네이티브 검출기가 아직 살아 있는 채로 함수가 끝나고,

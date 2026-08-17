@@ -2,6 +2,7 @@ import 'dart:ui' show Rect, Size;
 
 import 'entities/face_gate_result.dart';
 import 'face_gate_config.dart';
+import 'face_gate_rules.dart';
 
 /// 촬영이 끝난 **최종 이미지**에 대한 확인 항목 하나.
 enum PhotoCheckState {
@@ -112,47 +113,37 @@ PhotoCheck _cut(Rect face, Size photo) {
   if (photo.isEmpty) {
     return const PhotoCheck('얼굴 잘림', PhotoCheckState.unknown);
   }
-  final slackX = photo.width * FaceGateConfig.outOfFrameSlackRatio;
-  final slackY = photo.height * FaceGateConfig.outOfFrameSlackRatio;
-
-  final cut = face.left < -slackX ||
-      face.top < -slackY ||
-      face.right > photo.width + slackX ||
-      face.bottom > photo.height + slackY;
-
-  return cut
+  // 실시간 게이트와 **같은 함수**를 쓴다. 여백 기준을 복사해 두면 한쪽만 고쳐진다.
+  return isFaceCut(face, photo)
       ? const PhotoCheck('얼굴 잘림', PhotoCheckState.warn,
           note: '얼굴 일부가 사진 밖으로 잘렸어요.')
       : const PhotoCheck('얼굴 잘림', PhotoCheckState.ok);
 }
 
+/// 각도. **판정은 [faceOrientationIssue] 가 하고 여기서는 문구만 만든다** —
+/// 실시간 안내는 "이렇게 하세요", 여기는 "이렇게 찍혔어요" 로 시제가 다를 뿐
+/// 같은 결론이어야 한다.
 PhotoCheck _angle(FacePhotoType photoType, double? yaw, double? roll) {
-  // 각도를 못 읽는 기기가 있다. 모르는 것을 ✓ 로 그리지 않는다.
-  if (yaw == null) return const PhotoCheck('얼굴 각도', PhotoCheckState.unknown);
+  final issue = faceOrientationIssue(photoType, yaw, roll, null);
 
-  switch (photoType) {
-    case FacePhotoType.front:
-      if (roll != null && roll.abs() > FaceGateConfig.frontMaxRoll) {
-        return const PhotoCheck('얼굴 각도', PhotoCheckState.warn,
-            note: '고개가 기울어져 있어요.');
-      }
-      return yaw.abs() > FaceGateConfig.frontMaxYaw
-          ? const PhotoCheck('얼굴 각도', PhotoCheckState.warn,
-              note: '정면이 아니라 조금 돌아가 있어요.')
-          : const PhotoCheck('얼굴 각도', PhotoCheckState.ok);
-
-    case FacePhotoType.left:
-      return yaw * FaceGateConfig.userLeftYawSign >= FaceGateConfig.sideMinYaw
-          ? const PhotoCheck('얼굴 각도', PhotoCheckState.ok)
-          : const PhotoCheck('얼굴 각도', PhotoCheckState.warn,
-              note: '고개가 왼쪽으로 충분히 돌아가지 않았어요.');
-
-    case FacePhotoType.right:
-      return -yaw * FaceGateConfig.userLeftYawSign >= FaceGateConfig.sideMinYaw
-          ? const PhotoCheck('얼굴 각도', PhotoCheckState.ok)
-          : const PhotoCheck('얼굴 각도', PhotoCheckState.warn,
-              note: '고개가 오른쪽으로 충분히 돌아가지 않았어요.');
+  // 기울기만으로 판정이 난 경우가 있어서 이유부터 본다 — yaw 를 못 읽어도
+  // roll 이 읽히면 "고개가 기울었다"는 말은 할 수 있다.
+  if (issue == null && yaw == null) {
+    // 돌아간 정도를 못 쟀다. 모르는 것을 통과로 그리지 않는다.
+    return const PhotoCheck('얼굴 각도', PhotoCheckState.unknown);
   }
+  if (issue == null) return const PhotoCheck('얼굴 각도', PhotoCheckState.ok);
+
+  final note = switch (issue) {
+    FaceOrientationIssue.pitched => '고개를 너무 숙이거나 들었어요.',
+    FaceOrientationIssue.tilted => '고개가 기울어져 있어요.',
+    FaceOrientationIssue.notFront => '정면이 아니라 조금 돌아가 있어요.',
+    FaceOrientationIssue.turnMore || FaceOrientationIssue.turnedWrongWay =>
+      photoType == FacePhotoType.left
+          ? '고개가 왼쪽으로 충분히 돌아가지 않았어요.'
+          : '고개가 오른쪽으로 충분히 돌아가지 않았어요.',
+  };
+  return PhotoCheck('얼굴 각도', PhotoCheckState.warn, note: note);
 }
 
 PhotoCheck _light(int? luminance) {

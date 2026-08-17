@@ -87,7 +87,7 @@ FaceGateResult evaluateFaceGate({
     );
   }
 
-  if (liveGuidance && _isCut(faceBox, frameSize)) {
+  if (liveGuidance && isFaceCut(faceBox, frameSize)) {
     return FaceGateBlocked(
       FaceGateReason.outOfFrame,
       '얼굴이 화면 밖으로 잘렸어요.\n얼굴 전체가 보이도록 맞춰주세요.',
@@ -157,7 +157,10 @@ FaceGateResult evaluateFaceGate({
 
 /// 얼굴 박스가 프레임 밖으로 나갔는가. ML Kit 박스는 프레임 경계를 넘어서도
 /// 나오므로(음수 좌표가 실제로 온다) 이 검사가 성립한다.
-bool _isCut(Rect face, Size frame) {
+///
+/// **촬영본 확인 화면도 이 함수를 쓴다.** 같은 규칙을 양쪽에 복사해 두면 여백
+/// 기준을 한쪽에서만 고치고 다른 쪽은 그대로 남는다.
+bool isFaceCut(Rect face, Size frame) {
   final slackX = frame.width * FaceGateConfig.outOfFrameSlackRatio;
   final slackY = frame.height * FaceGateConfig.outOfFrameSlackRatio;
 
@@ -193,48 +196,99 @@ String? _checkCenter(Rect face, Size frame) {
       : '얼굴이 위로 치우쳤어요.\n조금 아래로 이동해주세요.';
 }
 
-/// 통과면 null, 막으면 (이유, 안내문구).
+/// 얼굴 방향에서 무엇이 어긋났는가.
+enum FaceOrientationIssue {
+  /// 고개를 너무 숙이거나 들었다.
+  pitched,
+
+  /// 정면 단계인데 고개가 기울어졌다.
+  tilted,
+
+  /// 정면 단계인데 좌우로 돌아가 있다.
+  notFront,
+
+  /// 측면 단계인데 덜 돌렸다.
+  turnMore,
+
+  /// 측면 단계인데 **반대쪽**으로 돌렸다.
+  turnedWrongWay,
+}
+
+/// 방향 판정. **이 앱에서 얼굴 방향을 판단하는 곳은 여기 하나뿐이다.**
+///
+/// 실시간 안내와 촬영본 확인 화면이 같은 결론을 받아 문구만 각자 만든다. 규칙을
+/// 복사해 두면 [FaceGateConfig.enablePitchCheck] 를 켜는 순간 한쪽은 막고 다른
+/// 쪽은 통과로 그리는 식으로 조용히 어긋난다.
+FaceOrientationIssue? faceOrientationIssue(
+  FacePhotoType photoType,
+  double? yaw,
+  double? roll,
+  double? pitch,
+) {
+  if (FaceGateConfig.enablePitchCheck &&
+      pitch != null &&
+      pitch.abs() > FaceGateConfig.maxPitch) {
+    return FaceOrientationIssue.pitched;
+  }
+
+  // 기울기는 yaw 를 못 읽어도 판단할 수 있다. 실제로 ML Kit 은 세 각도를 같이
+  // 주거나 같이 안 주므로 순서가 동작을 바꾸지는 않지만, 읽을 수 있는 값을
+  // 버릴 이유는 없다.
+  if (photoType == FacePhotoType.front &&
+      roll != null &&
+      roll.abs() > FaceGateConfig.frontMaxRoll) {
+    return FaceOrientationIssue.tilted;
+  }
+
+  // yaw 를 못 읽는 기기가 있다. 방향을 모르는 채로 막으면 게이트가 상시 닫힌다.
+  if (yaw == null) return null;
+
+  switch (photoType) {
+    case FacePhotoType.front:
+      return yaw.abs() > FaceGateConfig.frontMaxYaw
+          ? FaceOrientationIssue.notFront
+          : null;
+
+    // 사용자 기준 좌/우로 환산한다. 미러 처리 때문에 기기마다 부호가 뒤집힐 수
+    // 있어서 userLeftYawSign 하나로 통째로 반전시킨다.
+    case FacePhotoType.left:
+      return _sideIssue(yaw * FaceGateConfig.userLeftYawSign);
+    case FacePhotoType.right:
+      return _sideIssue(-yaw * FaceGateConfig.userLeftYawSign);
+  }
+}
+
+/// [towardTarget] 은 찍어야 하는 방향으로 환산한 각도다.
+FaceOrientationIssue? _sideIssue(double towardTarget) {
+  if (towardTarget >= FaceGateConfig.sideMinYaw) return null;
+  return towardTarget <= -FaceGateConfig.sideMinYaw
+      ? FaceOrientationIssue.turnedWrongWay
+      : FaceOrientationIssue.turnMore;
+}
+
+/// 통과면 null, 막으면 (이유, 안내문구). 판정은 [faceOrientationIssue] 가 하고
+/// 여기서는 **지금 무엇을 하라는** 말로만 옮긴다.
 (FaceGateReason, String)? _checkOrientation(
   FacePhotoType photoType,
   double? yaw,
   double? roll,
   double? pitch,
 ) {
-  // yaw 를 못 읽는 기기가 있다. 방향을 모르는 채로 막으면 게이트가 상시 닫힌다.
-  if (yaw == null) return null;
+  final issue = faceOrientationIssue(photoType, yaw, roll, pitch);
+  if (issue == null) return null;
 
-  if (FaceGateConfig.enablePitchCheck &&
-      pitch != null &&
-      pitch.abs() > FaceGateConfig.maxPitch) {
-    return (FaceGateReason.wrongOrientation, '고개를 너무 숙이거나 들지 말아주세요.');
-  }
-
-  switch (photoType) {
-    case FacePhotoType.front:
-      if (roll != null && roll.abs() > FaceGateConfig.frontMaxRoll) {
-        return (FaceGateReason.wrongOrientation, '고개를 기울이지 말고 촬영해주세요.');
-      }
-      if (yaw.abs() > FaceGateConfig.frontMaxYaw) {
-        return (FaceGateReason.wrongOrientation, '정면을 바라보고 촬영해주세요.');
-      }
-      return null;
-
-    // 사용자 기준 좌/우로 환산한다. 미러 처리 때문에 기기마다 부호가 뒤집힐 수
-    // 있어서 userLeftYawSign 하나로 통째로 반전시킨다.
-    case FacePhotoType.left:
-      final toUserLeft = yaw * FaceGateConfig.userLeftYawSign;
-      if (toUserLeft >= FaceGateConfig.sideMinYaw) return null;
-      return toUserLeft <= -FaceGateConfig.sideMinYaw
-          ? (FaceGateReason.wrongOrientation, '왼쪽 얼굴을 바라보고 촬영해주세요.')
-          : (FaceGateReason.wrongOrientation, '얼굴을 왼쪽으로 조금 더 돌려주세요.');
-
-    case FacePhotoType.right:
-      final toUserRight = -yaw * FaceGateConfig.userLeftYawSign;
-      if (toUserRight >= FaceGateConfig.sideMinYaw) return null;
-      return toUserRight <= -FaceGateConfig.sideMinYaw
-          ? (FaceGateReason.wrongOrientation, '오른쪽 얼굴을 바라보고 촬영해주세요.')
-          : (FaceGateReason.wrongOrientation, '얼굴을 오른쪽으로 조금 더 돌려주세요.');
-  }
+  final guide = switch (issue) {
+    FaceOrientationIssue.pitched => '고개를 너무 숙이거나 들지 말아주세요.',
+    FaceOrientationIssue.tilted => '고개를 기울이지 말고 촬영해주세요.',
+    FaceOrientationIssue.notFront => '정면을 바라보고 촬영해주세요.',
+    FaceOrientationIssue.turnMore => photoType == FacePhotoType.left
+        ? '얼굴을 왼쪽으로 조금 더 돌려주세요.'
+        : '얼굴을 오른쪽으로 조금 더 돌려주세요.',
+    FaceOrientationIssue.turnedWrongWay => photoType == FacePhotoType.left
+        ? '왼쪽 얼굴을 바라보고 촬영해주세요.'
+        : '오른쪽 얼굴을 바라보고 촬영해주세요.',
+  };
+  return (FaceGateReason.wrongOrientation, guide);
 }
 
 /// 검출된 얼굴에 여백을 붙인다. 딱 맞게 자르면 이마와 턱이 잘리는데,
