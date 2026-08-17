@@ -60,41 +60,37 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('AI 타입은 칩으로 따로 단다 — 제목은 갭 카드와 같은 값을 유지한다', (tester) async {
+  testWidgets('제목은 서버 문구 하나다 — 타입을 두 번 말하지 않는다', (tester) async {
     await tester.binding.setSurfaceSize(designSize);
     await tester.pumpWidget(host(data('skin_latest')));
     await tester.pumpAndSettle();
 
-    // 제목을 AI 관찰값으로 덮으면 갭 카드와 한 화면에서 어긋난다.
-    expect(find.text('건성 피부'), findsOneWidget);
-    // 서버 문구는 그대로 쓴다 — 뒤에 ' 피부' 같은 것을 붙이지 않는다.
-    expect(find.text('건성 · 민감 경향'), findsOneWidget);
+    // 서버 문구를 그대로 쓴다 — 뒤에 ' 피부' 같은 것을 붙이지 않는다.
+    expect(find.text('건성 · 붉은기'), findsOneWidget);
 
-    // 칩이 제목을 밀어내 두 줄로 접히면 시안이 깨진다. 접힘은 예외가 아니라
-    // takeException 으로는 안 잡히므로 높이로 본다.
-    final titleHeight = tester.getSize(find.text('건성 피부')).height;
-    expect(titleHeight, lessThan(30), reason: '제목이 두 줄로 접혔다');
+    // 예전에는 제목("건성 피부")과 칩("건성 · 민감 경향")이 나란히 있었다.
+    // 서버가 타입을 두 벌로 내던 시절의 구조라, 지금 같이 두면 같은 말이 두 번이다.
+    expect(find.text('건성 피부'), findsNothing);
 
-    // 기본 글자 크기에서는 제목과 칩이 같은 줄에 나란히 선다(시안). 폰트 크기가
-    // 달라 세로 중앙이 몇 px 어긋나므로 한 줄 높이 안인지로 본다.
-    final gap = (tester.getTopLeft(find.text('건성 · 민감 경향')).dy -
-            tester.getTopLeft(find.text('건성 피부')).dy)
-        .abs();
-    expect(gap, lessThan(titleHeight), reason: '칩이 아랫줄로 내려갔다');
+    // 제목이 두 줄로 접히면 시안이 깨진다. 접힘은 takeException 으로 안 잡혀 높이로 본다.
+    expect(tester.getSize(find.text('건성 · 붉은기')).height, lessThan(30),
+        reason: '제목이 두 줄로 접혔다');
   });
 
-  /// 서버가 만든 칩 문구는 길이가 정해져 있지 않다. 제목·칩·점수를 한 줄에
-  /// 나란히 두면 셋이 폭을 나눠 갖다가 잘린다 — 2026-08-17 에뮬레이터 QA 에서
+  /// 서버가 만든 제목 문구는 길이가 정해져 있지 않다. 제목과 점수를 한 줄에
+  /// 나란히 두면 둘이 폭을 나눠 갖다가 잘린다 — 2026-08-17 에뮬레이터 QA 에서
   /// 실서버 문구가 기본 글자 크기에도 "복합성 · T존 ..." 으로 잘렸다.
+  /// 상태가 둘 붙으면 문구는 다시 그만큼 길어진다.
   ///
-  /// `dy` 로는 못 잡는다. 폰트 크기가 달라 칩 top 이 원래 제목보다 아래라,
-  /// 같은 줄에서 잘려도 "아랫줄로 내려갔다" 와 구분되지 않는다. 잘림 자체를 본다.
+  /// `didExceedMaxLines` 로 보면 안 된다. 제목에는 maxLines 가 없어서 구조적으로
+  /// 항상 false 라, 누가 maxLines 를 되돌려 놓을 때 말고는 아무것도 잡지 못한다.
+  /// 폭이 모자란데도 한 줄에 머물렀는지를 본다 — 그게 잘림이다.
   for (final (label, scale) in <(String, double)>[
     ('기본 글자 크기', 1.0),
     ('글자 크기 2.0', 2.0),
   ]) {
-    testWidgets('$label — 긴 서버 문구도 칩에서 잘리지 않는다', (tester) async {
-      const long = '복합성 · T존 유분 경향(수부지)';
+    testWidgets('$label — 긴 서버 문구도 제목에서 잘리지 않는다', (tester) async {
+      const long = '복합성 · 수분 부족 · 장벽 약화(수부지)';
       final json = Map<String, dynamic>.from(data('skin_latest'));
       json['skinType'] = {
         ...json['skinType'] as Map<String, dynamic>,
@@ -105,31 +101,28 @@ void main() {
       await tester.pumpWidget(host(json, textScale: scale));
       await tester.pumpAndSettle();
 
-      // `didExceedMaxLines` 로 보면 안 된다. 지금 칩에는 maxLines 가 없어서
-      // 구조적으로 항상 false 라, 누가 maxLines 를 되돌려 놓을 때 말고는 아무것도
-      // 잡지 못한다. 폭이 모자란데도 한 줄에 머물렀는지를 본다 — 그게 잘림이다.
-      final chip = tester.renderObject<RenderParagraph>(find.text(long));
-      if (chip.getMaxIntrinsicWidth(double.infinity) > chip.size.width) {
+      final title = tester.renderObject<RenderParagraph>(find.text(long));
+      if (title.getMaxIntrinsicWidth(double.infinity) > title.size.width) {
         // 폭을 안 재면 한 줄이었을 높이. 접혔다면 이보다 커져야 한다.
-        final oneLine = chip.getMinIntrinsicHeight(double.infinity);
-        expect(chip.size.height, greaterThan(oneLine),
+        final oneLine = title.getMinIntrinsicHeight(double.infinity);
+        expect(title.size.height, greaterThan(oneLine),
             reason: '폭이 모자란데 한 줄에 머물렀다 — 문구가 잘렸다');
       }
       expect(tester.takeException(), isNull);
     });
   }
 
-  testWidgets('AI 타입이 있으면 앱이 홍조 임계로 민감도를 따로 판정하지 않는다', (tester) async {
+  testWidgets('앱이 홍조 임계로 민감도를 따로 판정하지 않는다', (tester) async {
     await tester.binding.setSurfaceSize(designSize);
-    await tester.pumpWidget(host(data('skin_latest')));  // redness 64 → 기존 배지 조건
+    await tester.pumpWidget(host(data('skin_latest')));  // redness 64 → 옛 배지 조건
     await tester.pumpAndSettle();
 
-    // 서버가 "민감 경향" 이라고 한 옆에 앱이 "민감도 높음" 을 또 달면
-    // 두 판정이 어긋나는 날 어느 쪽을 믿을지 알 수 없다.
+    // 서버가 "붉은기" 라고 한 옆에 앱이 "민감도 높음" 을 또 달면
+    // 두 판정이 어긋나는 날 어느 쪽을 믿을지 알 수 없다. 이제 임계는 서버에만 있다.
     expect(find.text('민감도 높음'), findsNothing);
   });
 
-  testWidgets('확장 필드가 없던 기록이면 나이 카드를 숨기고 기존 문구로 떨어진다', (tester) async {
+  testWidgets('확장 필드가 없던 기록이면 나이 카드를 숨기고 타입만 남는다', (tester) async {
     // 이 기능 이전에 저장된 분석은 서버가 세 키를 통째로 생략한다(non_null).
     // 빈 값으로 그리면 없는 데이터를 보여주는 셈이라 카드를 통째로 뺀다.
     final legacy = Map<String, dynamic>.from(data('skin_latest'))
@@ -142,19 +135,30 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('AI 추정 피부 나이'), findsNothing);
+    // 서버 문구가 없으면 갭 카드가 들고 있는 같은 타입으로 떨어진다.
     expect(find.text('건성 피부'), findsOneWidget);
-    // AI 타입이 없으면 기존 민감도 배지로 떨어진다 — 화면이 비지 않는다.
-    expect(find.text('민감도 높음'), findsOneWidget);
+    expect(find.text('민감도 높음'), findsNothing);
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('타입을 건너뛴 사용자도 오늘 측정한 타입이 제목에 나온다', (tester) async {
+    // 갭 카드는 자가 신고가 없으면 통째로 없다. 제목이 그쪽에 기대면
+    // 건너뛴 사용자에게는 오늘 측정한 타입이 영영 안 나온다.
+    final noGap = Map<String, dynamic>.from(data('skin_latest'))
+      ..remove('skinTypeGap');
+
+    await tester.binding.setSurfaceSize(designSize);
+    await tester.pumpWidget(host(noGap));
+    await tester.pumpAndSettle();
+
+    expect(find.text('건성 · 붉은기'), findsOneWidget);
+    expect(find.text('오늘의 피부'), findsNothing);
+  });
+
   /// 시스템 글자 크기를 키운 사용자. 카드 제목 줄에는 안 줄어드는 위젯을 하나도
-  /// 두면 안 된다 — 제목·배지·점수가 전부 고정폭이면 시안 폭에서 그대로 넘친다.
-  ///
-  /// 예전 기록 쪽이 더 위험하다. AI 칩(Flexible)이 없어서 '민감도 높음' 배지가
-  /// 고정폭으로 들어오기 때문이다.
+  /// 두면 안 된다 — 제목과 점수가 둘 다 고정폭이면 시안 폭에서 그대로 넘친다.
   for (final (label, mutate) in <(String, void Function(Map<String, dynamic>))>[
-    ('AI 타입이 있는 기록', _keepAll),
+    ('타입 문구가 있는 기록', _keepAll),
     ('확장 필드가 없던 기록', _stripExtensions),
   ]) {
     testWidgets('$label — 글자 크기 2.0 에서도 넘치지 않는다', (tester) async {

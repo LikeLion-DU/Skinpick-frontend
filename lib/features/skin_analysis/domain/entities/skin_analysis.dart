@@ -7,7 +7,7 @@ class SkinAnalysis {
     required this.skinScore,
     required this.metrics,
     this.metricDetails = const [],
-    this.aiSkinType,
+    this.skinType,
     this.skinAge,
     required this.summary,
     required this.highlights,
@@ -23,9 +23,9 @@ class SkinAnalysis {
   /// 이 기능 이전에 저장된 분석이면 근거가 비어 있다.
   final List<ScoredItem> metricDetails;
 
-  /// AI 가 사진에서 읽은 피부 타입. null = 예전 분석이라 서버가 키를 생략했다.
-  /// [skinTypeGap]`.observed`(규칙 도출)와는 다른 값이고, 갈릴 수 있다.
-  final AiSkinType? aiSkinType;
+  /// 오늘의 피부 타입 + 상태. `primary` 는 [skinTypeGap]`.observed` 와 항상 같은 값이다 —
+  /// 둘 다 서버가 같은 규칙으로 낸다. null 이면 화면이 자가 신고 타입으로 떨어진다.
+  final ObservedSkinType? skinType;
 
   /// AI 추정 피부 나이. null = 예전 분석이거나 서버가 쓸 수 없다고 판단했다.
   /// 그 경우 카드를 통째로 숨긴다 — 빈 값으로 그리지 않는다.
@@ -62,14 +62,16 @@ class ScoredItem {
   final List<String> evidence;
 }
 
-/// AI 관찰 피부 타입. 화면 문구는 서버가 조합해 준 [label] 을 그대로 쓴다.
-class AiSkinType {
-  const AiSkinType({required this.primary, required this.label});
+/// 오늘 관찰된 피부 타입 + 상태. 화면 문구는 서버가 조합해 준 [label] 을 그대로 쓴다.
+class ObservedSkinType {
+  const ObservedSkinType({required this.primary, required this.label});
 
   /// 모르는 값이면 null. "미선택"과 섞이지 않도록 기본값을 두지 않는다.
   final SkinType? primary;
 
-  /// "건성 · 민감 경향" 처럼 이미 조합된 문구. 비어 있을 수 있다.
+  /// "건성 · 붉은기" · "복합성 · 수분 부족(수부지)" 처럼 타입과 상태가 이미 조합된 문구.
+  /// 비어 있을 수 있다. **뒤에 아무것도 이어 붙이지 않는다** — 괄호로 끝나는 문구가
+  /// 있어서 "…(수부지) 피부" 로 깨진다.
   final String label;
 }
 
