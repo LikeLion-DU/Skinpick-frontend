@@ -1,0 +1,140 @@
+{
+    "success": true,
+    "data": {
+        "from": "2026-08-11",
+        "to": "2026-08-17",
+        "averageDailyScore": 76,
+        "grade": "GOOD",
+        "totalDays": 7,
+        "recordedDays": 5,
+        "recordCount": 12,
+        "dailyScores": [
+            {
+                "date": "2026-08-11",
+                "dailyScore": 68,
+                "grade": "GOOD"
+            },
+            {
+                "date": "2026-08-12",
+                "dailyScore": 74,
+                "grade": "GOOD"
+            },
+            {
+                "date": "2026-08-14",
+                "dailyScore": 91,
+                "grade": "EXCELLENT"
+            },
+            {
+                "date": "2026-08-15",
+                "dailyScore": 64,
+                "grade": "GOOD"
+            },
+            {
+                "date": "2026-08-17",
+                "dailyScore": 83,
+                "grade": "EXCELLENT"
+            }
+        ],
+        "nutrition": [
+            {
+                "nutrient": "CALORIES",
+                "label": "칼로리",
+                "unit": "kcal",
+                "amount": 1560.0,
+                "target": 2000,
+                "percent": 78,
+                "status": "NORMAL",
+                "higherIsWorse": true
+            },
+            {
+                "nutrient": "CARB",
+                "label": "탄수화물",
+                "unit": "g",
+                "amount": 96.0,
+                "target": 300,
+                "percent": 32,
+                "status": "LOW",
+                "higherIsWorse": true
+            },
+            {
+                "nutrient": "PROTEIN",
+                "label": "단백질",
+                "unit": "g",
+                "amount": 85.5,
+                "target": 55,
+                "percent": 155,
+                "status": "HIGH",
+                "higherIsWorse": false
+            },
+            {
+                "nutrient": "FAT",
+                "label": "지방",
+                "unit": "g",
+                "amount": 72.0,
+                "target": 50,
+                "percent": 144,
+                "status": "HIGH",
+                "higherIsWorse": true
+            },
+            {
+                "nutrient": "SODIUM",
+                "label": "나트륨",
+                "unit": "mg",
+                "amount": 5550.0,
+                "target": 2000,
+                "percent": 278,
+                "status": "HIGH",
+                "higherIsWorse": true
+            },
+            {
+                "nutrient": "SUGAR",
+                "label": "당류",
+                "unit": "g",
+                "amount": 18.6,
+                "target": 50,
+                "percent": 37,
+                "status": "LOW",
+                "higherIsWorse": true
+            }
+        ],
+        "concerns": [
+            {
+                "concern": "ACNE",
+                "label": "여드름",
+                "score": 74,
+                "status": "GOOD",
+                "changeFromFirstDay": 8
+            },
+            {
+                "concern": "REDNESS",
+                "label": "민감/홍조",
+                "score": 58,
+                "status": "NORMAL",
+                "changeFromFirstDay": -3
+            },
+            {
+                "concern": "PUFFINESS",
+                "label": "부기",
+                "score": 62,
+                "status": "GOOD",
+                "changeFromFirstDay": 0
+            }
+        ],
+        "bestDay": {
+            "date": "2026-08-14",
+            "dailyScore": 91,
+            "grade": "EXCELLENT"
+        },
+        "worstDay": {
+            "date": "2026-08-15",
+            "dailyScore": 64,
+            "grade": "GOOD"
+        },
+        "aiComment": {
+            "goodPoint": "단백질이 충분했고, 발효식품도 포함해 기록했어요.",
+            "improvePoint": "나트륨과 매운맛 자극이 함께 기록돼, 섭취 빈도를 줄여보면 좋아요.",
+            "habit": "돼지고기 김치찌개를 3끼 모두 기록했어요.",
+            "nextWeek": "김치찌개 대신 덜 짠 메뉴를 한 끼 선택해보세요."
+        }
+    }
+}

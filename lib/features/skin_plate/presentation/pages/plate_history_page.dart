@@ -7,19 +7,21 @@ import '../../../../app/theme/app_colors.dart';
 import '../../../../app/theme/app_theme.dart';
 import '../../../../core/di/providers.dart';
 import '../../../../core/widgets/app_widgets.dart';
-import '../../../../shared/enums/score_grade.dart';
-import '../../../../shared/widgets/app_bottom_nav.dart';
+import '../../../../shared/enums/skin_level.dart';
 import '../../../../shared/widgets/score_badge.dart';
+import '../../../report/presentation/providers/report_providers.dart';
 import '../../data/datasources/plate_image_store.dart';
 import '../../domain/entities/plate_history.dart';
 import '../providers/plate_history_provider.dart';
-import '../providers/weekly_report_provider.dart';
-import '../widgets/weekly_summary_card.dart';
 
 /// S09 — 오늘의 기록. 시안대로 **하루 단위**로 보여주고 ‹ › 로 날짜를 넘긴다.
 ///
 /// **저장한 것만 보인다.** 촬영해서 분석만 하고 나간 음식은 여기에 없다 —
 /// 그게 분석과 기록을 나눈 이유다.
+///
+/// 하단 네비를 두지 않는다. 세 자리(홈·촬영·리포트) 중 어디에도 속하지 않는
+/// 화면이라 알약이 전부 꺼진 막대만 남고, 그건 "어느 탭인지 모르겠다"로 읽힌다.
+/// 홈의 "전체 기록 보기"에서 push 로 들어오므로 뒤로가기가 나가는 길이다.
 ///
 /// 사진은 서버가 주지 않는다. 기록이 확정될 때 앱이 기기에 남긴
 /// `<documents>/plates/{plateId}.jpg` 를 읽는다. 없으면 음식 아이콘이다.
@@ -62,15 +64,20 @@ class _PlateHistoryPageState extends ConsumerState<PlateHistoryPage> {
     final history = ref.watch(plateHistoryProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('오늘의 기록')),
+      appBar: AppBar(
+        title: const Text('오늘의 기록'),
+        // 기록 저장 후 [기록 보러 가기] 는 `go` 라 이 화면이 스택의 **유일한**
+        // 페이지가 된다. 그때 기본 뒤로가기 화살표는 아예 그려지지 않는데,
+        // 하단 네비까지 없앴으므로 나갈 문이 하나도 남지 않는다.
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          tooltip: '뒤로',
+          onPressed: () =>
+              context.canPop() ? context.pop() : context.go(Routes.home),
+        ),
+      ),
       body: Column(
         children: [
-          // 하루씩 넘겨 보는 화면 위에 이번 주 전체를 한 줄로 얹는다.
-          // 기록이 없는 주에는 카드가 스스로 사라진다.
-          const Padding(
-            padding: EdgeInsets.fromLTRB(20, 12, 20, 0),
-            child: WeeklySummaryCard(),
-          ),
           _DateSelector(
             date: _selected,
             canGoBack: _canGoBack,
@@ -81,10 +88,7 @@ class _PlateHistoryPageState extends ConsumerState<PlateHistoryPage> {
             child: RefreshIndicator(
               // invalidate 는 void 라 당기자마자 스피너가 접힌다. 요청이 끝날
               // 때까지 붙잡으려면 새 값을 기다려야 한다.
-              onRefresh: () => Future.wait([
-                ref.refresh(plateHistoryProvider.future),
-                ref.refresh(weeklyReportProvider.future),
-              ]),
+              onRefresh: () => ref.refresh(plateHistoryProvider.future),
               child: history.when(
                 loading: () =>
                     const Center(child: CircularProgressIndicator()),
@@ -112,18 +116,6 @@ class _PlateHistoryPageState extends ConsumerState<PlateHistoryPage> {
             ),
           ),
         ],
-      ),
-      bottomNavigationBar: AppBottomNav(
-        current: AppTab.records,
-        onCapture: () => context.push(Routes.foodCapture),
-        onTabSelected: (tab) {
-          // 홈에서 push 로 들어오면 pop 이 맞지만, 기록 저장 후 [기록 보러 가기] 는
-          // go 로 와서 이 화면이 스택의 유일한 페이지다. 그때 pop 하면 go_router 가
-          // "There is nothing to pop" 을 던지고 화면은 그대로 — 홈으로 갈 문이 없다.
-          if (tab == AppTab.home) {
-            context.canPop() ? context.pop() : context.go(Routes.home);
-          }
-        },
       ),
     );
   }
@@ -206,8 +198,7 @@ class _DayView extends StatelessWidget {
     return ListView(
       physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.fromLTRB(
-          AppTheme.pagePadding, 8, AppTheme.pagePadding,
-          AppBottomNav.totalHeight + 16),
+          AppTheme.pagePadding, 8, AppTheme.pagePadding, 32),
       children: [
         for (final item in day!.plates)
           Padding(
@@ -275,13 +266,16 @@ class _DeleteButtonState extends ConsumerState<_DeleteButton> {
     // 이미 지워진 카드가 다시 눌린다 — 상세로 들어가면 404, × 를 또 누르면 방금
     // 성공한 삭제에 대해 "지우지 못했어요" 가 뜬다.
     if (result.isSuccess) {
-      // 지운 끼니가 이번 주 평균에 아직 섞여 있다. 카드가 방금 지운 기록을
-      // 포함한 숫자를 들고 있으면 삭제가 안 된 것처럼 보인다.
+      // 지운 끼니가 리포트의 점수·영양에 아직 섞여 있다. 방금 지운 기록을
+      // 포함한 숫자가 남아 있으면 삭제가 안 된 것처럼 보인다.
+      // 가족(family) 전체를 버린다 — 어느 날짜·어느 주가 영향을 받는지
+      // 앱이 판단하려면 결국 서버의 집계 규칙을 흉내 내게 된다.
       //
       // **await 앞이어야 한다.** 뒤에 두면 삭제와 목록 재조회(~1초) 사이에
       // 사용자가 뒤로 나갔을 때 이 위젯이 dispose 된 뒤 ref 를 만지게 되고,
       // riverpod 이 "Cannot use ref after the widget was disposed" 를 던진다.
-      // 그러면 주간 평균은 지운 끼니를 그대로 안고 있고 실패 안내도 못 뜬다.
+      // 그러면 리포트는 지운 끼니를 그대로 안고 있고 실패 안내도 못 뜬다.
+      ref.invalidate(dailyReportProvider);
       ref.invalidate(weeklyReportProvider);
 
       // ignore: unused_result — 새 목록 자체가 아니라 "다 받았다"는 시점만 쓴다.
@@ -331,7 +325,7 @@ class _MealCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final grade = ScoreGrade.fromScore(item.plateScore);
+    final grade = SkinLevel.fromScore(item.plateScore);
     final time = '${item.recordedAt.hour}:'
         '${item.recordedAt.minute.toString().padLeft(2, '0')}';
 
@@ -412,7 +406,7 @@ class _MealCard extends ConsumerWidget {
                             fontWeight: FontWeight.w700,
                             // 시안이 주의 점수를 빨강이 아니라 오렌지로 쓴다.
                             // 빨강은 BAD 라벨 전용이다.
-                            color: grade == ScoreGrade.good
+                            color: grade.isGood
                                 ? AppColors.good
                                 : AppColors.primary,
                           ),

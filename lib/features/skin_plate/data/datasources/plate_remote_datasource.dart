@@ -62,15 +62,6 @@ class PlateRemoteDataSource {
     return PlateHistoryDto.fromJson(requireEnvelopeData(response));
   }
 
-  /// 주간 리포트. 기준일은 **서버의 오늘(KST)** 이라 앱이 날짜를 보내지 않는다.
-  Future<PlateReportDto> weeklyReport() async {
-    final response = await _dio.get<dynamic>(
-      '/reports',
-      queryParameters: <String, dynamic>{'period': 'WEEK'},
-    );
-    return PlateReportDto.fromJson(requireEnvelopeData(response));
-  }
-
   /// `toIso8601String()` 은 시각까지 붙어서 서버의 `ISO.DATE` 바인딩이 400 을 낸다.
   static String _isoDate(DateTime date) =>
       '${date.year.toString().padLeft(4, '0')}-'

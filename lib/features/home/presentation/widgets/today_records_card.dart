@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../app/theme/app_colors.dart';
 import '../../../../app/theme/app_theme.dart';
-import '../../../../shared/enums/score_grade.dart';
+import '../../../../shared/enums/skin_level.dart';
 import '../../../skin_plate/data/datasources/plate_image_store.dart';
 import '../../../skin_plate/domain/entities/plate_history.dart';
 
@@ -188,7 +188,7 @@ class _Row extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final grade = ScoreGrade.fromScore(item.plateScore);
+    final grade = SkinLevel.fromScore(item.plateScore);
 
     return GestureDetector(
       onTap: onTap,
@@ -231,15 +231,7 @@ class _Row extends StatelessWidget {
                 color: grade.accentColor,
               )),
           const SizedBox(width: 6),
-          Icon(
-            switch (grade) {
-              ScoreGrade.good => Icons.sentiment_satisfied_alt,
-              ScoreGrade.normal => Icons.sentiment_neutral,
-              ScoreGrade.caution => Icons.sentiment_dissatisfied,
-            },
-            size: 20,
-            color: grade.accentColor,
-          ),
+          Icon(grade.faceIcon, size: 20, color: grade.accentColor),
         ],
       ),
     );

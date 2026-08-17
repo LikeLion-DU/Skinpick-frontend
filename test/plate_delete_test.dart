@@ -9,12 +9,10 @@ import 'package:skinplate/core/error/failure.dart';
 import 'package:skinplate/core/result/result.dart';
 import 'package:skinplate/features/skin_plate/domain/entities/plate_analysis.dart';
 import 'package:skinplate/features/skin_plate/domain/entities/plate_history.dart';
-import 'package:skinplate/features/skin_plate/domain/entities/weekly_report.dart';
 import 'package:skinplate/features/skin_plate/domain/entities/skin_plate.dart';
 import 'package:skinplate/features/skin_plate/domain/repositories/plate_repository.dart';
 import 'package:skinplate/features/skin_plate/presentation/pages/plate_history_page.dart';
 import 'package:skinplate/features/skin_plate/presentation/providers/plate_history_provider.dart';
-import 'package:skinplate/shared/widgets/app_bottom_nav.dart';
 import 'package:skinplate/shared/enums/meal_type.dart';
 import 'package:skinplate/shared/enums/plate_action_code.dart';
 
@@ -95,8 +93,8 @@ void main() {
 
   testWidgets('기록 화면이 스택의 유일한 페이지여도 홈으로 나갈 수 있다', (tester) async {
     // 저장 후 [기록 보러 가기] 는 go 로 온다 — 그러면 pop 할 것이 없다.
-    // 홈 탭이 pop 만 하면 go_router 가 "There is nothing to pop" 을 던지고
-    // 화면은 그대로다. 촬영 버튼 말고는 나갈 문이 없어진다.
+    // 뒤로가기가 pop 만 하면 go_router 가 "There is nothing to pop" 을 던지고
+    // 화면은 그대로다. 하단 네비도 없는 화면이라 나갈 문이 하나도 안 남는다.
     final router = GoRouter(
       initialLocation: Routes.home,
       routes: [
@@ -122,9 +120,9 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('오늘의 기록'), findsOneWidget);
 
-    // 하단 홈 탭의 콜백을 그대로 부른다. 아이콘 좌표를 찍으면 시안이 바뀔 때마다
-    // 테스트가 흔들리는데, 여기서 보려는 것은 그 콜백이 어디로 보내느냐다.
-    tester.widget<AppBottomNav>(find.byType(AppBottomNav)).onTabSelected(AppTab.home);
+    // 앱바의 뒤로가기가 유일한 문이다. 기본 뒤로가기 화살표는 pop 할 것이
+    // 없으면 아예 그려지지 않으므로, 화면이 직접 넣은 leading 이어야 한다.
+    await tester.tap(find.byIcon(Icons.arrow_back));
     await tester.pumpAndSettle();
 
     expect(tester.takeException(), isNull,
@@ -201,8 +199,6 @@ class _FakeRepository implements PlateRepository {
   @override
   Future<Result<List<PlateHistoryDay>>> history(DateTime from, DateTime to) =>
       throw UnimplementedError();
-  @override
-  Future<Result<WeeklyReport>> weeklyReport() => throw UnimplementedError();
   @override
   Future<Result<PlateSimulation>> simulateAnalysis(
           String analysisToken, List<PlateActionCode> actions) =>

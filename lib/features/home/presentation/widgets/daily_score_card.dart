@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../app/theme/app_colors.dart';
 import '../../../../app/theme/app_theme.dart';
-import '../../../../shared/enums/score_grade.dart';
+import '../../../../shared/enums/skin_level.dart';
 import '../../../../shared/widgets/score_badge.dart';
 
 /// 홈 맨 위의 "오늘의 피부 식단 점수" 카드.
@@ -27,7 +27,9 @@ class DailyScoreCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final grade = score == null ? null : ScoreGrade.fromScore(score!);
+    // 히스토리 응답에는 grade 필드가 없어 점수에서 낸다. 경계는 서버와 같은
+    // 표(SkinLevel.fromScore)를 지나므로 리포트와 등급이 갈리지 않는다.
+    final grade = score == null ? null : SkinLevel.fromScore(score!);
 
     return Container(
       height: 156,
@@ -85,7 +87,7 @@ class _ScoreLine extends StatelessWidget {
   const _ScoreLine({required this.score, required this.grade});
 
   final int? score;
-  final ScoreGrade? grade;
+  final SkinLevel? grade;
 
   @override
   Widget build(BuildContext context) {

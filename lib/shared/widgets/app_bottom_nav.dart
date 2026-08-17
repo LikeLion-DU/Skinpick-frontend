@@ -4,7 +4,14 @@ import 'package:flutter_svg/flutter_svg.dart';
 import '../../app/theme/app_colors.dart';
 
 /// 어느 탭에 있는지. 알약 배경이 어디로 갈지를 이 값이 정한다.
-enum AppTab { home, records }
+///
+/// 오른쪽 자리는 기록이 아니라 **리포트**다. 기록은 사라지지 않았고 홈의
+/// "오늘의 기록" 카드에서 들어간다 — 하루에 한 번 보는 화면(기록)보다
+/// 매일 보는 화면(리포트)이 탭 자리를 갖는 편이 맞다.
+///
+/// 아이콘은 그대로 `nav_records.svg` 를 쓴다. 목록 모양이라 리포트에도 맞고,
+/// 아이콘만 바꾸면 사용자가 그 자리를 새 기능으로 읽는다.
+enum AppTab { home, report }
 
 /// 시안의 하단 네비. 떠 있는 흰 알약 위에 촬영 버튼이 걸쳐 있다.
 ///
@@ -80,8 +87,8 @@ class AppBottomNav extends StatelessWidget {
                     child: _Tab(
                       asset: 'assets/icons/nav_records.svg',
                       size: 32,
-                      selected: current == AppTab.records,
-                      onTap: () => onTabSelected(AppTab.records),
+                      selected: current == AppTab.report,
+                      onTap: () => onTabSelected(AppTab.report),
                     ),
                   ),
                 ],

@@ -10,7 +10,6 @@ import 'package:skinplate/core/error/failure.dart';
 import 'package:skinplate/core/result/result.dart';
 import 'package:skinplate/features/skin_plate/domain/entities/plate_analysis.dart';
 import 'package:skinplate/features/skin_plate/domain/entities/plate_history.dart';
-import 'package:skinplate/features/skin_plate/domain/entities/weekly_report.dart';
 import 'package:skinplate/features/skin_plate/domain/entities/skin_plate.dart';
 import 'package:skinplate/features/skin_plate/domain/repositories/plate_repository.dart';
 import 'package:skinplate/features/skin_plate/presentation/providers/plate_notifier.dart';
@@ -615,6 +614,4 @@ class _FakeRepository implements PlateRepository {
   Future<Result<List<PlateHistoryDay>>> history(DateTime from, DateTime to) =>
       throw UnimplementedError();
 
-  @override
-  Future<Result<WeeklyReport>> weeklyReport() => throw UnimplementedError();
 }

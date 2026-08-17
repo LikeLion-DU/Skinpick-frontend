@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../app/theme/app_colors.dart';
 import '../../../../app/theme/app_theme.dart';
-import '../../../../shared/enums/score_grade.dart';
+import '../../../../shared/enums/skin_level.dart';
 
 /// 분석 결과 맨 위의 "내 피부 적합도" 카드.
 ///
@@ -25,7 +25,7 @@ class PlateScoreCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final grade = ScoreGrade.fromScore(score);
+    final grade = SkinLevel.fromScore(score);
 
     return Container(
       height: 156,
@@ -82,7 +82,7 @@ class PlateScoreCard extends StatelessWidget {
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Text(
-                          grade.badgeLabel,
+                          grade.label,
                           style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w500,
@@ -118,7 +118,7 @@ class ScoreGauge extends StatelessWidget {
   const ScoreGauge({super.key, required this.score, required this.grade});
 
   final int score;
-  final ScoreGrade grade;
+  final SkinLevel grade;
 
   @override
   Widget build(BuildContext context) {
@@ -133,15 +133,7 @@ class ScoreGauge extends StatelessWidget {
           color: grade.accentColor,
         ),
         child: Center(
-          child: Icon(
-            switch (grade) {
-              ScoreGrade.good => Icons.sentiment_satisfied_alt,
-              ScoreGrade.normal => Icons.sentiment_neutral,
-              ScoreGrade.caution => Icons.sentiment_dissatisfied,
-            },
-            size: 44,
-            color: grade.accentColor,
-          ),
+          child: Icon(grade.faceIcon, size: 44, color: grade.accentColor),
         ),
       ),
     );

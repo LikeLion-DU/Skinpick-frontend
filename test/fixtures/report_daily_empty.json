@@ -1,0 +1,12 @@
+{
+    "success": true,
+    "data": {
+        "date": "2026-08-01",
+        "recordCount": 0,
+        "nutrition": [],
+        "concerns": [],
+        "meals": [],
+        "goodPoints": [],
+        "improvePoints": []
+    }
+}
