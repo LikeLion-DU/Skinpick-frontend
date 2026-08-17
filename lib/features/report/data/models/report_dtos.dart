@@ -52,8 +52,12 @@ class ConcernScoreDto with _$ConcernScoreDto {
     @Default(0) int score,
     String? status,
 
+    /// 기간 첫 기록일 대비 변화. **서버 필드명은 `changeFromFirstDay` 다** —
+    /// `change` 로 읽으면 파싱이 조용히 null 이 되고, 화면은 "변화량이 아직
+    /// 없는 주"와 구분하지 못한 채 영영 증감을 안 그린다. 예외도 경고도 없다.
+    ///
     /// **일일 응답에는 이 키가 없다.** 주간도 기록일이 하루뿐이면 없다.
-    int? change,
+    @JsonKey(name: 'changeFromFirstDay') int? change,
   }) = _ConcernScoreDto;
 
   factory ConcernScoreDto.fromJson(Map<String, dynamic> json) =>
@@ -212,9 +216,7 @@ extension WeeklyReportDtoX on WeeklyReportDto {
         to: to,
         averageDailyScore: averageDailyScore,
         grade: SkinLevel.fromJson(grade),
-        // 서버가 안 보내도 축이 0칸이 되지 않게 기간에서 되센다.
-        // (달력 뺄셈이라 서머타임에도 안전하다)
-        totalDays: totalDays > 0 ? totalDays : to.difference(from).inDays + 1,
+        totalDays: totalDays,
         recordedDays: recordedDays,
         recordCount: recordCount,
         dailyScores: dailyScores.map((score) => score.toEntity()).toList(),

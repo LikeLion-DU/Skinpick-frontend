@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -11,6 +12,7 @@ import 'package:skinplate/core/result/result.dart';
 import 'package:skinplate/features/report/data/models/report_dtos.dart';
 import 'package:skinplate/features/report/domain/entities/report.dart';
 import 'package:skinplate/features/report/domain/repositories/report_repository.dart';
+import 'package:skinplate/features/report/presentation/pages/report_page.dart';
 import 'package:skinplate/features/report/presentation/widgets/daily_report_view.dart';
 import 'package:skinplate/features/report/presentation/widgets/weekly_report_view.dart';
 
@@ -297,6 +299,67 @@ void main() {
       expect(forwardAgain.onPressed, isNotNull);
     });
 
+    testWidgets('탭을 넘겼다 돌아와도 보고 있던 주가 유지된다', (tester) async {
+      // TabBarView 는 화면 밖 자식을 버린다. 살려 두지 않으면 이 State 가 새로
+      // 만들어져 보고 있던 주가 이번 주로 되돌아가고, autoDispose 프로바이더도
+      // 함께 버려져 최대 27초짜리 AI 생성이 다시 돈다.
+      final repository = _FakeReportRepository(
+        daily: Success(daily('report_daily')),
+        weekly: Success(weekly('report_weekly_multiday')),
+      );
+
+      await pump(
+        tester,
+        ProviderScope(
+          overrides: [reportRepositoryProvider.overrideWithValue(repository)],
+          child: const MaterialApp(home: ReportPage()),
+        ),
+      );
+
+      await tester.tap(find.text('주간 리포트'));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byIcon(Icons.chevron_left));
+      await tester.pumpAndSettle();
+      final previousWeek =
+          tester.widget<Text>(find.textContaining(' - ')).data;
+
+      await tester.tap(find.text('오늘의 리포트'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('주간 리포트'));
+      await tester.pumpAndSettle();
+
+      expect(tester.widget<Text>(find.textContaining(' - ')).data, previousWeek,
+          reason: '탭을 넘겼다 오면 이번 주로 되돌아가면 안 된다');
+    });
+
+    testWidgets('불러오는 중에는 주 이동 화살표가 잠긴다', (tester) async {
+      // 27초짜리 조회 위에서 화살표를 연타하면 매번 다른 기간이라 요청이
+      // 그만큼 새로 나가고, Dio 는 앞선 요청을 취소하지 않는다 —
+      // 사용자는 한 번 넘겼다고 생각하는데 서버는 AI 를 다섯 번 돌린다.
+      final repository = _FakeReportRepository(
+        weekly: Success(weekly('report_weekly')),
+        pending: true,
+      );
+
+      await tester.binding.setSurfaceSize(designSize);
+      await tester.pumpWidget(host(repository, const WeeklyReportView()));
+      await tester.pump(); // 로딩 상태에서 멈춘다
+
+      for (final icon in [Icons.chevron_left, Icons.chevron_right]) {
+        final button = tester.widget<IconButton>(
+          find.ancestor(
+            of: find.byIcon(icon),
+            matching: find.byType(IconButton),
+          ),
+        );
+        expect(button.onPressed, isNull, reason: '$icon 이 잠겨 있어야 한다');
+      }
+
+      repository.release();
+      await tester.pumpAndSettle();
+    });
+
     testWidgets('API 오류 — 다시 시도가 뜬다', (tester) async {
       await pump(
         tester,
@@ -318,11 +381,18 @@ class _FakeReportRepository implements ReportRepository {
   _FakeReportRepository({
     Result<DailyReport>? daily,
     Result<WeeklyReport>? weekly,
+    bool pending = false,
   })  : _daily = daily,
-        _weekly = weekly;
+        _weekly = weekly,
+        _gate = pending ? Completer<void>() : null;
 
   final Result<DailyReport>? _daily;
   final Result<WeeklyReport>? _weekly;
+
+  /// 응답을 붙잡아 두는 문. 로딩 상태를 그대로 세워 두고 화면을 본다.
+  final Completer<void>? _gate;
+
+  void release() => _gate?.complete();
 
   /// 마지막으로 조회한 구간. 주 이동이 실제로 다른 구간을 부르는지 본다.
   ({DateTime from, DateTime to})? lastRange;
@@ -334,6 +404,7 @@ class _FakeReportRepository implements ReportRepository {
   @override
   Future<Result<WeeklyReport>> weekly({DateTime? from, DateTime? to}) async {
     if (from != null && to != null) lastRange = (from: from, to: to);
+    await _gate?.future;
     return _weekly ?? (throw UnimplementedError());
   }
 }

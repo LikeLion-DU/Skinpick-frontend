@@ -443,8 +443,19 @@ void main() {
     expect(report.bestDay?.dailyScore, 91);
     expect(report.worstDay?.dailyScore, 64);
 
+    // **서버 필드명은 `changeFromFirstDay` 다.** `change` 로 읽으면 파싱이
+    // 조용히 null 이 되고 화면은 증감을 영영 안 그린다 — 예외도 경고도 없어서
+    // 다일 기록이 쌓이기 전에는 아무도 못 알아챈다. 원시 키를 함께 못 박는다.
+    final raw = data('report_weekly_multiday')['concerns'] as List<dynamic>;
+    expect((raw.first as Map<String, dynamic>).containsKey('changeFromFirstDay'),
+        isTrue);
+    expect((raw.first as Map<String, dynamic>).containsKey('change'), isFalse);
+
     expect(report.concerns.first.change, 8);
     expect(report.concerns[1].change, -3);
+    // 기록일이 둘 이상이면 서버가 모든 고민에 균일하게 채운다. 변화가 없는
+    // 고민은 키가 빠지는 게 아니라 0 이다 — null 과 0 은 다른 뜻이다.
+    expect(report.concerns[2].change, 0);
   });
 
   test('AI 생성이 실패하면 aiComment 키만 빠진다 — 숫자는 그대로 온다', () {

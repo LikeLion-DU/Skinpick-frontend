@@ -15,13 +15,27 @@ import 'report_widgets.dart';
 ///
 /// 한 번의 호출로 화면이 완성된다. **AI 를 부르지 않는 조회**라 즉시 온다 —
 /// `aiComment` 는 기록을 저장할 때 이미 만들어져 저장돼 있던 문장이다.
-class DailyReportView extends ConsumerWidget {
+class DailyReportView extends ConsumerStatefulWidget {
   const DailyReportView({super.key, required this.date});
 
   final DateTime date;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<DailyReportView> createState() => _DailyReportViewState();
+}
+
+/// `TabBarView` 는 화면 밖 자식을 버린다. 살려 두지 않으면 탭을 넘길 때마다
+/// 스켈레톤이 한 번 번쩍이고 조회가 다시 나간다 — 주간과 같은 이유다.
+class _DailyReportViewState extends ConsumerState<DailyReportView>
+    with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
+
+  @override
+  Widget build(BuildContext context) {
+    super.build(context);   // AutomaticKeepAliveClientMixin 이 요구한다
+
+    final date = widget.date;
     final report = ref.watch(dailyReportProvider(date));
 
     return report.when(

@@ -103,20 +103,21 @@
                 "label": "여드름",
                 "score": 74,
                 "status": "GOOD",
-                "change": 8
+                "changeFromFirstDay": 8
             },
             {
                 "concern": "REDNESS",
                 "label": "민감/홍조",
                 "score": 58,
                 "status": "NORMAL",
-                "change": -3
+                "changeFromFirstDay": -3
             },
             {
                 "concern": "PUFFINESS",
                 "label": "부기",
                 "score": 62,
-                "status": "GOOD"
+                "status": "GOOD",
+                "changeFromFirstDay": 0
             }
         ],
         "bestDay": {

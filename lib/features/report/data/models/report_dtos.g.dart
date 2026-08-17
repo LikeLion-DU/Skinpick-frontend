@@ -39,7 +39,7 @@ _$ConcernScoreDtoImpl _$$ConcernScoreDtoImplFromJson(
       label: json['label'] as String? ?? '',
       score: (json['score'] as num?)?.toInt() ?? 0,
       status: json['status'] as String?,
-      change: (json['change'] as num?)?.toInt(),
+      change: (json['changeFromFirstDay'] as num?)?.toInt(),
     );
 
 Map<String, dynamic> _$$ConcernScoreDtoImplToJson(
@@ -49,7 +49,7 @@ Map<String, dynamic> _$$ConcernScoreDtoImplToJson(
       'label': instance.label,
       'score': instance.score,
       'status': instance.status,
-      'change': instance.change,
+      'changeFromFirstDay': instance.change,
     };
 
 _$DayScoreDtoImpl _$$DayScoreDtoImplFromJson(Map<String, dynamic> json) =>

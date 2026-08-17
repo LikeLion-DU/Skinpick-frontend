@@ -347,7 +347,12 @@ mixin _$ConcernScoreDto {
   int get score => throw _privateConstructorUsedError;
   String? get status => throw _privateConstructorUsedError;
 
+  /// 기간 첫 기록일 대비 변화. **서버 필드명은 `changeFromFirstDay` 다** —
+  /// `change` 로 읽으면 파싱이 조용히 null 이 되고, 화면은 "변화량이 아직
+  /// 없는 주"와 구분하지 못한 채 영영 증감을 안 그린다. 예외도 경고도 없다.
+  ///
   /// **일일 응답에는 이 키가 없다.** 주간도 기록일이 하루뿐이면 없다.
+  @JsonKey(name: 'changeFromFirstDay')
   int? get change => throw _privateConstructorUsedError;
 
   /// Serializes this ConcernScoreDto to a JSON map.
@@ -367,7 +372,11 @@ abstract class $ConcernScoreDtoCopyWith<$Res> {
       _$ConcernScoreDtoCopyWithImpl<$Res, ConcernScoreDto>;
   @useResult
   $Res call(
-      {String concern, String label, int score, String? status, int? change});
+      {String concern,
+      String label,
+      int score,
+      String? status,
+      @JsonKey(name: 'changeFromFirstDay') int? change});
 }
 
 /// @nodoc
@@ -425,7 +434,11 @@ abstract class _$$ConcernScoreDtoImplCopyWith<$Res>
   @override
   @useResult
   $Res call(
-      {String concern, String label, int score, String? status, int? change});
+      {String concern,
+      String label,
+      int score,
+      String? status,
+      @JsonKey(name: 'changeFromFirstDay') int? change});
 }
 
 /// @nodoc
@@ -480,7 +493,7 @@ class _$ConcernScoreDtoImpl implements _ConcernScoreDto {
       this.label = '',
       this.score = 0,
       this.status,
-      this.change});
+      @JsonKey(name: 'changeFromFirstDay') this.change});
 
   factory _$ConcernScoreDtoImpl.fromJson(Map<String, dynamic> json) =>
       _$$ConcernScoreDtoImplFromJson(json);
@@ -497,8 +510,13 @@ class _$ConcernScoreDtoImpl implements _ConcernScoreDto {
   @override
   final String? status;
 
+  /// 기간 첫 기록일 대비 변화. **서버 필드명은 `changeFromFirstDay` 다** —
+  /// `change` 로 읽으면 파싱이 조용히 null 이 되고, 화면은 "변화량이 아직
+  /// 없는 주"와 구분하지 못한 채 영영 증감을 안 그린다. 예외도 경고도 없다.
+  ///
   /// **일일 응답에는 이 키가 없다.** 주간도 기록일이 하루뿐이면 없다.
   @override
+  @JsonKey(name: 'changeFromFirstDay')
   final int? change;
 
   @override
@@ -542,11 +560,12 @@ class _$ConcernScoreDtoImpl implements _ConcernScoreDto {
 
 abstract class _ConcernScoreDto implements ConcernScoreDto {
   const factory _ConcernScoreDto(
-      {final String concern,
-      final String label,
-      final int score,
-      final String? status,
-      final int? change}) = _$ConcernScoreDtoImpl;
+          {final String concern,
+          final String label,
+          final int score,
+          final String? status,
+          @JsonKey(name: 'changeFromFirstDay') final int? change}) =
+      _$ConcernScoreDtoImpl;
 
   factory _ConcernScoreDto.fromJson(Map<String, dynamic> json) =
       _$ConcernScoreDtoImpl.fromJson;
@@ -560,8 +579,13 @@ abstract class _ConcernScoreDto implements ConcernScoreDto {
   @override
   String? get status;
 
+  /// 기간 첫 기록일 대비 변화. **서버 필드명은 `changeFromFirstDay` 다** —
+  /// `change` 로 읽으면 파싱이 조용히 null 이 되고, 화면은 "변화량이 아직
+  /// 없는 주"와 구분하지 못한 채 영영 증감을 안 그린다. 예외도 경고도 없다.
+  ///
   /// **일일 응답에는 이 키가 없다.** 주간도 기록일이 하루뿐이면 없다.
   @override
+  @JsonKey(name: 'changeFromFirstDay')
   int? get change;
 
   /// Create a copy of ConcernScoreDto

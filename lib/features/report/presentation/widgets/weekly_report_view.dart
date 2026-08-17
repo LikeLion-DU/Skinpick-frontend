@@ -26,7 +26,15 @@ class WeeklyReportView extends ConsumerStatefulWidget {
   ConsumerState<WeeklyReportView> createState() => _WeeklyReportViewState();
 }
 
-class _WeeklyReportViewState extends ConsumerState<WeeklyReportView> {
+/// `TabBarView` 는 화면 밖 자식을 살려 두지 않는다. 그대로 두면 탭을 한 번
+/// 넘겼다 오는 것만으로 이 State 가 새로 만들어져 **보고 있던 주가 이번 주로
+/// 되돌아가고**, autoDispose 프로바이더도 함께 버려져 최대 27초짜리 AI 생성이
+/// 다시 돈다. 사용자가 한 것은 탭 두 번 누른 것뿐인데.
+class _WeeklyReportViewState extends ConsumerState<WeeklyReportView>
+    with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
+
   /// 오늘 포함 7일이 기본이다 — 서버의 기본 동작(`lastDays(7)`)과 같은 정의다.
   /// 달력 주가 아니라서 월요일에 리셋되지 않는다.
   static const _weekDays = 7;
@@ -43,6 +51,8 @@ class _WeeklyReportViewState extends ConsumerState<WeeklyReportView> {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);   // AutomaticKeepAliveClientMixin 이 요구한다
+
     final range = _range;
     final report = ref.watch(weeklyReportProvider(range));
 
@@ -51,8 +61,12 @@ class _WeeklyReportViewState extends ConsumerState<WeeklyReportView> {
         _RangeSelector(
           from: range.from,
           to: range.to,
+          // 불러오는 중에는 양쪽 다 잠근다. 27초짜리 조회 위에서 화살표를
+          // 연타하면 매번 다른 기간이라 요청이 그만큼 새로 나가고, Dio 는
+          // 앞선 요청을 취소하지 않아 서버가 AI 를 그 횟수만큼 돌린다.
+          canGoBack: !report.isLoading,
           // 이번 주보다 뒤로는 못 간다.
-          canGoForward: _weeksAgo > 0,
+          canGoForward: !report.isLoading && _weeksAgo > 0,
           onShift: (weeks) => setState(() => _weeksAgo -= weeks),
         ),
         Expanded(
@@ -90,12 +104,14 @@ class _RangeSelector extends StatelessWidget {
   const _RangeSelector({
     required this.from,
     required this.to,
+    required this.canGoBack,
     required this.canGoForward,
     required this.onShift,
   });
 
   final DateTime from;
   final DateTime to;
+  final bool canGoBack;
   final bool canGoForward;
 
   /// +1 이면 다음 주, -1 이면 이전 주.
@@ -108,7 +124,7 @@ class _RangeSelector extends StatelessWidget {
       child: Row(
         children: [
           IconButton(
-            onPressed: () => onShift(-1),
+            onPressed: canGoBack ? () => onShift(-1) : null,
             icon: const Icon(Icons.chevron_left, size: 22),
             color: AppColors.textPrimary,
             tooltip: '이전 주',

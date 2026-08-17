@@ -6,6 +6,7 @@
 /// 애매해지고, 결국 두 벌이 생긴다.
 library;
 
+import '../../../../core/utils/kst_date.dart';
 import '../../../../shared/enums/meal_type.dart';
 import '../../../../shared/enums/nutrient_status.dart';
 import '../../../../shared/enums/skin_level.dart';
@@ -228,14 +229,23 @@ class WeeklyReport {
 
   bool get isEmpty => recordedDays == 0;
 
-  /// [from] 부터 하루씩 [totalDays] 칸. 그래프의 가로축이다.
+  /// [from] 부터 [to] 까지 하루씩. 그래프의 가로축이다.
   ///
-  /// 달력 뺄셈이어야 한다 — `Duration(days: n)` 은 정확히 24n 시간이라
+  /// **[totalDays] 를 세지 않고 두 날짜를 직접 훑는다.** 서버가 그 키를 빠뜨리면
+  /// 축이 0칸이 되어 그래프가 통째로 사라지는데, 그건 "기록이 없는 주"와
+  /// 화면에서 구분되지 않는다.
+  ///
+  /// 달력 덧셈이어야 한다 — `Duration(days: n)` 은 정확히 24n 시간이라
   /// 서머타임이 있는 시간대의 기기에서 하루가 밀린다.
-  List<DateTime> get axis => [
-        for (var day = 0; day < totalDays; day++)
-          DateTime(from.year, from.month, from.day + day),
-      ];
+  List<DateTime> get axis {
+    final days = <DateTime>[];
+    for (var date = DateTime(from.year, from.month, from.day);
+        !date.isAfter(to);
+        date = addDays(date, 1)) {
+      days.add(date);
+    }
+    return days;
+  }
 
   /// 그 날짜의 점수. 기록이 없는 날은 null 이고 화면은 점을 찍지 않는다.
   DayScore? scoreOn(DateTime date) {

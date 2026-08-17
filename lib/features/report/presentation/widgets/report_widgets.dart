@@ -528,10 +528,9 @@ class _MealThumbnailFallback extends StatelessWidget {
 /// 섹션 하나가 비었을 때. 화면째 비우지 않고 자리를 지킨다 —
 /// 섹션이 통째로 사라지면 사용자가 "불러오다 만 화면"으로 읽는다.
 class ReportEmpty extends StatelessWidget {
-  const ReportEmpty({super.key, required this.message, this.action});
+  const ReportEmpty({super.key, required this.message});
 
   final String message;
-  final Widget? action;
 
   @override
   Widget build(BuildContext context) {
@@ -542,15 +541,10 @@ class ReportEmpty extends StatelessWidget {
         border: Border.all(color: AppColors.borderEmptySlot),
         borderRadius: BorderRadius.circular(AppTheme.cardRadius),
       ),
-      child: Column(
-        children: [
-          Text(
-            message,
-            textAlign: TextAlign.center,
-            style: Theme.of(context).textTheme.bodySmall,
-          ),
-          if (action != null) ...[const SizedBox(height: 12), action!],
-        ],
+      child: Text(
+        message,
+        textAlign: TextAlign.center,
+        style: Theme.of(context).textTheme.bodySmall,
       ),
     );
   }
