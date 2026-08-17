@@ -150,10 +150,12 @@ void main() {
     expect(rawDetails.map((d) => d.level), everyElement(isNotEmpty));
     expect(analysis.metricDetails.first.evidence, isNotEmpty);
 
-    // AI 관찰 타입. 위 skinTypeGap.observed(규칙 도출)와 다른 값이고 갈릴 수 있다.
-    expect(analysis.aiSkinType!.primary, SkinType.dry);
-    // 화면 문구는 서버가 조합해 준다 — 앱이 타입과 경향을 이어 붙이지 않는다.
-    expect(analysis.aiSkinType!.label, '건성 · 민감 경향');
+    // 오늘의 타입 + 상태. 위 skinTypeGap.observed 와 **같은 값**이어야 한다 —
+    // 서버가 둘을 같은 규칙으로 내므로, 갈리면 계약이 어긋난 것이다.
+    expect(analysis.skinType!.primary, SkinType.dry);
+    expect(analysis.skinType!.primary, analysis.skinTypeGap!.observed);
+    // 화면 문구는 서버가 조합해 준다 — 앱이 타입과 상태를 이어 붙이지 않는다.
+    expect(analysis.skinType!.label, '건성 · 붉은기');
 
     // 피부 나이 축은 7개다. 붉은기는 지표 쪽에 이미 있어 서버가 응답에서 뺀다 —
     // 8개가 오면 계약이 어긋난 것이다.
@@ -181,7 +183,7 @@ void main() {
 
     expect(analysis.skinScore, 55);
     expect(analysis.metricDetails, isEmpty);
-    expect(analysis.aiSkinType, isNull);
+    expect(analysis.skinType, isNull);
     expect(analysis.skinAge, isNull);
   });
 

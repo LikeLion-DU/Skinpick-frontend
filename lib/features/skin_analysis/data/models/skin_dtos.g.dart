@@ -73,8 +73,8 @@ Map<String, dynamic> _$$ScoredItemDtoImplToJson(_$ScoredItemDtoImpl instance) =>
       'evidence': instance.evidence,
     };
 
-_$AiSkinTypeDtoImpl _$$AiSkinTypeDtoImplFromJson(Map<String, dynamic> json) =>
-    _$AiSkinTypeDtoImpl(
+_$SkinTypeDtoImpl _$$SkinTypeDtoImplFromJson(Map<String, dynamic> json) =>
+    _$SkinTypeDtoImpl(
       primary: json['primary'] as String?,
       traits: (json['traits'] as List<dynamic>?)
               ?.map((e) => e as String)
@@ -83,7 +83,7 @@ _$AiSkinTypeDtoImpl _$$AiSkinTypeDtoImplFromJson(Map<String, dynamic> json) =>
       label: json['label'] as String? ?? '',
     );
 
-Map<String, dynamic> _$$AiSkinTypeDtoImplToJson(_$AiSkinTypeDtoImpl instance) =>
+Map<String, dynamic> _$$SkinTypeDtoImplToJson(_$SkinTypeDtoImpl instance) =>
     <String, dynamic>{
       'primary': instance.primary,
       'traits': instance.traits,
@@ -119,7 +119,7 @@ _$SkinAnalysisDtoImpl _$$SkinAnalysisDtoImplFromJson(
           const <ScoredItemDto>[],
       skinType: json['skinType'] == null
           ? null
-          : AiSkinTypeDto.fromJson(json['skinType'] as Map<String, dynamic>),
+          : SkinTypeDto.fromJson(json['skinType'] as Map<String, dynamic>),
       skinAge: json['skinAge'] == null
           ? null
           : SkinAgeDto.fromJson(json['skinAge'] as Map<String, dynamic>),

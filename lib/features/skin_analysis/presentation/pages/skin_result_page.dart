@@ -47,13 +47,17 @@ class SkinResultPage extends ConsumerWidget {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
-    // 카드 제목의 타입. 오늘 측정(observed)이 있으면 그쪽이 맞다 —
-    // 이 화면은 방금 한 분석의 결과지, 자기 소개가 아니다.
+    // 카드 제목. 오늘 측정한 값이 있으면 그쪽이 맞다 — 이 화면은 방금 한 분석의
+    // 결과지, 자기 소개가 아니다. 서버가 못 냈을 때만 자가 신고 타입으로 떨어진다.
+    //
+    // skinTypeGap 이 아니라 skinType 을 본다. 둘의 타입은 이제 같은 값이지만
+    // 갭 카드는 사용자가 타입을 안 골랐으면 통째로 null 이라, 그쪽에 기대면
+    // 건너뛴 사용자에게는 오늘 측정한 타입이 제목에 영영 안 나온다.
     final declaredType = switch (ref.watch(authNotifierProvider)) {
       Authenticated(:final user) => user.declaredSkinType,
       _ => null,
     };
-    final headlineType = analysis.skinTypeGap?.observed ?? declaredType;
+    final headline = _headline(analysis, declaredType);
 
     return Scaffold(
       appBar: AppBar(),
@@ -92,7 +96,7 @@ class SkinResultPage extends ConsumerWidget {
           ),
           const SizedBox(height: 36),
 
-          _TypeCard(analysis: analysis, headlineType: headlineType),
+          _TypeCard(analysis: analysis, headline: headline),
 
           // 서버가 못 냈으면(예전 분석이거나 응답을 못 믿을 때) 키 자체가 없다.
           // 그때는 카드를 숨긴다 — 빈 값으로 그리면 없는 데이터를 보여주는 셈이다.
@@ -146,18 +150,40 @@ class SkinResultPage extends ConsumerWidget {
 // 지표를 같은 색으로 칠해야 하는데, 여기 private 으로 두면 그쪽이 다른 기준을
 // 쓰게 되고 두 화면에서 같은 값이 다른 색으로 나온다.
 
-/// "복합성 피부" 카드 — 민감도 배지와 지표 4종 원.
+/// 타입 카드의 제목을 정한다.
+///
+/// 서버 문구가 1순위다. 타입만이 아니라 오늘의 상태까지 조합돼 있어서
+/// ("건성 · 붉은기") 앱이 더 얹을 것이 없다.
+///
+/// 문구가 없을 때만 타입 하나로 떨어진다. 그 타입도 세 군데를 순서대로 본다 —
+/// 확장 필드가 없던 기록은 `skinType` 이 통째로 없지만 갭 카드에는 같은 값이
+/// 들어 있고, 갭 카드는 사용자가 타입을 건너뛰면 없다.
+///
+/// 폴백에만 '피부' 를 붙인다. 타입 하나면 "건성" 보다 "건성 피부" 가 제목처럼 읽힌다.
+/// 서버 문구에는 붙이지 않는다 — 괄호로 끝나는 것이 있어 "…(수부지) 피부" 로 깨진다.
+String _headline(SkinAnalysis analysis, SkinType? declaredType) {
+  final label = analysis.skinType?.label ?? '';
+  if (label.isNotEmpty) return label;
+
+  final type = analysis.skinType?.primary ??
+      analysis.skinTypeGap?.observed ??
+      declaredType;
+
+  return type == null ? '오늘의 피부' : '${type.label} 피부';
+}
+
+/// "건성 · 붉은기" 카드 — 제목·점수와 지표 4종 원.
 class _TypeCard extends StatelessWidget {
-  const _TypeCard({required this.analysis, required this.headlineType});
+  const _TypeCard({required this.analysis, required this.headline});
 
   final SkinAnalysis analysis;
-  final SkinType? headlineType;
+
+  /// 서버가 조합해 준 문구. "건성 · 붉은기" 처럼 오늘의 상태까지 들어 있다.
+  final String headline;
 
   @override
   Widget build(BuildContext context) {
     final metrics = analysis.metrics;
-    // 서버가 조합해 준 문구. "건성 · 민감 경향" 처럼 경향까지 들어 있다.
-    final aiLabel = analysis.aiSkinType?.label ?? '';
 
     return Container(
       padding: const EdgeInsets.fromLTRB(18, 20, 18, 22),
@@ -172,45 +198,29 @@ class _TypeCard extends StatelessWidget {
           Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              // **제목과 칩을 Wrap 으로 묶는다.** 한 줄에 나란히 두면 셋이 폭을
-              // 나눠 갖는데, 칩 문구는 서버가 만들어서 길이가 정해져 있지 않다 —
-              // QA 에서 기본 글자 크기에도 "복합성 · T존 ..." 으로 잘렸고, 2.0 에서는
-              // 제목까지 "보통..." 이 됐다. 폭으로 버티는 구조가 계속 새는 자리다.
-              // Wrap 이면 좁을 때 칩이 아랫줄로 내려가 둘 다 온전히 읽힌다.
+              // **제목 하나만 남았다.** 예전에는 여기에 제목(규칙 도출 타입)과
+              // 칩(AI 관찰 타입)이 나란히 있었다. 서버가 둘로 판정하던 시절의
+              // 흔적인데, 값이 갈리면 "지성 피부" 옆에 "건성 · 민감 경향" 이
+              // 붙는 화면이 나왔다. 서버가 판정을 하나로 모으면서 칩은 제목과
+              // 같은 말을 두 번 하는 자리가 됐고, 문구에 상태까지 들어오므로
+              // 제목이 그대로 그 역할을 한다.
               //
-              // 제목은 규칙 도출 타입 그대로 둔다. 바로 아래 갭 카드가 같은 값에
-              // 기대고 있어서, 여기만 AI 관찰값으로 바꾸면 한 화면에서 "지성 피부" 와
-              // "오늘 측정 기준 : 건성" 이 같이 보인다. 둘은 갈릴 수 있는 값이다.
+              // 서버 문구를 그대로 쓴다 — 뒤에 '피부' 같은 것을 이어 붙이지
+              // 않는다. '수부지' 처럼 괄호로 끝나는 문구가 있어서 붙이면
+              // "…(수부지) 피부" 로 깨진다.
+              //
+              // 폭은 계속 새던 자리라 Expanded 로 감싼 채 둔다 — QA 에서 기본
+              // 글자 크기에도 "복합성 · T존 ..." 으로 잘렸고 2.0 에서는 제목까지
+              // "보통..." 이 됐다. 이제 경쟁하는 요소가 하나 줄었지만, 상태가
+              // 둘 붙으면 문구는 그때만큼 길어진다.
               Expanded(
-                child: Wrap(
-                  crossAxisAlignment: WrapCrossAlignment.center,
-                  spacing: 10,
-                  runSpacing: 6,
-                  children: [
-                    Text(
-                      headlineType == null
-                          ? '오늘의 피부'
-                          : '${headlineType!.label} 피부',
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: Color(0xFF1A1A1A),
-                      ),
-                    ),
-                    // AI 가 읽은 타입은 칩으로 따로 단다(설계서 계약 주의표 8번).
-                    // 서버 문구를 그대로 쓴다 — 뒤에 아무것도 붙이지 않는다.
-                    // '수부지' 처럼 괄호로 끝나는 문구가 있어서 이어 붙이면
-                    // "…(수부지) 피부" 로 깨진다.
-                    //
-                    // 예전 분석이면 서버가 키를 생략하므로 기존 민감도 배지로
-                    // 떨어진다. 둘을 같이 달지 않는 이유는, 서버가 "민감 경향"
-                    // 이라고 한 옆에서 앱이 홍조 임계로 "민감도 높음" 을 따로
-                    // 판정하게 되기 때문이다.
-                    if (aiLabel.isNotEmpty)
-                      _Chip(aiLabel)
-                    else if (metrics.redness >= 60)
-                      const _Chip('민감도 높음'),
-                  ],
+                child: Text(
+                  headline,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF1A1A1A),
+                  ),
                 ),
               ),
               const SizedBox(width: 10),
@@ -298,31 +308,6 @@ class _TypeCard extends StatelessWidget {
   }
 }
 
-
-/// 제목 옆 작은 칩. 서버가 만든 문구를 그대로 담는다.
-class _Chip extends StatelessWidget {
-  const _Chip(this.text);
-
-  final String text;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-      decoration: BoxDecoration(
-        color: const Color(0xFFFFF2EC),
-        borderRadius: BorderRadius.circular(16),
-      ),
-      // **자르지 않는다.** 문구는 서버가 만들고 길이가 정해져 있지 않다. 한 줄로
-      // 못 박으면 글자를 키운 사용자에게 "복합..." 만 남아 자기 피부 타입을 못
-      // 읽는다. 칩이 두 줄이 되는 쪽이 낫다 — 읽히지 않는 배지는 없는 것과 같다.
-      child: Text(
-        text,
-        style: const TextStyle(fontSize: 10, color: AppColors.primary),
-      ),
-    );
-  }
-}
 
 class _Metric extends StatelessWidget {
   const _Metric({
