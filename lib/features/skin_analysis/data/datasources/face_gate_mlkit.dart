@@ -1,6 +1,6 @@
 import 'dart:io' show File;
 import 'dart:math' as math;
-import 'dart:ui' show Offset, Rect;
+import 'dart:ui' show Offset, Rect, Size;
 
 import 'package:camera/camera.dart'
     show CameraDescription, CameraImage, ImageFormatGroup, XFile;
@@ -9,6 +9,7 @@ import 'package:google_mlkit_face_detection/google_mlkit_face_detection.dart';
 import 'package:image/image.dart' as img;
 
 import '../../../../core/mlkit/camera_input_image.dart';
+import '../../domain/captured_image_validator.dart';
 import '../../domain/entities/face_gate_result.dart';
 import '../../domain/face_gate_config.dart';
 import '../../domain/face_gate_rules.dart';
@@ -19,16 +20,24 @@ FaceGate createFaceGate(CameraDescription camera) => MlKitFaceGate(camera);
 /// ML Kit 은 **값을 뽑기만 한다.** 판정은 [evaluateFaceGate] 가 하고,
 /// 피부 상태는 서버가 한다. 이 파일에서 피부에 대한 결론을 내리지 않는다.
 ///
-/// `enableClassification: false` 는 의도적이다. smilingProbability ·
-/// leftEyeOpenProbability 로 트러블이나 홍조를 추정하려 들면 "AI 는 인식,
-/// 로직은 Backend" 구조가 무너지고 근거 없는 숫자가 하나 더 생긴다.
+/// `enableClassification: true` 는 **눈 뜸 확률 하나만** 쓰려고 켠다 — 감은 눈으로
+/// 찍힌 사진을 걸러내기 위해서다. smilingProbability 로 트러블이나 홍조를 추정하는
+/// 순간 "AI 는 인식, 로직은 Backend" 구조가 무너지므로, 그 값은 읽지도 않는다.
+/// 게이트와 크롭까지가 전부다 (PRD §9.5).
+///
+/// `enableLandmarks: true` 는 **코 위치 하나만** 쓰려고 켠다. 화면 가이드가 코를
+/// 기준으로 방향을 그리기 때문이다. **판정에는 쓰지 않는다** — 게이트 조건은
+/// 여전히 박스·각도·밝기뿐이고, 코는 그리기 전용이다.
+///
+/// `enableContours` 는 계속 끈다. 윤곽선 132점은 어디에도 쓰지 않으면서
+/// 프레임당 처리 시간만 크게 늘린다.
 class MlKitFaceGate implements FaceGate {
   MlKitFaceGate(this._camera)
       : _detector = FaceDetector(
           options: FaceDetectorOptions(
             performanceMode: FaceDetectorMode.fast, // 실시간 프리뷰용
-            enableLandmarks: false, // 게이트에는 불필요
-            enableClassification: false, // 웃음·눈뜸 확률 안 쓴다
+            enableLandmarks: true, // 코 위치만 쓴다 (가이드 렌더링)
+            enableClassification: true, // 눈 뜸 확률만 쓴다
           ),
         );
 
@@ -61,13 +70,21 @@ class MlKitFaceGate implements FaceGate {
     // 여기서 안 맞추면 얼굴 크기 비율이 통째로 틀어져 "조금 더 가까이"만 계속 뜬다.
     final rotation = rotationDegreesOf(_camera);
     final rotated = isRotatedQuarter(rotation);
-    final orientedHeight = (rotated ? frame.width : frame.height).toDouble();
+    final oriented = rotated
+        ? Size(frame.height.toDouble(), frame.width.toDouble())
+        : Size(frame.width.toDouble(), frame.height.toDouble());
 
     return evaluateFaceGate(
       photoType: photoType,
       faceCount: faces.length,
-      faceBox: face?.boundingBox,
-      frameHeight: orientedHeight,
+      // 좌우 안내와 오버레이 박스가 같이 걸려 있다. 거울상 여부를 여기서 흡수해
+      // 판정 함수는 언제나 사용자 기준 좌표만 본다.
+      faceBox: face == null
+          ? null
+          : toUserSpace(face.boundingBox, _camera, oriented.width),
+      nose: _nose(face, _camera, oriented.width),
+      frameSize: oriented,
+      eyeOpen: _eyeOpen(face),
       // 거울상으로 들어온 프레임이면 **여기서** 사용자 기준으로 되돌린다.
       // 정지 이미지 경로(prepareSkinPhoto)는 뒤집히지 않아 곱하지 않는다.
       yaw: face?.headEulerAngleY == null
@@ -152,10 +169,15 @@ class MlKitFaceGate implements FaceGate {
               photoType: photoType,
               faceCount: faces.length,
               faceBox: face?.boundingBox,
-              frameHeight: photo.height.toDouble(),
+              frameSize:
+                  Size(photo.width.toDouble(), photo.height.toDouble()),
               yaw: face?.headEulerAngleY,
               pitch: face?.headEulerAngleX,
               roll: face?.headEulerAngleZ,
+              // 이미 찍힌 사진에는 "조금 오른쪽으로 이동해주세요" 를 말할 수 없다.
+              // 프리뷰 전용 조건(크기 상한·잘림·중앙 정렬)을 끄지 않으면 얼굴이
+              // 한쪽에 있는 멀쩡한 셀카가 갤러리 경로에서 통째로 막힌다.
+              liveGuidance: false,
               luminanceOf: () => _stillLuminance(photo, face!.boundingBox),
             )
           // 카메라 경로. 크기·방향·밝기는 방금 프리뷰에서 통과했다. 종횡비가 달라
@@ -185,7 +207,26 @@ class MlKitFaceGate implements FaceGate {
 
       final path = '${File(original.path).parent.path}/skin_${original.name}';
       await File(path).writeAsBytes(img.encodeJpg(resized, quality: 80));
-      return PreparedPhoto(XFile(path), gate);
+
+      // 확인 화면은 **카메라 경로에서만** 뜬다. 갤러리는 사용자가 방금 피커에서
+      // 고른 사진이라 확인 단계를 거치지 않으므로, 여기서 계산하면 아무도 안 보는
+      // 목록을 만들자고 원본 전체를 한 번 더 훑게 된다(갤러리 경로는 게이트가
+      // 이미 휘도를 쟀다). 막힌 경우에도 마찬가지라 통과한 뒤에만 만든다.
+      final checks = fullGate
+          ? const <PhotoCheck>[]
+          : reviewCapturedPhoto(
+              photoType: photoType,
+              faceCount: faces.length,
+              faceBox: face?.boundingBox,
+              photoSize: Size(photo.width.toDouble(), photo.height.toDouble()),
+              yaw: face?.headEulerAngleY,
+              roll: face?.headEulerAngleZ,
+              luminance: face == null
+                  ? null
+                  : _stillLuminance(photo, face.boundingBox),
+            );
+
+      return PreparedPhoto(XFile(path), gate, checks: checks);
     } finally {
       // 기다리지 않으면 네이티브 검출기가 아직 살아 있는 채로 함수가 끝나고,
       // 닫다가 난 오류는 미처리 비동기 예외가 된다.
@@ -199,6 +240,35 @@ class MlKitFaceGate implements FaceGate {
     // 그대로 두면 플랫폼 채널 실패가 미처리 zone 오류로 올라온다.
     _detector.close().ignore();
   }
+}
+
+/// 코 밑점의 위치. **그리기 전용이다 — 판정에 쓰지 않는다.**
+///
+/// 랜드마크를 못 읽는 기기·각도가 있다. 그때는 얼굴 박스 중심으로 대신한다 —
+/// 가이드가 통째로 사라지는 것보다 조금 어긋나는 편이 낫다. 옆얼굴에서는 코가
+/// 박스 가장자리로 가므로 정확한 랜드마크가 있을 때 값이 가장 크다.
+Offset? _nose(Face? face, CameraDescription camera, double frameWidth) {
+  if (face == null) return null;
+  final point = face.landmarks[FaceLandmarkType.noseBase]?.position;
+  final raw = point == null
+      ? face.boundingBox.center
+      : Offset(point.x.toDouble(), point.y.toDouble());
+
+  // 박스와 같은 좌표계로 맞춘다. 하나만 뒤집으면 코가 반대쪽 뺨에 붙는다.
+  return toUserSpacePoint(raw, camera, frameWidth);
+}
+
+/// 눈 뜸 확률 — **양쪽 중 큰 값**이다.
+///
+/// 측면 단계에서는 먼 쪽 눈이 얼굴에 가려 확률이 바닥으로 떨어진다. 두 눈을 모두
+/// 요구하면 LEFT·RIGHT 촬영이 상시 막힌다. 둘 다 못 읽으면 null 이고, 판정은
+/// 모르는 값으로 막지 않는다.
+double? _eyeOpen(Face? face) {
+  final left = face?.leftEyeOpenProbability;
+  final right = face?.rightEyeOpenProbability;
+  if (left == null) return right;
+  if (right == null) return left;
+  return math.max(left, right);
 }
 
 /// 촬영 원본에 얼굴이 정확히 하나인지만 본다. 통과해도 원본을 올리지는 않는다 —
