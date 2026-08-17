@@ -10,11 +10,12 @@ void main() {
     expect(PlateActionCode.forRuleCode('R02'), PlateActionCode.lessSpicy);
     expect(PlateActionCode.forRuleCode('R03'), PlateActionCode.noSugarDrink);
     expect(PlateActionCode.forRuleCode('R07'), PlateActionCode.removeBatter);
+    expect(PlateActionCode.forRuleCode('R10'), PlateActionCode.lessRice);
   });
 
   test('버튼이 없는 룰과 null 은 조용히 비운다 — 앱이 죽지 않는다', () {
     expect(PlateActionCode.forRuleCode('R05'), isNull); // 가점 룰이라 행동이 없다
-    expect(PlateActionCode.forRuleCode('R10'), isNull); // 미구현 확장 룰
+    expect(PlateActionCode.forRuleCode('R99'), isNull); // 아직 없는 룰
     expect(PlateActionCode.forRuleCode(null), isNull);
   });
 
@@ -23,9 +24,10 @@ void main() {
     expect(PlateActionCode.lessSpicy.wire, 'LESS_SPICY');
     expect(PlateActionCode.noSugarDrink.wire, 'NO_SUGAR_DRINK');
     expect(PlateActionCode.removeBatter.wire, 'REMOVE_BATTER');
+    expect(PlateActionCode.lessRice.wire, 'LESS_RICE');
   });
 
   test('모르는 액션이 와도 null 로 흘려보낸다', () {
-    expect(PlateActionCode.fromJson('LESS_RICE'), isNull);
+    expect(PlateActionCode.fromJson('SKIP_DESSERT'), isNull);
   });
 }

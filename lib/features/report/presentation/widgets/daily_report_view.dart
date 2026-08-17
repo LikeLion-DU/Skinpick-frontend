@@ -91,7 +91,11 @@ class _Body extends StatelessWidget {
 
         ReportSection(
           title: '오늘의 영양 밸런스',
-          subtitle: '기록한 끼니만 더한 값이에요',
+          // 결과 화면의 "1인분 기준"과 다른 숫자가 나오는 이유를 여기서 말한다.
+          // 서버가 섭취량 계수(SMALL 0.7 · LARGE 1.3)를 곱해 합산한 값이라
+          // 같은 음식이 두 화면에서 520 과 676kcal 로 갈린다. 앱이 맞추지 않는다 —
+          // 두 화면이 다른 것을 재고 있다.
+          subtitle: '기록한 끼니의 섭취량을 반영한 추정치예요',
           child: NutritionBars(items: report.nutrition),
         ),
         const SizedBox(height: 28),

@@ -9,7 +9,6 @@ import '../../../../app/theme/app_theme.dart';
 import '../../../../core/error/failure.dart';
 import '../../../../core/widgets/app_widgets.dart';
 import '../../../../shared/enums/plate_action_code.dart';
-import '../../../auth/presentation/providers/auth_notifier.dart';
 import '../../domain/entities/skin_plate.dart';
 import '../providers/plate_notifier.dart';
 import '../widgets/plate_score_card.dart';
@@ -103,7 +102,11 @@ class _PlateResultPageState extends ConsumerState<PlateResultPage> {
   }
 }
 
-class _Content extends ConsumerWidget {
+/// 자가신고 피부 타입을 읽지 않는다 — 그래서 [ConsumerWidget] 이 아니다.
+/// 음식 판정은 실제 측정 지표로 하는데 "민감성 피부 기준" 을 붙이면 화면이 채점
+/// 근거를 잘못 말하고, 타입을 "잘 모르겠어요" 로 고른 사용자에게는 그 문구가
+/// 그대로 새어 나왔다. 채점 기준을 말하는 자리는 [SkinBasisLine] 하나다.
+class _Content extends StatelessWidget {
   const _Content({
     required this.plate,
     required this.state,
@@ -119,15 +122,8 @@ class _Content extends ConsumerWidget {
   final Future<void> Function(PlateActionCode) onToggle;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final score = state.displayedScore ?? plate.plateScore;
-
-    // "민감성 피부 기준" — 채점에 실제로 쓰인 기준을 말해 주는 문구다.
-    // 자가신고 타입이 없으면 문구를 비운다. 지어내서 채우지 않는다.
-    final declaredType = switch (ref.watch(authNotifierProvider)) {
-      Authenticated(:final user) => user.declaredSkinType,
-      _ => null,
-    };
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(
@@ -152,13 +148,18 @@ class _Content extends ConsumerWidget {
             ),
           ),
         ),
+
+        // 이 점수가 **언제 찍은 피부**로 계산됐는지. 음식명 바로 아래에 두는 건
+        // 읽는 순서 때문이다 — 기준을 먼저 알아야 아래 점수를 제대로 읽는다.
+        // 저장 직후에도 pastRecord 는 false 다. 그때의 "기록 당일"은 곧 오늘이다.
+        SkinBasisLine(
+          basis: plate.skinBasis,
+          measuredAt: plate.skinMeasuredAt,
+        ),
+        FoodTraitChips(food: plate.food),
         const SizedBox(height: 18),
 
-        PlateScoreCard(
-          score: score,
-          basisLabel:
-              declaredType == null ? null : '${declaredType.label} 피부 기준',
-        ),
+        PlateScoreCard(score: score),
 
         if (FeatureFlags.actionSimulation && state.simulation != null) ...[
           const SizedBox(height: 12),

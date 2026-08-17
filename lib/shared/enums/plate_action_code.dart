@@ -4,7 +4,10 @@ enum PlateActionCode {
   halveSoup('HALVE_SOUP', '국물을 절반만 남기기'),
   lessSpicy('LESS_SPICY', '매운 양념 덜어내기'),
   noSugarDrink('NO_SUGAR_DRINK', '단 음료 대신 물'),
-  removeBatter('REMOVE_BATTER', '튀김옷 일부 제거');
+  removeBatter('REMOVE_BATTER', '튀김옷 일부 제거'),
+  // R10 은 고열량(900kcal 초과)이라 면·튀김에도 걸린다. 서버 라벨이 "밥·면" 인
+  // 이유고, 나머지 넷과 마찬가지로 글자까지 서버와 같게 둔다.
+  lessRice('LESS_RICE', '밥·면 조금 줄이기');
 
   const PlateActionCode(this.wire, this.label);
 
@@ -29,6 +32,7 @@ enum PlateActionCode {
         'R02' => lessSpicy,
         'R03' => noSugarDrink,
         'R07' => removeBatter,
+        'R10' => lessRice, // 고열량(900kcal 초과)
         _ => null,
       };
 }

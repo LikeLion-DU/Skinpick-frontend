@@ -11,17 +11,14 @@ import '../../../../shared/enums/skin_level.dart';
 /// 시안 수치 그대로다 — 크림 배경(#FEF7F0) · 테두리 #FFDFD1 · 높이 156.
 /// 오른쪽의 원형 게이지는 시안이 SVG 호 두 장으로 그려 놓았는데, 점수마다
 /// 호의 길이가 달라져야 하므로 이미지 대신 CustomPaint 로 그린다.
+///
+/// **채점 기준 문구(basisLabel)를 여기 다시 만들지 마라.** 자가신고 피부 타입을
+/// 넣었다가 "잘 모르겠어요 피부 기준" 이 그대로 화면에 떴다. 음식 판정은 실제
+/// 측정 지표로 하므로 기준을 말하는 자리는 [SkinBasisLine] 하나다.
 class PlateScoreCard extends StatelessWidget {
-  const PlateScoreCard({
-    super.key,
-    required this.score,
-    required this.basisLabel,
-  });
+  const PlateScoreCard({super.key, required this.score});
 
   final int score;
-
-  /// "민감성 / 여드름 피부 기준" 같은 채점 기준 문구. 서버 값이 없으면 비운다.
-  final String? basisLabel;
 
   @override
   Widget build(BuildContext context) {
@@ -40,6 +37,10 @@ class PlateScoreCard extends StatelessWidget {
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
+              // 기준 문구가 빠지면서 아래를 밀어 주던 Spacer 도 없어졌다.
+              // 가운데로 모아야 오른쪽 게이지(118)와 눈높이가 맞는다 —
+              // 그냥 두면 글자가 카드 위쪽에 붙고 아래가 통째로 빈다.
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 const Text(
                   '내 피부 적합도',
@@ -93,16 +94,6 @@ class PlateScoreCard extends StatelessWidget {
                     ],
                   ),
                 ),
-                const Spacer(),
-                if (basisLabel != null)
-                  Text(
-                    basisLabel!,
-                    style: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                      color: AppColors.textOnCard,
-                    ),
-                  ),
               ],
             ),
           ),

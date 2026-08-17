@@ -1,6 +1,8 @@
 import '../../../../shared/enums/cooking_method.dart';
+import '../../../../shared/enums/food_traits.dart';
 import '../../../../shared/enums/ingredient_tag.dart';
 import '../../../../shared/enums/plate_action_code.dart';
+import '../../../../shared/enums/skin_basis.dart';
 
 /// 결과 화면이 실제로 그리는 면(面)만 모은 것.
 ///
@@ -12,6 +14,12 @@ import '../../../../shared/enums/plate_action_code.dart';
 /// PlateState 의 recordStatus 를 봐야 한다.
 abstract interface class PlateView {
   int get skinAnalysisId;
+
+  /// 어느 날 피부로 계산됐는지. 옛 기록에는 없어서 null 이고, 그때 화면은
+  /// 아무 문구도 그리지 않는다 — 지어내면 그게 거짓말이 된다.
+  SkinBasis? get skinBasis;
+  DateTime? get skinMeasuredAt;
+
   int get plateScore;
   int get baseScore;
   String get summary;
@@ -27,6 +35,8 @@ class SkinPlate implements PlateView {
   const SkinPlate({
     required this.id,
     required this.skinAnalysisId,
+    this.skinBasis,
+    this.skinMeasuredAt,
     required this.plateScore,
     this.baseScore = 70,
     required this.summary,
@@ -44,6 +54,14 @@ class SkinPlate implements PlateView {
   /// 이 Plate 가 어떤 피부 분석을 기준으로 계산됐는지. S08 추천 조회에 쓴다.
   @override
   final int skinAnalysisId;
+
+  /// **이 기록을 저장한 날** 기준이다. [SkinBasis.today] 라도 "오늘"이 아니라
+  /// "기록 당일" 로 읽어야 한다 — 서버가 저장 시점에 굳혀 둔 값이라 시간이
+  /// 지나도 안 바뀐다.
+  @override
+  final SkinBasis? skinBasis;
+  @override
+  final DateTime? skinMeasuredAt;
 
   @override
   final int plateScore;
@@ -88,15 +106,27 @@ class SkinPlate implements PlateView {
 class PlateFeedback {
   const PlateFeedback({
     required this.message,
+    this.reason,
     required this.scoreDelta,
     required this.ruleCode,
   });
 
+  /// 짧은 제목·라벨. "나트륨 과다"
   final String message;
+
+  /// 지금 피부 상태와 음식 특성을 잇는 설명. 없는 기록(V8 이전)이 있으므로
+  /// 화면은 제목만으로도 성립해야 한다.
+  final String? reason;
+
   final int scoreDelta;
   final String? ruleCode;
 }
 
+/// 행동 제안. **[PlateFeedback.reason] 에 해당하는 필드가 없다** — 문구 자체가
+/// 이미 설명이라 서버가 만들지 않는다. 여기에 reason 을 파 보려 하지 마라.
+///
+/// 주의(caution)와 1:1 이라고 가정하지도 마라. R07(기름기)이 튀김이 아닌 기름진
+/// 음식에서 걸리면 "튀김옷을 제거하세요"가 성립하지 않아 짝이 되는 행동이 없다.
 class PlateAction {
   const PlateAction({
     required this.message,
@@ -116,6 +146,11 @@ class FoodAnalysis {
     required this.foodCategory,
     required this.cookingMethod,
     required this.spicy,
+    this.foodGroup = FoodGroup.etc,
+    this.portionSize = PortionSize.unknown,
+    this.spiciness = Spiciness.unknown,
+    this.oiliness = Oiliness.unknown,
+    this.processingLevel = ProcessingLevel.unknown,
     required this.ingredients,
     required this.nutrition,
   });
@@ -127,6 +162,22 @@ class FoodAnalysis {
   final String? foodCategory;
   final CookingMethod cookingMethod;
   final bool spicy;
+
+  /// 화면에 안 낸다 — 받아만 둔다.
+  ///
+  /// 분류·가공도는 결과 화면에 자리가 없고, 가공도는 서버도 아직 점수에 쓰지 않는
+  /// 축적용이다. [portionSize] 는 척도를 정의한 기준이 없는 AI 관찰값이라 뺐다 —
+  /// 서버는 저장·리포트 영양 환산에 계속 쓰지만 앱은 파싱만 한다. 이 값으로
+  /// 점수도 영양값도 다시 계산하지 않는다.
+  final FoodGroup foodGroup;
+  final ProcessingLevel processingLevel;
+  final PortionSize portionSize;
+
+  /// 결과 화면 칩 2종. 값이 없으면(UNKNOWN, 그리고 서버 경고와 부딪히는
+  /// NONE·LOW) 그 칩을 그리지 않는다 — [Spiciness.label] 참고.
+  final Spiciness spiciness;
+  final Oiliness oiliness;
+
   final List<Ingredient> ingredients;
   final Nutrition nutrition;
 }

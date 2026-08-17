@@ -46,6 +46,11 @@ _$FoodAnalysisDtoImpl _$$FoodAnalysisDtoImplFromJson(
       foodCategory: json['foodCategory'] as String?,
       cookingMethod: json['cookingMethod'] as String? ?? 'ETC',
       spicy: json['spicy'] as bool? ?? false,
+      foodGroup: json['foodGroup'] as String? ?? 'ETC',
+      portionSize: json['portionSize'] as String? ?? 'UNKNOWN',
+      spiciness: json['spiciness'] as String? ?? 'UNKNOWN',
+      oiliness: json['oiliness'] as String? ?? 'UNKNOWN',
+      processingLevel: json['processingLevel'] as String? ?? 'UNKNOWN',
       ingredients: (json['ingredients'] as List<dynamic>?)
               ?.map((e) => IngredientDto.fromJson(e as Map<String, dynamic>))
               .toList() ??
@@ -62,6 +67,11 @@ Map<String, dynamic> _$$FoodAnalysisDtoImplToJson(
       'foodCategory': instance.foodCategory,
       'cookingMethod': instance.cookingMethod,
       'spicy': instance.spicy,
+      'foodGroup': instance.foodGroup,
+      'portionSize': instance.portionSize,
+      'spiciness': instance.spiciness,
+      'oiliness': instance.oiliness,
+      'processingLevel': instance.processingLevel,
       'ingredients': instance.ingredients,
       'nutrition': instance.nutrition,
     };
@@ -69,6 +79,7 @@ Map<String, dynamic> _$$FoodAnalysisDtoImplToJson(
 _$FeedbackDtoImpl _$$FeedbackDtoImplFromJson(Map<String, dynamic> json) =>
     _$FeedbackDtoImpl(
       message: json['message'] as String,
+      reason: json['reason'] as String?,
       scoreDelta: (json['scoreDelta'] as num?)?.toInt() ?? 0,
       ruleCode: json['ruleCode'] as String?,
     );
@@ -76,6 +87,7 @@ _$FeedbackDtoImpl _$$FeedbackDtoImplFromJson(Map<String, dynamic> json) =>
 Map<String, dynamic> _$$FeedbackDtoImplToJson(_$FeedbackDtoImpl instance) =>
     <String, dynamic>{
       'message': instance.message,
+      'reason': instance.reason,
       'scoreDelta': instance.scoreDelta,
       'ruleCode': instance.ruleCode,
     };
@@ -124,6 +136,10 @@ _$PlateAnalysisDtoImpl _$$PlateAnalysisDtoImplFromJson(
     _$PlateAnalysisDtoImpl(
       analysisToken: json['analysisToken'] as String,
       skinAnalysisId: (json['skinAnalysisId'] as num).toInt(),
+      skinBasis: json['skinBasis'] as String?,
+      skinMeasuredAt: json['skinMeasuredAt'] == null
+          ? null
+          : DateTime.parse(json['skinMeasuredAt'] as String),
       plateScore: (json['plateScore'] as num).toInt(),
       baseScore: (json['baseScore'] as num?)?.toInt() ?? 70,
       summary: json['summary'] as String? ?? '',
@@ -141,6 +157,8 @@ Map<String, dynamic> _$$PlateAnalysisDtoImplToJson(
     <String, dynamic>{
       'analysisToken': instance.analysisToken,
       'skinAnalysisId': instance.skinAnalysisId,
+      'skinBasis': instance.skinBasis,
+      'skinMeasuredAt': instance.skinMeasuredAt?.toIso8601String(),
       'plateScore': instance.plateScore,
       'baseScore': instance.baseScore,
       'summary': instance.summary,
@@ -153,6 +171,10 @@ _$SkinPlateDtoImpl _$$SkinPlateDtoImplFromJson(Map<String, dynamic> json) =>
     _$SkinPlateDtoImpl(
       plateId: (json['plateId'] as num).toInt(),
       skinAnalysisId: (json['skinAnalysisId'] as num).toInt(),
+      skinBasis: json['skinBasis'] as String?,
+      skinMeasuredAt: json['skinMeasuredAt'] == null
+          ? null
+          : DateTime.parse(json['skinMeasuredAt'] as String),
       plateScore: (json['plateScore'] as num).toInt(),
       baseScore: (json['baseScore'] as num?)?.toInt() ?? 70,
       summary: json['summary'] as String? ?? '',
@@ -171,6 +193,8 @@ Map<String, dynamic> _$$SkinPlateDtoImplToJson(_$SkinPlateDtoImpl instance) =>
     <String, dynamic>{
       'plateId': instance.plateId,
       'skinAnalysisId': instance.skinAnalysisId,
+      'skinBasis': instance.skinBasis,
+      'skinMeasuredAt': instance.skinMeasuredAt?.toIso8601String(),
       'plateScore': instance.plateScore,
       'baseScore': instance.baseScore,
       'summary': instance.summary,

@@ -6,7 +6,6 @@ import '../../../../app/theme/app_theme.dart';
 import '../../../../core/di/providers.dart';
 import '../../../../core/result/result.dart';
 import '../../../../core/widgets/app_widgets.dart';
-import '../../../auth/presentation/providers/auth_notifier.dart';
 import '../../domain/entities/skin_plate.dart';
 import '../widgets/plate_score_card.dart';
 import '../widgets/plate_summary_cards.dart';
@@ -48,18 +47,15 @@ class PlateDetailPage extends ConsumerWidget {
   }
 }
 
-class _Body extends ConsumerWidget {
+/// 자가신고 피부 타입을 채점 기준 문구로 쓰지 않는다 — 결과 화면과 같은 이유고,
+/// 그래서 여기도 [ConsumerWidget] 이 아니다.
+class _Body extends StatelessWidget {
   const _Body({required this.plate});
 
   final SkinPlate plate;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final declaredType = switch (ref.watch(authNotifierProvider)) {
-      Authenticated(:final user) => user.declaredSkinType,
-      _ => null,
-    };
-
+  Widget build(BuildContext context) {
     return ListView(
       padding: const EdgeInsets.fromLTRB(
           AppTheme.pagePadding, 8, AppTheme.pagePadding, 32),
@@ -82,12 +78,17 @@ class _Body extends ConsumerWidget {
             ),
           ),
         ),
-        const SizedBox(height: 18),
-        PlateScoreCard(
-          score: plate.plateScore,
-          basisLabel:
-              declaredType == null ? null : '${declaredType.label} 피부 기준',
+
+        // **pastRecord 다.** 서버는 저장한 날로 기준을 굳혀 주므로 8/15 기록을
+        // 8/17 에 열어도 TODAY 가 온다 — 여기서 "오늘 피부 상태 기준"이라고 쓰면 거짓말이다.
+        SkinBasisLine(
+          basis: plate.skinBasis,
+          measuredAt: plate.skinMeasuredAt,
+          pastRecord: true,
         ),
+        FoodTraitChips(food: plate.food),
+        const SizedBox(height: 18),
+        PlateScoreCard(score: plate.plateScore),
         const SizedBox(height: 26),
         // 저장된 기록도 같은 근거를 보여준다. 그때 채점에 쓰인 분석 id 로 읽으므로
         // 그 뒤에 피부를 다시 분석했어도 이 기록의 기준은 바뀌지 않는다.
