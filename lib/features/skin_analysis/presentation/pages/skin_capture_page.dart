@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:math' as math;
+import 'dart:typed_data' show Uint8List;
 
 import 'package:camera/camera.dart';
 import 'package:flutter/foundation.dart'
@@ -13,12 +14,15 @@ import '../../../../app/router/app_router.dart';
 import '../../../../app/theme/app_colors.dart';
 import '../../../../app/theme/app_theme.dart';
 import '../../../../core/camera/camera_error_message.dart';
+import '../../../../core/camera/preview_fit.dart';
 import '../../../../core/utils/photo_picker.dart';
 import '../../../../core/widgets/camera_preview_box.dart';
 import '../../data/datasources/face_gate.dart';
+import '../../domain/captured_image_validator.dart';
 import '../../domain/entities/face_gate_result.dart';
 import '../../domain/entities/skin_photo_set.dart';
 import '../../domain/face_gate_config.dart';
+import '../../domain/face_gate_rules.dart' show CaptureReadiness, readinessOf;
 import '../providers/skin_analysis_notifier.dart';
 
 /// 정지 이미지 게이트만 쓸 때의 자리표시자.
@@ -82,8 +86,23 @@ class _SkinCapturePageState extends ConsumerState<SkinCapturePage>
 
   FaceGateResult? _result;
 
-  /// 연속 통과 프레임 수. 자동 촬영은 이 값이 임계치에 닿을 때만 눌린다.
+  /// 연속 통과 프레임 수. 셔터 활성화와 자동 촬영이 이 값 하나에 걸려 있다.
   int _okStreak = 0;
+
+  /// 화면에 그리는 코 위치(프레임 좌표). 검출값을 그대로 그리면 300ms 마다
+  /// 몇 픽셀씩 튀어서 가이드가 얼굴 위에서 떨린다. 이전 값과 섞어 따라가게 한다.
+  Offset? _smoothNose;
+
+  /// 가이드 곡선의 크기 기준이 되는 얼굴 높이(프레임 좌표). 같이 부드럽게 한다 —
+  /// 이것만 튀면 곡선이 얼굴 위에서 커졌다 작아졌다 한다.
+  double? _smoothFaceHeight;
+
+  CaptureReadiness get _readiness => readinessOf(_result, _okStreak);
+
+  /// 방금 찍어서 **사용자 확인을 기다리는** 사진. 있으면 프리뷰 대신 확인 화면을
+  /// 그린다. [다음] 을 눌러야 `_accept` 로 넘어간다 — 찍자마자 다음 단계로
+  /// 넘어가면 사용자는 자기가 무엇을 올렸는지 끝내 보지 못한다.
+  _PendingShot? _pending;
 
   /// 촬영이 막힌 뒤 자동 촬영을 잠시 멈춰 두는 시각.
   DateTime _autoCaptureNotBefore = DateTime.fromMillisecondsSinceEpoch(0);
@@ -251,9 +270,18 @@ class _SkinCapturePageState extends ConsumerState<SkinCapturePage>
 
   /// 프레임마다 ML Kit 을 호출하면 프리뷰가 눈에 띄게 끊긴다.
   /// 간격을 두고, 앞 프레임 분석이 안 끝났으면 그냥 버린다.
+  ///
+  /// **확인 화면이 떠 있으면 아예 보지 않는다.** `_ensureStreaming` 에도 같은
+  /// 조건이 있지만 그것만으로는 못 막는다 — 앱을 나갔다 오면 `_openCamera` 가
+  /// 스트림을 무조건 다시 켠다. 그 경로로 프레임이 들어오면 사용자가 사진을
+  /// 들여다보는 사이 자동 촬영이 눌려서, 보고 있던 사진이 엉뚱한 것으로 바뀐다.
+  /// 카메라를 다시 여는 것 자체는 맞다 — [다시 촬영] 을 누를 때 프리뷰가 살아
+  /// 있어야 한다. 막을 곳은 여기다.
   void _onFrame(CameraImage frame) {
     final gate = _gate;
-    if (gate == null || _analyzing || _busy || _disposed) return;
+    if (gate == null || _analyzing || _busy || _disposed || _pending != null) {
+      return;
+    }
 
     final now = DateTime.now();
     if (now.difference(_lastAnalyzed) < FaceGateConfig.analysisInterval) return;
@@ -267,9 +295,11 @@ class _SkinCapturePageState extends ConsumerState<SkinCapturePage>
           _set(() {
             _result = result;
             _okStreak = result is FaceGateOk ? _okStreak + 1 : 0;
+            _smoothNose = _smoothedNose(result.nose);
+            _smoothFaceHeight = _smoothedHeight(result.faceBox?.height);
           });
           // 조건이 잠깐 맞은 게 아니라 유지되고 있을 때만 셔터를 누른다.
-          if (_okStreak >= FaceGateConfig.autoCaptureStableFrames &&
+          if (_readiness == CaptureReadiness.ready &&
               !_busy &&
               DateTime.now().isAfter(_autoCaptureNotBefore)) {
             unawaited(_capture());
@@ -279,6 +309,26 @@ class _SkinCapturePageState extends ConsumerState<SkinCapturePage>
         // 잡지 않으면 미처리 비동기 예외가 계속 쌓인다.
         .catchError((_) {})
         .whenComplete(() => _analyzing = false));
+  }
+
+  /// 이전 값과 섞어 떨림을 줄인다. 얼굴이 사라지면 바로 지운다 — 남은 가이드가
+  /// 허공에서 천천히 녹아 없어지면 아직 잡고 있는 것처럼 보인다.
+  ///
+  /// 첫 프레임은 섞지 않는다. 앞이 null 인데 0 에서 보간하면 가이드가 매번
+  /// 화면 좌상단에서 날아온다.
+  Offset? _smoothedNose(Offset? next) {
+    if (next == null) return null;
+    final previous = _smoothNose;
+    if (previous == null) return next;
+    return Offset.lerp(previous, next, FaceGateConfig.faceBoxSmoothing)!;
+  }
+
+  double? _smoothedHeight(double? next) {
+    if (next == null) return null;
+    final previous = _smoothFaceHeight;
+    if (previous == null) return next;
+    return previous +
+        (next - previous) * FaceGateConfig.faceBoxSmoothing;
   }
 
   Future<void> _capture() async {
@@ -312,12 +362,63 @@ class _SkinCapturePageState extends ConsumerState<SkinCapturePage>
         return;
       }
 
-      await _accept(prepared.file!);
+      // 바이트를 지금 한 번만 읽는다. `Image.file` 은 `dart:io` 라 이 화면을
+      // 웹에서 빌드할 수 없게 만들고, 매 rebuild 마다 다시 읽으면 확인 화면이
+      // 깜빡인다.
+      final bytes = await prepared.file!.readAsBytes();
+      if (!mounted || _disposed) return;
+
+      // **여기서 바로 다음 단계로 넘기지 않는다.** 사용자가 방금 찍힌 사진을
+      // 보고 [다시 촬영] / [다음] 을 고른다. 스트림은 촬영하면서 이미 멈춰 있고
+      // 확인 화면에서도 켜지 않는다 — 뒤에서 자동 촬영이 또 눌리면 사용자가
+      // 보고 있던 사진이 조용히 다른 것으로 바뀐다.
+      _set(() {
+        _pending =
+            _PendingShot(_stage, prepared.file!, bytes, prepared.checks);
+        _busy = false;
+      });
     } on Object catch (e) {
       // takePicture · ML Kit · 파일 IO · 이미지 디코딩 어디서든 던질 수 있다.
       // 하나라도 새어 나가면 _busy 가 선 채로 화면이 죽는다.
       await _recover(cameraErrorMessage(e, '촬영에 실패했습니다.'));
     }
+  }
+
+  /// 확인 화면에서 [다시 촬영]. 방금 찍은 사진을 버리고 프리뷰로 돌아간다.
+  ///
+  /// ponytail: 버린 파일을 지우지 않는다. 지우려면 `dart:io` 가 필요한데 이 화면은
+  /// 웹에서도 빌드되어야 해서(`kIsWeb` 분기가 있다) import 하는 순간 웹 빌드가
+  /// 깨진다. 임시 디렉터리에 100~200KB 짜리가 재촬영 횟수만큼 남을 뿐이고 OS 가
+  /// 회수한다. 쌓이는 게 문제가 되면 FaceGate 에 삭제를 하나 열어 위임한다.
+  Future<void> _retake() async {
+    // **스트림을 되살리기 전에 상태를 먼저 지운다.** 순서를 뒤집으면 스트림이
+    // 살아난 뒤 이 대입이 실행될 때까지 `_okStreak` 가 아직 3 이고 쿨다운도 이미
+    // 지난 시각이라, 프레임 하나만 들어와도 그 자리에서 다시 촬영된다 —
+    // "다시 찍겠다"고 누른 사람이 자세를 고칠 틈 없이 확인 화면을 다시 받는다.
+    // 다른 재개 지점(_recover · _accept · _pickFromGallery)은 `_busy` 가 서 있어
+    // 막히지만 여기는 `_capture` 가 이미 `_busy` 를 내려놓은 뒤다.
+    _set(() {
+      _pending = null;
+      _result = null;
+      _okStreak = 0;
+      _smoothNose = null;
+      _smoothFaceHeight = null;
+      _blockedGuide = null;
+      _autoCaptureNotBefore = DateTime.now().add(const Duration(seconds: 3));
+    });
+
+    await _lockCamera(_resumeStream);
+  }
+
+  /// 확인 화면에서 [다음].
+  Future<void> _confirm() async {
+    final confirmed = _pending;
+    if (confirmed == null) return;
+    _set(() {
+      _pending = null;
+      _busy = true;
+    });
+    await _accept(confirmed.file);
   }
 
   /// 갤러리도 게이트를 지난다. 실시간 검사를 거치지 않은 경로라 4개 조건을 전부 본다.
@@ -361,6 +462,9 @@ class _SkinCapturePageState extends ConsumerState<SkinCapturePage>
         return;
       }
 
+      // 갤러리는 확인 화면을 거치지 않는다. 사용자가 방금 피커에서 그 사진을 직접
+      // 골랐고, 이 경로는 4개 조건을 전부 다시 보는 fullGate 를 이미 통과했다.
+      // 자기가 고른 사진을 한 번 더 확인시키면 단계만 늘어난다.
       await _accept(prepared.file!);
     } on Object catch (e) {
       await _recover(cameraErrorMessage(e, '사진을 불러오지 못했습니다.'));
@@ -379,6 +483,8 @@ class _SkinCapturePageState extends ConsumerState<SkinCapturePage>
         _result = null; // 방향이 바뀌었으니 이전 판정은 버린다
         _blockedGuide = null; // 이전 단계의 실패 안내도 같이 버린다
         _okStreak = 0;
+        _smoothNose = null;
+        _smoothFaceHeight = null;
       });
       return;
     }
@@ -395,6 +501,8 @@ class _SkinCapturePageState extends ConsumerState<SkinCapturePage>
       _blockedGuide = guide;
       _result = null;
       _okStreak = 0;
+      _smoothNose = null;
+      _smoothFaceHeight = null;
       // 프리뷰는 통과인데 정지 이미지에서만 막히는 경우가 있다 — 프리뷰는 fast,
       // 업로드 관문은 accurate 라 흔들린 사진에서 갈린다. 쿨다운이 없으면
       // 0.9초마다 촬영·디코딩을 반복하면서 사용자는 손쓸 수 없는 안내만 본다.
@@ -434,6 +542,8 @@ class _SkinCapturePageState extends ConsumerState<SkinCapturePage>
       _blockedGuide = null;
       _result = null;
       _okStreak = 0;
+      _smoothNose = null;
+      _smoothFaceHeight = null;
       _shots.clear();
     });
 
@@ -495,7 +605,9 @@ class _SkinCapturePageState extends ConsumerState<SkinCapturePage>
   /// 되었는지를 build 에서 본다. 스트림이 살아나면 조건이 더 이상 맞지 않으므로
   /// 매 프레임 호출되지 않는다.
   void _ensureStreaming() {
-    if (_disposed || _busy || kIsWeb) return;
+    // 확인 화면이 떠 있으면 스트림을 되살리지 않는다. 뒤에서 자동 촬영이 눌리면
+    // 사용자가 보고 있던 사진이 조용히 다른 것으로 바뀐다.
+    if (_disposed || _busy || kIsWeb || _pending != null) return;
     if (ModalRoute.of(context)?.isCurrent == false) return;
     final controller = _controller;
     if (controller == null || controller.value.isStreamingImages) return;
@@ -511,9 +623,12 @@ class _SkinCapturePageState extends ConsumerState<SkinCapturePage>
 
     _ensureStreaming();
 
+    final pending = _pending;
     return Scaffold(
       backgroundColor: Colors.black,
-      body: _controller == null ? _noPreview() : _preview(),
+      body: pending != null
+          ? _reviewView(pending)
+          : (_controller == null ? _noPreview() : _preview()),
     );
   }
 
@@ -566,6 +681,101 @@ class _SkinCapturePageState extends ConsumerState<SkinCapturePage>
     );
   }
 
+  /// 방금 찍은 사진을 보여주고 사용자가 정하게 한다.
+  ///
+  /// **체크리스트는 관문이 아니다.** 경고가 있어도 [다음] 은 눌린다 — 이 사진을
+  /// 쓸지는 사진을 직접 보고 있는 사람이 정한다. 여기서 막으면 프리뷰(`fast`)와
+  /// 촬영본(`accurate`) 검출기가 갈릴 때 사용자가 빠져나갈 수 없게 된다.
+  Widget _reviewView(_PendingShot shot) {
+    final warnings =
+        shot.checks.where((c) => c.state == PhotoCheckState.warn).toList();
+
+    return SafeArea(
+      child: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(24, 16, 24, 8),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    '${_label(shot.stage)} 사진을 확인해 주세요',
+                    style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 17,
+                        fontWeight: FontWeight.w600),
+                  ),
+                ),
+                Text('${_stageIndex + 1}/${_stages.length}',
+                    style: const TextStyle(
+                        color: Colors.white54, fontSize: 13)),
+              ],
+            ),
+          ),
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(16),
+                // 업로드되는 것과 **같은 이미지**다 — 얼굴만 잘라낸 결과물이라
+                // 프리뷰에서 보던 화면 전체와 다르게 보이는 게 정상이다.
+                child: Image.memory(shot.bytes, fit: BoxFit.contain),
+              ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                for (final check in shot.checks) _CheckRow(check),
+                const SizedBox(height: 10),
+                // 확인 못 하는 것을 조용히 빼면 사용자는 목록이 전부인 줄 안다.
+                const Text(capturedPhotoBlindSpots,
+                    style: TextStyle(
+                        color: Colors.white38, fontSize: 11, height: 1.5)),
+              ],
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(24, 16, 24, 18),
+            child: Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: _retake,
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: Colors.white,
+                      side: const BorderSide(color: Colors.white38),
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                    ),
+                    child: const Text('다시 촬영'),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: ElevatedButton(
+                    // 경고가 있어도 막지 않는다. 다만 주 동작으로 보이지는 않게
+                    // 해서, 사용자가 무심코 넘기지 않도록 한 박자 세운다.
+                    onPressed: _confirm,
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      backgroundColor:
+                          warnings.isEmpty ? AppColors.primary : Colors.white24,
+                    ),
+                    child: Text(
+                      _shots.length == _stages.length - 1 ? '분석 시작' : '다음',
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   /// 프리뷰를 못 여는 환경. 갤러리 경로는 게이트를 통과하면 열려 있다.
   Widget _noPreview() {
     return Padding(
@@ -601,7 +811,11 @@ class _SkinCapturePageState extends ConsumerState<SkinCapturePage>
 
   Widget _preview() {
     final result = _result;
-    final canCapture = result?.canCapture ?? false;
+    final readiness = _readiness;
+    // **한 프레임 통과로는 셔터를 켜지 않는다.** 고개를 돌리다 스쳐 지나가는
+    // 순간에 조건이 맞을 수 있고, 그때 눌린 셔터는 자세를 잡기도 전에 다음
+    // 단계로 넘겨 버린다. 0.9초(3프레임) 유지해야 켠다.
+    final ready = readiness == CaptureReadiness.ready;
 
     // 지금 프레임의 판정이 항상 우선이다. 이 순서를 뒤집으면 이전 촬영 시도에서
     // 세운 문구가 남아, 체크리스트는 "방향" 이 틀렸다는데 안내는 "한 명의 얼굴만"
@@ -621,7 +835,20 @@ class _SkinCapturePageState extends ConsumerState<SkinCapturePage>
         CameraPreviewBox(_controller!),
         // 어디에 얼굴을 두어야 하는지 형태로 보여준다. 문장만으로는
         // "조금 더 가까이" 가 얼마나 가까이인지 알 수 없다.
-        _FaceGuide(passing: canCapture),
+        _FaceGuide(passing: ready),
+        // 얼굴을 네모로 감싸지 않는다. 네모는 "이 상자를 어디에 맞추지?" 를
+        // 묻게 만드는데, 사용자가 알아야 하는 건 **어느 쪽으로 돌리느냐** 다.
+        // 코를 기준으로 방향을 그리면 읽지 않아도 따라 하게 된다.
+        if (_smoothNose != null &&
+            _smoothFaceHeight != null &&
+            result?.frameSize != null)
+          _NoseGuideOverlay(
+            nose: _smoothNose!,
+            faceHeight: _smoothFaceHeight!,
+            frame: result!.frameSize!,
+            stage: _stage,
+            readiness: readiness,
+          ),
         if (kDebugMode && result?.debug != null)
           Positioned(top: 100, left: 8, child: _DebugOverlay(result!)),
         SafeArea(
@@ -710,15 +937,24 @@ class _SkinCapturePageState extends ConsumerState<SkinCapturePage>
                               style: const TextStyle(
                                   color: Colors.white, fontSize: 12)),
                         )
-                      else if (canCapture && !_busy)
+                      else if (!_busy && ready)
                         const Padding(
                           padding: EdgeInsets.only(bottom: 10),
-                          child: Text('곧 자동으로 촬영됩니다 · 탭하면 바로 촬영',
+                          child: Text('✓ 촬영 준비 완료 · 곧 자동으로 촬영됩니다',
+                              style: TextStyle(
+                                  color: Colors.greenAccent, fontSize: 12)),
+                        )
+                      // 조건은 맞았지만 아직 유지 중이다. 여기서 아무 말도 안 하면
+                      // 안내가 사라진 채 버튼만 꺼져 있어서 고장으로 읽힌다.
+                      else if (!_busy && readiness == CaptureReadiness.validating)
+                        const Padding(
+                          padding: EdgeInsets.only(bottom: 10),
+                          child: Text('좋아요 · 자세를 잠시 유지해주세요',
                               style: TextStyle(
                                   color: Colors.white70, fontSize: 12)),
                         ),
                       _CaptureShutter(
-                        enabled: canCapture && !_busy,
+                        enabled: ready && !_busy,
                         busy: _busy,
                         onTap: _capture,
                       ),
@@ -788,6 +1024,186 @@ class _CaptureShutter extends StatelessWidget {
 
 
 
+/// 확인 항목 한 줄. **`unknown` 은 ✓ 로 그리지 않는다** — 판단할 수단이 없는
+/// 것을 통과로 보여주면 사용자는 확인받았다고 믿는다.
+class _CheckRow extends StatelessWidget {
+  const _CheckRow(this.check);
+
+  final PhotoCheck check;
+
+  @override
+  Widget build(BuildContext context) {
+    final (icon, color) = switch (check.state) {
+      PhotoCheckState.ok => (Icons.check, Colors.greenAccent),
+      PhotoCheckState.warn => (Icons.error_outline, AppColors.primary),
+      PhotoCheckState.unknown => (Icons.remove, Colors.white38),
+    };
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 3),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, size: 16, color: color),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              // 경고면 무엇이 문제인지까지 말한다. 항목 이름만으로는 뭘 고쳐야
+              // 할지 알 수 없다.
+              check.note ??
+                  (check.state == PhotoCheckState.unknown
+                      ? '${check.label} — 확인할 수 없었어요'
+                      : check.label),
+              style: TextStyle(color: color, fontSize: 12, height: 1.4),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// 확인을 기다리는 촬영본. 바이트까지 들고 있는 이유는 `_capture` 주석 참조.
+class _PendingShot {
+  const _PendingShot(this.stage, this.file, this.bytes, this.checks);
+
+  final FacePhotoType stage;
+  final XFile file;
+  final Uint8List bytes;
+
+  /// 촬영본 확인 항목. **막지 않는다** — 경고가 있어도 [다음] 은 눌린다.
+  final List<PhotoCheck> checks;
+}
+
+/// 코를 기준으로 **어느 쪽으로 돌려야 하는지**를 그린다.
+///
+/// 얼굴을 네모로 감싸지 않는 이유가 있다. 네모는 "이 상자를 어디에 맞추지?" 를
+/// 묻게 만드는데, 3단계 촬영에서 사용자가 실제로 알아야 하는 것은 위치가 아니라
+/// **방향**이다. 코에 붙은 선과 호는 읽지 않아도 따라 하게 된다.
+///
+/// - 정면: 코를 지나는 세로 축. 얼굴을 이 축에 세우면 된다.
+/// - 왼쪽·오른쪽: 돌려야 하는 쪽에 호를 그린다. 호가 있는 쪽이 코가 갈 방향이다.
+///   방향은 `_TurnHint` 화살표와 같은 쪽이다 — 둘이 어긋나면 화면이 두 말을 한다.
+///
+/// 좌표는 이미 사용자 기준으로 뒤집혀 들어온다(`toUserSpace`). 여기서는 프리뷰가
+/// `BoxFit.cover` 로 확대·절단한 만큼만 맞추면 된다 — 그걸 빼먹고 단순 비례로
+/// 그리면 가이드가 얼굴에서 한쪽으로 밀린다.
+class _NoseGuideOverlay extends StatelessWidget {
+  const _NoseGuideOverlay({
+    required this.nose,
+    required this.faceHeight,
+    required this.frame,
+    required this.stage,
+    required this.readiness,
+  });
+
+  /// 프레임 좌표의 코 위치.
+  final Offset nose;
+
+  /// 프레임 좌표의 얼굴 높이. 가이드 크기를 얼굴에 비례시키는 데만 쓴다 —
+  /// 고정 픽셀로 그리면 멀리 있을 때 얼굴을 덮고 가까울 때 점처럼 작아진다.
+  final double faceHeight;
+
+  final Size frame;
+  final FacePhotoType stage;
+  final CaptureReadiness readiness;
+
+  @override
+  Widget build(BuildContext context) => CustomPaint(
+        painter: _NoseGuidePainter(nose, faceHeight, frame, stage, readiness),
+      );
+}
+
+class _NoseGuidePainter extends CustomPainter {
+  const _NoseGuidePainter(
+      this.nose, this.faceHeight, this.frame, this.stage, this.readiness);
+
+  final Offset nose;
+  final double faceHeight;
+  final Size frame;
+  final FacePhotoType stage;
+  final CaptureReadiness readiness;
+
+  static const _colors = {
+    CaptureReadiness.invalid: Colors.white70,
+    CaptureReadiness.validating: AppColors.primary,
+    CaptureReadiness.ready: Colors.greenAccent,
+  };
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = coverPointToWidget(nose, frame, size);
+    final reach = faceHeight * coverScale(frame, size) * 0.5;
+    final color = _colors[readiness]!;
+
+    final stroke = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 3
+      ..strokeCap = StrokeCap.round
+      ..color = color;
+
+    // 코 자리. 가이드가 무엇에 붙어 있는지 한 점으로 못 박는다.
+    canvas.drawCircle(center, 5, Paint()..color = color);
+
+    switch (stage) {
+      // 세로 축. 코 주변은 비워 둔다 — 선이 점을 뚫고 지나가면 어디가 기준인지
+      // 오히려 흐려진다.
+      case FacePhotoType.front:
+        canvas.drawLine(Offset(center.dx, center.dy - reach),
+            Offset(center.dx, center.dy - reach * 0.28), stroke);
+        canvas.drawLine(Offset(center.dx, center.dy + reach * 0.28),
+            Offset(center.dx, center.dy + reach), stroke);
+
+      // 돌려야 하는 쪽에 호. 사용자 좌표라 왼쪽이 x 작은 쪽이다.
+      case FacePhotoType.left:
+        _arc(canvas, center, reach, stroke, size, toLeft: true);
+      case FacePhotoType.right:
+        _arc(canvas, center, reach, stroke, size, toLeft: false);
+    }
+  }
+
+  /// 돌려야 하는 쪽에 괄호 하나를 세운다.
+  ///
+  /// **얼굴을 감싸지 않는다.** 처음에는 코를 중심으로 큰 호를 두 겹 그렸는데,
+  /// 에뮬레이터에서 보니 가이드 타원과 겹쳐 방향이 아니라 잡음으로 읽혔다.
+  /// 얼굴 옆에 하나만 세우는 쪽이 한눈에 들어온다.
+  void _arc(Canvas canvas, Offset center, double reach, Paint stroke, Size size,
+      {required bool toLeft}) {
+    final sign = toLeft ? -1.0 : 1.0;
+    final width = reach * 0.7;
+    // 얼굴이 크면 호가 화면 높이를 넘어간다. 위아래로도 잘라 둔다.
+    final height = math.min(reach * 1.6, size.height * 0.5);
+
+    // **화면 안으로 잡아 둔다.** 얼굴이 가장자리에 있으면 그 옆자리는 화면 밖이라,
+    // 안 잡으면 방향 표시가 통째로 사라진다 — 에뮬레이터에서 실제로 그랬다.
+    // 방향을 알려주는 표시라 자리가 조금 밀려도 뜻은 그대로다.
+    const margin = 16.0;
+    final limit = math.max(margin + width / 2, size.width - margin - width / 2);
+    final x = (center.dx + sign * reach * 0.6)
+        .clamp(math.min(margin + width / 2, limit), limit)
+        .toDouble();
+
+    // 볼록한 쪽이 돌아갈 방향을 향한다. 캔버스 각도는 3시 방향이 0이고
+    // 시계방향이 양수라, 6시에서 반 바퀴 돌면 왼쪽 반원이 그려진다.
+    canvas.drawArc(
+      Rect.fromCenter(
+          center: Offset(x, center.dy), width: width, height: height),
+      toLeft ? math.pi / 2 : -math.pi / 2,
+      math.pi,
+      false,
+      stroke,
+    );
+  }
+
+  @override
+  bool shouldRepaint(_NoseGuidePainter oldDelegate) =>
+      oldDelegate.nose != nose ||
+      oldDelegate.faceHeight != faceHeight ||
+      oldDelegate.frame != frame ||
+      oldDelegate.stage != stage ||
+      oldDelegate.readiness != readiness;
+}
+
 /// 측면 단계에서 고개를 어느 쪽으로 돌릴지 움직임으로 보여준다.
 ///
 /// 거울 프리뷰 앞에서 "왼쪽으로" 라는 문장은 한 박자 늦게 읽힌다 —
@@ -855,7 +1271,15 @@ class _DebugOverlay extends StatelessWidget {
       FaceGateUnavailable() => 'UNAVAILABLE',
     };
 
-    String num(double? v) => v == null ? '-' : v.toStringAsFixed(1);
+    String num(double? v) => v == null ? '-' : v.toStringAsFixed(2);
+
+    // 중앙에서 얼마나 벗어났는지(프레임 대비). 임계값을 실기기에서 맞출 때 쓴다.
+    final box = debug.faceBox;
+    final frame = debug.frameSize;
+    final offset = box == null || frame == null || frame.isEmpty
+        ? null
+        : Offset((box.center.dx - frame.width / 2) / frame.width,
+            (box.center.dy - frame.height / 2) / frame.height);
 
     return DecoratedBox(
       decoration: BoxDecoration(
@@ -866,9 +1290,16 @@ class _DebugOverlay extends StatelessWidget {
         padding: const EdgeInsets.all(8),
         child: Text(
           'Face: ${debug.faceCount}\n'
+          // 오버레이 좌표 변환이 통째로 이 값에 걸려 있다. 프레임이 세로로
+          // 서서 오는지(720x1280) 가로로 누워서 오는지(1280x720)에 따라 코
+          // 가이드가 얼굴에서 크게 어긋나는데, 화면에 안 띄우면 실기기에서
+          // "어긋난다"는 것만 알고 왜인지는 못 본다.
+          'Frame: ${frame == null ? '-' : '${frame.width.toInt()}x${frame.height.toInt()}'}\n'
           'Yaw: ${num(debug.yaw)}  Pitch: ${num(debug.pitch)}  Roll: ${num(debug.roll)}\n'
           'Ratio: ${num(debug.faceHeightRatio == null ? null : debug.faceHeightRatio! * 100)}%\n'
-          'Luma: ${debug.luminance ?? '-'}\n'
+          'Off: ${num(offset?.dx)}, ${num(offset?.dy)}\n'
+          'Nose: ${debug.nose == null ? '-' : '${debug.nose!.dx.toInt()},${debug.nose!.dy.toInt()}'}\n'
+          'Eye: ${num(debug.eyeOpen)}  Luma: ${debug.luminance ?? '-'}\n'
           '$verdict',
           style: const TextStyle(
               color: Colors.greenAccent, fontSize: 11, fontFamily: 'monospace'),

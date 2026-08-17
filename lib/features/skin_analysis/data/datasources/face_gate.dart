@@ -1,5 +1,6 @@
 import 'package:camera/camera.dart' show CameraDescription, CameraImage, XFile;
 
+import '../../domain/captured_image_validator.dart';
 import '../../domain/entities/face_gate_result.dart';
 
 // dart.library.io 가 있으면 모바일 구현, 없으면(=웹) 스텁을 가져온다.
@@ -42,13 +43,18 @@ abstract interface class FaceGate {
 
 /// 업로드 관문 통과 결과.
 class PreparedPhoto {
-  const PreparedPhoto(this.file, this.gate);
+  const PreparedPhoto(this.file, this.gate, {this.checks = const []});
 
   /// 크롭까지 끝난 업로드용 파일. **null 이면 업로드하지 않는다.**
   final XFile? file;
 
   /// 막힌 이유. 화면은 [FaceGateBlocked.guide] 를 그대로 띄우면 된다.
   final FaceGateResult gate;
+
+  /// 촬영본 확인 화면에 늘어놓을 항목들. **관문이 아니다** — 사용자가 사진을
+  /// 보고 [다시 촬영] 과 [다음] 중에 고르는 근거일 뿐이라, 여기에 경고가 있어도
+  /// [file] 은 그대로 있다. 막는 일은 위의 [gate] 하나가 맡는다.
+  final List<PhotoCheck> checks;
 }
 
 /// 호출부가 쓰는 유일한 진입점. 두 구현 파일이 같은 이름으로 제공한다.

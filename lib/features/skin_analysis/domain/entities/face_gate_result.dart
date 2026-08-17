@@ -1,4 +1,4 @@
-import 'dart:ui' show Rect;   // dart:ui 는 웹에도 있다. 플랫폼 중립이다.
+import 'dart:ui' show Offset, Rect, Size;   // dart:ui 는 웹에도 있다. 플랫폼 중립이다.
 
 /// 지금 찍어야 하는 사진의 종류. 세 장이 `POST /skin/analyses` 의
 /// front · left · right 파트로 올라간다.
@@ -10,15 +10,32 @@ import 'dart:ui' show Rect;   // dart:ui 는 웹에도 있다. 플랫폼 중립�
 enum FacePhotoType { front, left, right }
 
 /// 게이트가 막은 이유. 화면은 [FaceGateBlocked.guide] 를 그대로 띄우면 된다.
-enum FaceGateReason { noFace, multipleFaces, tooSmall, wrongOrientation, tooDark }
+enum FaceGateReason {
+  noFace,
+  multipleFaces,
+  tooSmall,
+  tooBig,
+  outOfFrame,
+  offCenter,
+  wrongOrientation,
+  eyesClosed,
+  tooDark,
+}
 
-/// 디버그 오버레이(§22)용 관측값. 릴리즈 빌드에서는 화면에 노출하지 않는다.
+/// 한 프레임에서 뽑아낸 관측값.
+///
+/// 디버그 오버레이(§22)가 주 용도지만 **얼굴 박스와 프레임 크기는 릴리즈에서도
+/// 쓴다** — 프리뷰 위에 박스를 그리려면 이 둘이 있어야 한다.
 class FaceGateDebug {
   const FaceGateDebug({
     required this.faceCount,
     this.yaw,
     this.pitch,
     this.roll,
+    this.faceBox,
+    this.nose,
+    this.frameSize,
+    this.eyeOpen,
     this.faceHeightRatio,
     this.luminance,
   });
@@ -27,6 +44,22 @@ class FaceGateDebug {
   final double? yaw;
   final double? pitch;
   final double? roll;
+
+  /// 검출된 얼굴 박스. **여백을 붙이지 않은** 원본이고, 좌표계는 사용자가 보는
+  /// 방향(= 미러 프리뷰와 같은 방향)이다. 크기·중앙 정렬 판정의 입력이다.
+  final Rect? faceBox;
+
+  /// 코 밑점. [faceBox] 와 같은 좌표계다.
+  ///
+  /// **그리기 전용이다 — 어떤 판정에도 쓰지 않는다.** 화면 가이드가 코를 기준으로
+  /// 방향을 그리기 때문에 들고 다닌다. 랜드마크를 못 읽으면 박스 중심이 들어온다.
+  final Offset? nose;
+
+  /// [faceBox] 가 놓인 프레임의 크기. 위젯 좌표로 옮기려면 필요하다.
+  final Size? frameSize;
+
+  /// 눈 뜸 확률 (0~1, 양쪽 중 큰 값). 분류를 끈 경로에서는 null 이다.
+  final double? eyeOpen;
 
   /// 얼굴 바운딩 박스 높이 / 프레임 높이
   final double? faceHeightRatio;
@@ -40,6 +73,10 @@ class FaceGateDebug {
         yaw: yaw,
         pitch: pitch,
         roll: roll,
+        faceBox: faceBox,
+        nose: nose,
+        frameSize: frameSize,
+        eyeOpen: eyeOpen,
         faceHeightRatio: faceHeightRatio ?? this.faceHeightRatio,
         luminance: luminance ?? this.luminance,
       );
@@ -57,13 +94,26 @@ sealed class FaceGateResult {
   bool get canCapture => this is FaceGateOk;
 
   FaceGateDebug? get debug;
+
+  /// 프리뷰에 그릴 얼굴 박스. 통과든 차단이든 얼굴이 잡혔으면 있다 —
+  /// 막힌 동안에도 박스가 보여야 사용자가 무엇을 고쳐야 하는지 안다.
+  Rect? get faceBox => debug?.faceBox;
+
+  /// 프리뷰에 그릴 코 위치. 얼굴이 잡혔으면 있다.
+  Offset? get nose => debug?.nose;
+
+  /// [faceBox] 가 놓인 프레임 크기.
+  Size? get frameSize => debug?.frameSize;
 }
 
 class FaceGateOk extends FaceGateResult {
   const FaceGateOk(this.faceRect, this.debug);
 
-  /// 프리뷰 좌표계의 얼굴 영역(여백 포함). **오버레이를 그리는 데만 쓴다.**
-  /// 업로드 크롭에는 쓰지 않는다 — 프리뷰와 촬영 원본은 해상도도 방향도 다르다.
+  /// 얼굴 영역(여백 포함). **정지 이미지 경로의 크롭에만 쓴다.**
+  ///
+  /// 라이브 프리뷰 경로가 돌려주는 값은 크롭에 쓰지 않는다 — 프리뷰와 촬영 원본은
+  /// 해상도도 방향도 다르고, 게다가 좌우가 사용자 기준으로 뒤집혀 있다(`toUserSpace`).
+  /// 그 값으로 사진을 자르면 반대쪽 뺨이 잘려 나간다.
   final Rect faceRect;
 
   @override
