@@ -65,23 +65,26 @@ class ScoredItemDto with _$ScoredItemDto {
       _$ScoredItemDtoFromJson(json);
 }
 
-/// AI 가 사진에서 읽은 피부 타입.
+/// 오늘의 피부 타입과 상태. 서버가 지표에서 규칙으로 낸다.
 ///
-/// `skinTypeGap.observed` 와는 다른 값이다 — 그쪽은 서버가 5개 지표에서 규칙으로
-/// 도출한다. 둘이 갈리는 것은 오류가 아니라 정보이고, 갭 카드는 계속 규칙값을 쓴다.
+/// [primary] 는 `skinTypeGap.observed` 와 **항상 같은 값**이다. 예전에는 이 필드가
+/// AI 관찰값이라 둘이 갈릴 수 있었고, 그래서 S05 는 제목에 규칙값을·칩에 AI 값을
+/// 그리며 한 화면에서 타입 두 개를 들고 있었다. 서버가 판정을 한쪽으로 모으면서
+/// 그 구조가 없어졌다.
 ///
 /// `traits` 를 enum 으로 올리지 않는다. 화면에 그리는 것은 서버가 조합해 준 [label]
-/// 이고("건성 · 민감 경향"), 앱이 경향을 따로 그리기 시작하면 조합 규칙이 두 곳에 생긴다.
+/// 이고("건성 · 붉은기"), 앱이 상태를 따로 그리기 시작하면 조합 규칙이 두 곳에 생긴다.
+/// 그래서 서버가 상태 값 이름을 바꿔도 이 모델은 깨지지 않는다.
 @freezed
-class AiSkinTypeDto with _$AiSkinTypeDto {
-  const factory AiSkinTypeDto({
+class SkinTypeDto with _$SkinTypeDto {
+  const factory SkinTypeDto({
     String? primary,
     @Default(<String>[]) List<String> traits,
     @Default('') String label,
-  }) = _AiSkinTypeDto;
+  }) = _SkinTypeDto;
 
-  factory AiSkinTypeDto.fromJson(Map<String, dynamic> json) =>
-      _$AiSkinTypeDtoFromJson(json);
+  factory SkinTypeDto.fromJson(Map<String, dynamic> json) =>
+      _$SkinTypeDtoFromJson(json);
 }
 
 /// AI 추정 피부 나이. 실제 나이가 아니라 사진 기반 외관 추정이다.
@@ -108,7 +111,9 @@ class SkinAnalysisDto with _$SkinAnalysisDto {
     required SkinMetricsDto metrics,
     // 같은 5개에 등급과 근거를 붙인 것. 이 기능 이전에 저장된 분석이면 근거가 비어 있다.
     @Default(<ScoredItemDto>[]) List<ScoredItemDto> metricDetails,
-    AiSkinTypeDto? skinType,            // 예전 분석이면 서버가 키를 생략한다
+    // 지표에서 규칙으로 도출한다 — 예전 분석에도 온다. 서버가 못 낼 이유가 없어졌지만
+    // 널 허용은 유지한다. 계약이 바뀌었다고 옛 기록을 여는 순간 앱이 멎어서는 안 된다.
+    SkinTypeDto? skinType,
     SkinAgeDto? skinAge,                // 예전 분석이면 서버가 키를 생략한다
     @Default('') String summary,
     @Default(<HighlightDto>[]) List<HighlightDto> highlights,
@@ -132,7 +137,7 @@ extension SkinAnalysisDtoX on SkinAnalysisDto {
           barrier: metrics.barrier,
         ),
         metricDetails: metricDetails.map((d) => d.toEntity()).toList(),
-        aiSkinType: skinType?.toEntity(),
+        skinType: skinType?.toEntity(),
         skinAge: skinAge?.toEntity(),
         summary: summary,
         highlights: highlights
@@ -153,11 +158,11 @@ extension ScoredItemDtoX on ScoredItemDto {
       ScoredItem(key: key, score: score, evidence: evidence);
 }
 
-extension AiSkinTypeDtoX on AiSkinTypeDto {
+extension SkinTypeDtoX on SkinTypeDto {
   /// primary 는 모르는 값이면 null 로 흘려보낸다 — SkinType 의 기존 규칙과 같다.
   /// label 이 비어 있으면 화면이 기존 문구로 떨어진다.
-  AiSkinType toEntity() =>
-      AiSkinType(primary: SkinType.fromJson(primary), label: label);
+  ObservedSkinType toEntity() =>
+      ObservedSkinType(primary: SkinType.fromJson(primary), label: label);
 }
 
 extension SkinAgeDtoX on SkinAgeDto {
