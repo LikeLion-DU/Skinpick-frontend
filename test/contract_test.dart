@@ -301,7 +301,7 @@ void main() {
   });
 
   test('R10 고열량 — 새 룰과 짝 없는 주의(R07)를 함께 처리한다', () {
-    // **손으로 쓴 응답이다.** AI_MOCK 픽스처(김치찌개 520kcal)로는 R10(900kcal
+    // **손으로 쓴 응답이다.** AI_MOCK 픽스처(김치찌개 520kcal)로는 R10(660kcal
     // 초과)도, 튀김이 아닌 기름진 음식의 R07 도 만들 수 없다. 실물이 필요해지면
     // 백엔드에 요청한다.
     final analysis = PlateAnalysisDto.fromJson({
@@ -317,12 +317,15 @@ void main() {
       'feedbacks': {
         'caution': [
           {'message': '기름진 음식', 'scoreDelta': -6, 'ruleCode': 'R07'},
-          {'message': '고열량', 'scoreDelta': -6, 'ruleCode': 'R10'},
+          {'message': '고열량', 'scoreDelta': -7, 'ruleCode': 'R10'},
         ],
         'action': [
-          // 서버 RuleConstants.GAIN_LESS_RICE 와 같은 5 다. 단언하는 값은 아니지만
-          // 손으로 쓴 JSON 에 없는 숫자를 박아 두면 다음 사람이 그걸 계약으로 읽는다.
-          {'message': '밥 양을 줄여보세요.', 'expectedGain': 5, 'ruleCode': 'R10'},
+          // **회복치는 이제 상수가 아니다.** 서버가 행동 후 단계를 계산해서 싣는다
+          // (2026-08-18 재캘리브레이션 — 옛 GAIN_LESS_RICE 상수는 없어졌다).
+          // 980kcal 은 2단계(-7)고 3/4 로 줄이면 735kcal 이라 1단계(-4)로만 내려간다
+          // → 회복 3. 단언하는 값은 아니지만, 손으로 쓴 JSON 에 없는 숫자를 박아 두면
+          // 다음 사람이 그걸 계약으로 읽는다.
+          {'message': '밥 양을 줄여보세요.', 'expectedGain': 3, 'ruleCode': 'R10'},
         ],
       },
       'appliedRules': ['R07', 'R10'],
