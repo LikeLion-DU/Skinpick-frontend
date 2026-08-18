@@ -170,8 +170,10 @@ void main() {
   });
 
   test('GET /skin/analyses/latest — 확장 필드가 없던 시절의 기록도 파싱된다', () {
-    // 이 기능 이전에 저장된 분석은 서버가 세 키를 통째로 생략한다(non_null).
-    // required 를 쓰면 여기서 죽는다 — 옛 기록을 여는 순간 앱이 멎는다.
+    // **실제로 오는 응답이 아니라 방어 테스트다.** `skinType` 은 저장된 지표에서
+    // 매번 다시 만들어져 옛 기록에도 오고(서버 `SkinAnalysisResponse`: "항상 채워진다"),
+    // 지금 세 키가 다 빠지는 응답은 없다. 그래도 셋 다 없는 모양을 여기서 태운다 —
+    // required 를 걸면 계약이 바뀌는 날 옛 기록을 여는 순간 앱이 멎는다.
     final analysis = SkinAnalysisDto.fromJson({
       'skinAnalysisId': 1,
       'skinScore': 55,
