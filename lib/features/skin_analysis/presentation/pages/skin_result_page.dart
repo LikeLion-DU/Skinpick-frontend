@@ -289,6 +289,14 @@ class _TypeCard extends StatelessWidget {
             ],
           ),
 
+          // 지표 숫자가 왜 그 숫자인지. 서버가 사진에서 본 것을 지표당 최대
+          // 2줄로 내려준다 — 앱이 점수에서 문장을 짓지 않는다. 확장 필드가
+          // 없던 기록은 근거가 비어 있고, 그때는 토글째 사라진다.
+          if (_evidenceRows(analysis) case final rows when rows.isNotEmpty) ...[
+            const SizedBox(height: 4),
+            _EvidenceSection(rows: rows),
+          ],
+
           // 서버가 만든 한 줄 요약. 앱이 문장을 짓지 않는다.
           if (analysis.summary.isNotEmpty) ...[
             const SizedBox(height: 20),
@@ -312,6 +320,94 @@ class _TypeCard extends StatelessWidget {
   }
 }
 
+
+/// 관찰 근거를 그리는 순서와 이름.
+///
+/// **위 지표 원 4개와 짝이 맞아야 한다.** 서버는 trouble 까지 5개의 근거를 주지만
+/// 시안이 그 원을 안 그리므로, 그 줄만 넣으면 어느 지표에 붙은 설명인지 알 수 없다.
+/// 이름도 원 쪽을 따른다 — barrier 는 여기서 '장벽'(`SkinMetrics.toBars`)이 아니라
+/// '피부결'이다.
+const _evidenceMetrics = [
+  ('hydration', '수분'),
+  ('oil', '유분'),
+  ('redness', '홍조'),
+  ('barrier', '피부결'),
+];
+
+/// (지표 이름, 관찰 문장) 줄 목록. 근거가 없는 지표는 줄을 만들지 않는다.
+List<(String, String)> _evidenceRows(SkinAnalysis analysis) {
+  final byKey = {
+    for (final detail in analysis.metricDetails) detail.key: detail,
+  };
+
+  return [
+    for (final (key, label) in _evidenceMetrics)
+      for (final line in byKey[key]?.evidence ?? const <String>[]) (label, line),
+  ];
+}
+
+/// "관찰 근거 자세히 보기" — 접어 둔 지표별 관찰 문장.
+///
+/// 기본은 접힘이다. 지표 4개 × 최대 2줄이라 펼쳐 둔 채로 두면 점수·요약·하이라이트가
+/// 있는 카드가 문장으로 덮인다. 숫자를 대신하는 것이 아니라 그 아래 한 겹이다.
+///
+/// 문장은 서버가 만든 것을 그대로 옮긴다.
+class _EvidenceSection extends StatelessWidget {
+  const _EvidenceSection({required this.rows});
+
+  final List<(String, String)> rows;
+
+  @override
+  Widget build(BuildContext context) {
+    return ExpansionTile(
+      // 기본 ExpansionTile 은 위아래 구분선을 그린다. 카드 안에 넣으면
+      // 시안에 없던 칸막이가 생긴다.
+      shape: const Border(),
+      collapsedShape: const Border(),
+      tilePadding: EdgeInsets.zero,
+      childrenPadding: const EdgeInsets.only(bottom: 4),
+      expandedCrossAxisAlignment: CrossAxisAlignment.start,
+      iconColor: AppColors.textSecondary,
+      collapsedIconColor: AppColors.textSecondary,
+      title: const Text(
+        '관찰 근거 자세히 보기',
+        style: TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.w500,
+          color: AppColors.textSecondary,
+        ),
+      ),
+      children: [
+        // 지표 이름을 고정폭 칸으로 세우지 않는다. 시스템 글자 크기를 키우면
+        // '피부결' 이 그 칸에서 두 줄로 접힌다. 한 문단으로 흘려 두면 어떤
+        // 배율에서도 문장처럼 이어진다.
+        for (final (label, line) in rows)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: Text.rich(
+              TextSpan(
+                children: [
+                  TextSpan(
+                    text: '$label  ',
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                  TextSpan(text: line),
+                ],
+              ),
+              style: const TextStyle(
+                fontSize: 11,
+                color: AppColors.textBody,
+                height: 1.5,
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+}
 
 class _Metric extends StatelessWidget {
   const _Metric({
