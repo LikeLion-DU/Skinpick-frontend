@@ -21,7 +21,13 @@ class Env {
   /// "서버가 죽었나" 부터 의심하게 된다.
   ///
   /// 정의를 넘기면 여전히 그쪽이 이긴다. 실기기에 로컬 서버를 물려 볼 때
-  /// `--dart-define=API_BASE_URL=http://<맥 IP>:8080/api/v1` 로 덮으면 된다.
+  /// `--dart-define=API_BASE_URL=http://<맥 IP>:8080/api/v1` 로 덮는다.
+  ///
+  /// **릴리스 빌드로 그걸 하려면 평문 예외가 따로 있어야 한다.** Android 릴리스는
+  /// `android/app/src/main/res/xml/network_security_config.xml` 이 10.0.2.2 ·
+  /// localhost · 127.0.0.1 만 허용해서 LAN IP 로 가는 http 를 OS 가 막는다 —
+  /// 그 파일에 IP 한 줄을 더해야 한다(절차는 파일 주석에 있다). debug 는
+  /// `src/debug` 오버레이가 전부 열어 두므로 이 정의만으로 된다.
   static const String apiBaseUrl = String.fromEnvironment(
     'API_BASE_URL',
     defaultValue: kReleaseMode ? _deployedHost : _localHost,
