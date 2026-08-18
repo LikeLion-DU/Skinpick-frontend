@@ -18,8 +18,8 @@ import '../providers/skin_analysis_notifier.dart';
 /// 체크 아이콘 · 타입 카드(점수·지표 4종·요약·하이라이트) · "앞으로 이런 기준으로"
 /// 카드 · 시작 버튼.
 ///
-/// 시안이 지표를 4개만 보여주는 것은 확인받은 의도다(서버는 5개를 준다).
-/// trouble 은 화면에 안 그리지만 점수 계산에는 그대로 들어가 있다.
+/// 시안이 지표 **원**을 4개만 그리는 것은 확인받은 의도다(서버는 5개를 준다).
+/// trouble 은 원이 없지만 관찰 근거에는 들어간다 — 이유는 [_evidenceMetrics] 참고.
 ///
 /// **점수와 하이라이트는 반드시 화면에 있어야 한다.** 산식이 공개돼 있어
 /// 심사위원이 직접 검산할 수 있다는 게 이 기능의 근거다(PRD §4.1). 시안이 이
@@ -280,7 +280,7 @@ class _TypeCard extends StatelessWidget {
                 background: AppColors.rednessBg,
               ),
               _Metric(
-                label: '피부결',
+                label: '장벽',
                 band: MetricBand.higherIsBetter(metrics.barrier),
                 icon: Icons.auto_awesome,
                 foreground: AppColors.textureFg,
@@ -323,15 +323,22 @@ class _TypeCard extends StatelessWidget {
 
 /// 관찰 근거를 그리는 순서와 이름.
 ///
-/// **위 지표 원 4개와 짝이 맞아야 한다.** 서버는 trouble 까지 5개의 근거를 주지만
-/// 시안이 그 원을 안 그리므로, 그 줄만 넣으면 어느 지표에 붙은 설명인지 알 수 없다.
-/// 이름도 원 쪽을 따른다 — barrier 는 여기서 '장벽'(`SkinMetrics.toBars`)이 아니라
-/// '피부결'이다.
+/// **지표 원보다 한 줄 많다.** 원은 시안대로 4개지만 근거는 trouble 까지 5개다 —
+/// 서버 룰 R03 의 판정 이유가 음식 결과에서 "지금 트러블 지표가 … 상태에서" 라고
+/// 인용하는데, 서버 `highlights` 는 위치 기반 3줄이라 트러블이 탈락할 수 있다.
+/// 그러면 앱이 한 번도 보여준 적 없는 상태를 근거로 감점을 설명하게 된다.
+/// 원 없이 근거만 있는 줄이 생기는 것보다 그쪽이 나쁘다.
+///
+/// 이름은 **서버 문구를 따른다.** barrier 는 '장벽'이다 — 하이라이트가 "피부 장벽
+/// 양호", 룰 이유가 "지금 장벽 지표가 …" 이다. '피부결'로 부르면 나이 축
+/// `skinTexture`(프롬프트가 정의한 이름이 '피부결'이다)와 한 화면에서 같은 이름이
+/// 두 지표를 가리킨다.
 const _evidenceMetrics = [
   ('hydration', '수분'),
   ('oil', '유분'),
   ('redness', '홍조'),
-  ('barrier', '피부결'),
+  ('trouble', '트러블'),
+  ('barrier', '장벽'),
 ];
 
 /// (지표 이름, 관찰 문장) 줄 목록. 근거가 없는 지표는 줄을 만들지 않는다.
@@ -379,7 +386,7 @@ class _EvidenceSection extends StatelessWidget {
       ),
       children: [
         // 지표 이름을 고정폭 칸으로 세우지 않는다. 시스템 글자 크기를 키우면
-        // '피부결' 이 그 칸에서 두 줄로 접힌다. 한 문단으로 흘려 두면 어떤
+        // '트러블' 이 그 칸에서 두 줄로 접힌다. 한 문단으로 흘려 두면 어떤
         // 배율에서도 문장처럼 이어진다.
         for (final (label, line) in rows)
           Padding(
