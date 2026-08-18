@@ -113,7 +113,7 @@ void main() {
   }
 
   /// 관찰 근거는 숫자를 대신하지 않는다 — 접힌 한 줄 뒤에 있다가 눌러야 펼쳐진다.
-  /// 항상 펼쳐 두면 지표 4개 × 최대 2줄이 점수·요약·하이라이트를 덮는다.
+  /// 항상 펼쳐 두면 지표 5개 × 최대 2줄이 점수·요약·하이라이트를 덮는다.
   testWidgets('관찰 근거는 접혀 있다가 펼치면 서버 문장이 나온다', (tester) async {
     await tester.binding.setSurfaceSize(designSize);
     await tester.pumpWidget(host(data('skin_latest')));
@@ -129,11 +129,15 @@ void main() {
 
     // 지표 이름이 문장 앞에 붙는다 — 어느 지표의 근거인지가 문장 안에 있어야 한다.
     expect(find.textContaining('수분  볼과 입가에 부분적인 각질이 보임'), findsOneWidget);
-    expect(find.textContaining('피부결  전반적인 피부결이 균일한 편임'), findsOneWidget);
 
-    // 서버는 트러블 근거도 주지만 이 카드에는 트러블 원이 없다.
-    // 근거만 뜨면 어느 지표에 붙은 설명인지 알 수 없다.
-    expect(find.textContaining('작은 융기가 소수만 보임'), findsNothing);
+    // barrier 는 '장벽'이다. 서버 하이라이트("피부 장벽 양호")·룰 이유와 같은 이름이어야
+    // 하고, '피부결'은 나이 축 skinTexture 가 쓰는 이름이라 한 화면에서 겹친다.
+    expect(find.textContaining('장벽  전반적인 피부결이 균일한 편임'), findsOneWidget);
+
+    // 트러블은 지표 원이 없어도 근거에는 싣는다. 서버 룰 R03 의 판정 이유가
+    // 음식 결과에서 트러블을 인용하는데, 앱이 그 상태를 한 번도 안 보여주면
+    // 근거 없는 감점이 된다.
+    expect(find.textContaining('트러블  작은 융기가 소수만 보임'), findsOneWidget);
 
     expect(tester.takeException(), isNull);
   });
