@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 /// 빌드 시점에 --dart-define 으로 주입한다.
 ///
 ///   flutter run --dart-define=API_BASE_URL=http://10.0.2.2:8080/api/v1
@@ -7,9 +9,28 @@
 class Env {
   const Env._();
 
+  /// 로컬 개발 서버. debug · profile 의 기본값이다.
+  static const String _localHost = 'http://10.0.2.2:8080/api/v1';
+
+  /// 배포 서버 (PRD §9.6 "배포는 https").
+  static const String _deployedHost = 'https://1-201-116-157.sslip.io/api/v1';
+
+  /// **기본값을 빌드 모드로 가른다.** `--dart-define` 하나에 기대면, 그 플래그를
+  /// 빠뜨린 릴리스 빌드가 실기기에서 `10.0.2.2` 를 찌른다 — 기기에는 그런 호스트가
+  /// 없으니 모든 화면이 연결 오류로 뜨는데, 빌드는 성공했고 로그도 안 남아서
+  /// "서버가 죽었나" 부터 의심하게 된다.
+  ///
+  /// 정의를 넘기면 여전히 그쪽이 이긴다. 실기기에 로컬 서버를 물려 볼 때
+  /// `--dart-define=API_BASE_URL=http://<맥 IP>:8080/api/v1` 로 덮는다.
+  ///
+  /// **릴리스 빌드로 그걸 하려면 평문 예외가 따로 있어야 한다.** Android 릴리스는
+  /// `android/app/src/main/res/xml/network_security_config.xml` 이 10.0.2.2 ·
+  /// localhost · 127.0.0.1 만 허용해서 LAN IP 로 가는 http 를 OS 가 막는다 —
+  /// 그 파일에 IP 한 줄을 더해야 한다(절차는 파일 주석에 있다). debug 는
+  /// `src/debug` 오버레이가 전부 열어 두므로 이 정의만으로 된다.
   static const String apiBaseUrl = String.fromEnvironment(
     'API_BASE_URL',
-    defaultValue: 'http://10.0.2.2:8080/api/v1',
+    defaultValue: kReleaseMode ? _deployedHost : _localHost,
   );
 
   /// 서버 없이 UI만 확인할 때 사용하는 로컬 목업 모드.
