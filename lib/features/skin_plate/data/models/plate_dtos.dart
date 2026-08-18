@@ -53,7 +53,9 @@ class FoodAnalysisDto with _$FoodAnalysisDto {
     /// 음식 특성 5종. **서버는 "모른다"를 null 이 아니라 `UNKNOWN`(foodGroup 은
     /// `ETC`) 문자열로 내려보낸다.** nullable 로 받아 null 체크만 하면 화면에
     /// UNKNOWN 이 그대로 뜬다 — 숨김은 [FoodGroup] 쪽 enum 이 맡는다.
-    /// 기본값은 이 필드가 없던 시절(V7 이전) 기록용이다.
+    /// 기본값이 막는 것은 **옛 기록이 아니라 옛 서버 응답**이다. 저장된 옛 행에도
+    /// 서버는 키를 UNKNOWN/ETC 로 채워 내리고(`plate_legacy_traits.json`), 이 키를
+    /// 아예 안 만들던 것은 배포 경계에 남은 구 서버다(`plate_analyze.json`).
     @Default('ETC') String foodGroup,
     @Default('UNKNOWN') String portionSize,
     @Default('UNKNOWN') String spiciness,
@@ -283,15 +285,19 @@ class PlateHistoryDayDto with _$PlateHistoryDayDto {
   const factory PlateHistoryDayDto({
     required DateTime date,
 
-    /// 그날 피부 분석이 없으면 서버가 키를 뺀다. required 로 두면 파싱이 죽는다.
+    /// **정상 응답에는 항상 온다.** 그날 얼굴을 안 찍었어도 서버가 그날 첫 기록의
+    /// 채점 기준 분석 점수로 채운다(`PlateHistoryService`). 계약상 nullable 이라
+    /// 그대로 열어 두는 것이지, 비는 날이 있어서가 아니다.
     int? skinScore,
 
     /// 그날 기록들의 평균. 서버가 계산해서 준다.
     ///
-    /// **기본값을 두지 않는다.** 서버는 평균을 못 낸 날 이 키를 통째로 뺀다.
-    /// 0 으로 떨어뜨리면 홈이 "0점 · 주의" 를 그리는데, 0점은 "아주 나쁘게
-    /// 먹었다"로 읽힌다 — 아직 안 먹은 것과 다른 상태다. null 이어야 카드가
-    /// 시안대로 `OO점` 으로 빠진다.
+    /// 서버 쪽 타입이 primitive `int` 라 이 키는 생략될 수 없고, 기록이 하나도
+    /// 없는 날은 `days` 에 아예 안 들어온다. nullable 은 방어다.
+    ///
+    /// **그래도 기본값을 두지 않는다.** 0 으로 떨어뜨리면 홈이 "0점 · 주의" 를
+    /// 그리는데, 0점은 "아주 나쁘게 먹었다"로 읽힌다 — 아직 안 먹은 것과 다른
+    /// 상태다. null 이어야 카드가 시안대로 `OO점` 으로 빠진다.
     int? plateScore,
 
     /// 시안의 "목표 80점". 서버가 못 보내도 화면이 0 을 그리지 않도록 기본값을 둔다.

@@ -376,8 +376,13 @@ void main() {
     expect(plate.food.nutrition.sodiumMg, 1850);
   });
 
+  /// **이 픽스처는 손으로 쓴 것이고, 그대로 둔다.** 여기서 지키는 계약(여러 날
+  /// 정렬 · 같은 날 2건의 시각 정렬 · 서버가 낸 평균)은 실서버에서 캡처할 수 없다 —
+  /// 과거 날짜의 기록을 만들 방법이 없어서 배포 계정에는 하루치 한 건뿐이다.
+  ///
+  /// 손으로 쓴 픽스처의 위험은 "필드명이 틀려도 파싱만 맞으면 초록"인 것이다.
+  /// 그쪽은 아래 실캡처 테스트(`plate_history_live`)가 막는다.
   test('GET /plates?from=&to= — 날짜 내림차순, 같은 날은 시각 내림차순', () {
-    // ⚠️ 이 픽스처도 실서버 curl 이 아니다. 백엔드 응답이 오면 교체할 것.
     final days = PlateHistoryDto.fromJson(data('plate_history')).toEntity();
 
     expect(days.length, 2);
@@ -408,6 +413,43 @@ void main() {
 
     // plateId 가 곧 로컬 사진 파일명이다 — <documents>/plates/{plateId}.jpg
     expect(days.last.plates.single.plateId, 3);
+  });
+
+  /// 배포 서버(`https://1-201-116-157.sslip.io`)에서 그대로 받아 저장한 응답.
+  /// 2026-08-18 캡처, 테스트 계정 기준.
+  ///
+  /// **키 이름을 원문 JSON 에서 못 박는 것이 이 테스트의 전부다.** 위 픽스처는 손으로
+  /// 쓴 것이라 필드명이 서버와 어긋나도 저 혼자 파싱에 성공한다 — 서버가 키를 바꾸면
+  /// json_serializable 이 조용히 null 로 두고 화면만 빈다. 그 부류를 실제 페이로드로
+  /// 한 번 대조해 둔다.
+  ///
+  /// 서버 계약이 바뀌면 이 파일을 다시 떠서 교체한다:
+  ///   curl -s "$BASE/plates?from=&to=" -H "Authorization: Bearer $TOKEN"
+  test('GET /plates?from=&to= — 실서버 응답이 그대로 파싱된다', () {
+    final json = data('plate_history_live');
+    final day = (json['days'] as List).first as Map<String, dynamic>;
+    final plate = (day['plates'] as List).first as Map<String, dynamic>;
+
+    // 앱이 읽는 키가 실제로 그 이름으로 온다.
+    for (final key in ['date', 'skinScore', 'plateScore', 'targetScore',
+                       'aiComment', 'plates']) {
+      expect(day.containsKey(key), isTrue, reason: 'days[].$key 가 없다');
+    }
+    for (final key in ['plateId', 'foodName', 'plateScore', 'mealType',
+                       'recordedAt']) {
+      expect(plate.containsKey(key), isTrue, reason: 'plates[].$key 가 없다');
+    }
+
+    // 그 키들이 도메인까지 값으로 올라온다. containsKey 만 보면 타입이 바뀐 것을 놓친다.
+    final days = PlateHistoryDto.fromJson(json).toEntity();
+    final today = days.single;
+
+    expect(today.skinScore, isNotNull);
+    expect(today.plateScore, isNotNull);
+    expect(today.targetScore, 80);
+    expect(today.aiComment, isNotEmpty);
+    expect(today.plates.single.mealType, isNotNull);
+    expect(today.plates.single.recordedAt.year, 2026);
   });
 
   test('POST /plates/records — 저장되면 plateId·createdAt·foodAnalysisId 가 생긴다', () {
