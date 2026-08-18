@@ -426,8 +426,9 @@ void main() {
     // 저장은 AI 를 다시 부르지 않는다. analyze 가 보여준 점수가 그대로 확정된다.
     expect(plate.plateScore, 60);
 
-    // 저장 시 1회 생성된 AI 문장. 생성이 실패한 기록은 키가 없고 앱은
-    // 룰 요약(summary)으로 대신한다 — nullable 인 이유가 그것이다.
+    // 저장 시 1회 생성된 AI 문장. 생성이 실패한 기록은 서버가 키를 빼므로
+    // nullable 이고, 그때 앱은 "AI 맞춤 TIP" 카드를 아예 그리지 않는다 —
+    // 룰 요약으로 메우면 AI 가 만들지 않은 문장에 AI 제목이 붙는다.
     expect(plate.aiTip, isNotEmpty);
   });
 

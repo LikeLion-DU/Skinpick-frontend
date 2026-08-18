@@ -1957,7 +1957,9 @@ mixin _$SkinPlateDto {
   FeedbackGroupDto get feedbacks => throw _privateConstructorUsedError;
   List<String> get appliedRules => throw _privateConstructorUsedError;
 
-  /// "AI 맞춤 TIP". 생성 실패 시 서버가 키를 뺀다 — 그때는 룰 요약으로 대신한다.
+  /// "AI 맞춤 TIP". 생성 실패 시 서버가 키를 뺀다 — 그때 앱은 카드를 그리지
+  /// 않는다. 룰 요약(summary)으로 메우지 마라. [PlateAnalysisDto] 에는 이 필드가
+  /// 아예 없어서, 폴백을 두면 저장 전후로 같은 카드의 문장이 갈린다.
   String? get aiTip => throw _privateConstructorUsedError;
   DateTime get createdAt => throw _privateConstructorUsedError;
 
@@ -2260,7 +2262,9 @@ class _$SkinPlateDtoImpl implements _SkinPlateDto {
     return EqualUnmodifiableListView(_appliedRules);
   }
 
-  /// "AI 맞춤 TIP". 생성 실패 시 서버가 키를 뺀다 — 그때는 룰 요약으로 대신한다.
+  /// "AI 맞춤 TIP". 생성 실패 시 서버가 키를 뺀다 — 그때 앱은 카드를 그리지
+  /// 않는다. 룰 요약(summary)으로 메우지 마라. [PlateAnalysisDto] 에는 이 필드가
+  /// 아예 없어서, 폴백을 두면 저장 전후로 같은 카드의 문장이 갈린다.
   @override
   final String? aiTip;
   @override
@@ -2377,7 +2381,9 @@ abstract class _SkinPlateDto implements SkinPlateDto {
   @override
   List<String> get appliedRules;
 
-  /// "AI 맞춤 TIP". 생성 실패 시 서버가 키를 뺀다 — 그때는 룰 요약으로 대신한다.
+  /// "AI 맞춤 TIP". 생성 실패 시 서버가 키를 뺀다 — 그때 앱은 카드를 그리지
+  /// 않는다. 룰 요약(summary)으로 메우지 마라. [PlateAnalysisDto] 에는 이 필드가
+  /// 아예 없어서, 폴백을 두면 저장 전후로 같은 카드의 문장이 갈린다.
   @override
   String? get aiTip;
   @override
