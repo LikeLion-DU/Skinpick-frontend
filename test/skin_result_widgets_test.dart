@@ -123,8 +123,9 @@ void main() {
   });
 
   testWidgets('확장 필드가 없던 기록이면 나이 카드를 숨기고 타입만 남는다', (tester) async {
-    // 이 기능 이전에 저장된 분석은 서버가 세 키를 통째로 생략한다(non_null).
-    // 빈 값으로 그리면 없는 데이터를 보여주는 셈이라 카드를 통째로 뺀다.
+    // 실제로 키가 빠지는 것은 `skinAge`·`metricDetails` 뿐이다 — `skinType` 은 지표에서
+    // 다시 만들어져 옛 기록에도 온다. 여기서 셋 다 지우는 것은 방어다. 없는 값을 빈
+    // 카드로 그리지 않는다는 것과, 제목이 폴백으로 버틴다는 것을 함께 본다.
     final legacy = Map<String, dynamic>.from(data('skin_latest'))
       ..remove('skinType')
       ..remove('skinAge')
