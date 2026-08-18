@@ -165,7 +165,9 @@ class SkinPlateDto with _$SkinPlateDto {
     required FeedbackGroupDto feedbacks,
     @Default(<String>[]) List<String> appliedRules,
 
-    /// "AI 맞춤 TIP". 생성 실패 시 서버가 키를 뺀다 — 그때는 룰 요약으로 대신한다.
+    /// "AI 맞춤 TIP". 생성 실패 시 서버가 키를 뺀다 — 그때 앱은 카드를 그리지
+    /// 않는다. 룰 요약(summary)으로 메우지 마라. [PlateAnalysisDto] 에는 이 필드가
+    /// 아예 없어서, 폴백을 두면 저장 전후로 같은 카드의 문장이 갈린다.
     String? aiTip,
     required DateTime createdAt,
   }) = _SkinPlateDto;

@@ -73,7 +73,9 @@ class SkinPlate implements PlateView {
   @override
   final String summary;
 
-  /// "AI 맞춤 TIP". 서버 생성이 실패한 기록은 null 이고, 화면은 룰 요약으로 대신한다.
+  /// "AI 맞춤 TIP". 서버 생성이 실패한 기록은 null 이다. **룰 요약으로 대신하지
+  /// 않는다** — 그때 화면은 카드를 아예 그리지 않는다. AI 가 만들지 않은 문장에
+  /// AI 제목을 붙이면, 저장 전후로 같은 자리의 문장이 갈린다.
   final String? aiTip;
 
   @override
