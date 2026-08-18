@@ -341,7 +341,17 @@ const _evidenceMetrics = [
   ('barrier', '장벽'),
 ];
 
-/// (지표 이름, 관찰 문장) 줄 목록. 근거가 없는 지표는 줄을 만들지 않는다.
+/// (지표 이름, 관찰 문장) 줄 목록. **지표당 한 줄이다.**
+///
+/// 서버는 지표당 문장을 최대 2개 준다(`METRIC_EVIDENCE_MAX`). 문장마다 줄을 만들면
+/// 그 줄마다 지표 이름이 다시 찍혀서 "수분이 두 번 떴다"로 읽힌다 — 2026-08-18
+/// 실기기 QA 에서 실제로 그렇게 신고됐다. 픽스처와 `AI_MOCK` 이 지표당 1문장뿐이라
+/// 위젯 테스트도 에뮬레이터도 이 경우를 한 번도 그리지 않았다.
+///
+/// 문장은 손대지 않고 구분자만 넣는다. `·` 는 이 앱이 이미 쓰는 기호다
+/// ("건성 · 붉은기" · "매운 정도 · 보통").
+///
+/// 근거가 없는 지표는 줄을 만들지 않는다.
 List<(String, String)> _evidenceRows(SkinAnalysis analysis) {
   final byKey = {
     for (final detail in analysis.metricDetails) detail.key: detail,
@@ -349,14 +359,17 @@ List<(String, String)> _evidenceRows(SkinAnalysis analysis) {
 
   return [
     for (final (key, label) in _evidenceMetrics)
-      for (final line in byKey[key]?.evidence ?? const <String>[]) (label, line),
+      if (byKey[key]?.evidence case final sentences?
+          when sentences.isNotEmpty)
+        (label, sentences.join(' · ')),
   ];
 }
 
 /// "관찰 근거 자세히 보기" — 접어 둔 지표별 관찰 문장.
 ///
-/// 기본은 접힘이다. 지표 5개 × 최대 2줄이라 펼쳐 둔 채로 두면 점수·요약·하이라이트가
-/// 있는 카드가 문장으로 덮인다. 숫자를 대신하는 것이 아니라 그 아래 한 겹이다.
+/// 기본은 접힘이다. 지표 5줄이고 한 줄에 문장이 둘까지 들어가서, 펼쳐 둔 채로 두면
+/// 점수·요약·하이라이트가 있는 카드가 문장으로 덮인다. 숫자를 대신하는 것이 아니라
+/// 그 아래 한 겹이다.
 ///
 /// 문장은 서버가 만든 것을 그대로 옮긴다.
 class _EvidenceSection extends StatelessWidget {

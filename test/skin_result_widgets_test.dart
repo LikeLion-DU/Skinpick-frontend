@@ -142,6 +142,46 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  /// 실서버는 지표당 문장을 최대 2개 준다(`METRIC_EVIDENCE_MAX = 2`). 픽스처와
+  /// `AI_MOCK` 은 지표당 1문장뿐이라 이 경로가 위젯 테스트도 에뮬레이터 QA 도
+  /// 통째로 비켜갔고, 2026-08-18 실기기에서 "수분이 두 번 뜬다"로 신고됐다.
+  ///
+  /// 픽스처는 실서버에서 받아 저장한 응답이라 건드리지 않는다. 여기서 두 번째
+  /// 문장을 붙여 그 모양만 만든다.
+  testWidgets('한 지표에 근거가 둘이면 이름을 한 번만 쓰고 문장을 이어 붙인다', (tester) async {
+    const second = '측면에서도 건조한 각질이 두드러지지 않음';
+    final json = Map<String, dynamic>.from(data('skin_latest'));
+    json['metricDetails'] = [
+      for (final detail
+          in (json['metricDetails'] as List).cast<Map<String, dynamic>>())
+        if (detail['key'] == 'hydration')
+          {
+            ...detail,
+            'evidence': [...detail['evidence'] as List, second],
+          }
+        else
+          detail,
+    ];
+
+    await tester.binding.setSurfaceSize(designSize);
+    await tester.pumpWidget(host(json));
+    await tester.pumpAndSettle();
+
+    final toggle = find.text('관찰 근거 자세히 보기');
+    await tester.ensureVisible(toggle);
+    await tester.tap(toggle);
+    await tester.pumpAndSettle();
+
+    expect(
+        find.textContaining('수분  볼과 입가에 부분적인 각질이 보임 · $second'),
+        findsOneWidget);
+
+    // 두 번째 문장이 자기 줄을 만들면 그 줄에 '수분' 이 다시 찍힌다.
+    expect(find.textContaining('수분  $second'), findsNothing);
+
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('글자 크기 2.0 에서 근거를 펼쳐도 넘치지 않는다', (tester) async {
     await tester.binding.setSurfaceSize(designSize);
     await tester.pumpWidget(host(data('skin_latest'), textScale: 2.0));
