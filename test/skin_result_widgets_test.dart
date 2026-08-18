@@ -113,7 +113,7 @@ void main() {
   }
 
   /// 관찰 근거는 숫자를 대신하지 않는다 — 접힌 한 줄 뒤에 있다가 눌러야 펼쳐진다.
-  /// 항상 펼쳐 두면 지표 4개 × 최대 2줄이 점수·요약·하이라이트를 덮는다.
+  /// 항상 펼쳐 두면 지표 5개 × 최대 2줄이 점수·요약·하이라이트를 덮는다.
   testWidgets('관찰 근거는 접혀 있다가 펼치면 서버 문장이 나온다', (tester) async {
     await tester.binding.setSurfaceSize(designSize);
     await tester.pumpWidget(host(data('skin_latest')));
