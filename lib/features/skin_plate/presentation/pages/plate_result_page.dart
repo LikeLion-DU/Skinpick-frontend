@@ -178,11 +178,23 @@ class _Content extends StatelessWidget {
         const SizedBox(height: 10),
         PlateSummaryCard(good: plate.good, caution: plate.caution),
 
-        const SizedBox(height: 12),
-        // 저장 전에는 룰 요약(summary)뿐이지만, 저장되면 서버가 AI 문장을 만들어
-        // 붙인다. 여기서 안 읽으면 같은 기록이 이 화면에서는 룰 요약, 상세
-        // 화면에서는 AI 문장으로 갈린다 — 상세(plate_detail_page)와 같은 우선순위다.
-        if (_tipOf(plate).isNotEmpty) PlateTipCard(tip: _tipOf(plate)),
+        // **AI 문장은 저장된 기록에만 있다.** 서버는 저장할 때 한 번 만들고,
+        // `POST /plates/analyze` 응답에는 그 필드 자체가 없다.
+        //
+        // 없을 때 룰 요약(summary)을 대신 끼우던 코드가 있었다. 그러면 "AI 맞춤
+        // TIP" 이라는 제목이 저장 전에는 거짓이 되고, 저장을 누른 순간 같은 자리의
+        // 문장이 다른 문장으로 갈린다 — 2026-08-18 실기기 QA 에서 오작동으로
+        // 신고됐다. 없으면 카드째 그리지 않는다. 나중에 카드가 하나 **생기는** 것은
+        // 읽던 문장이 **바뀌는** 것과 다르다.
+        //
+        // 룰 요약을 다른 이름으로 따로 내지도 않는다. 그 문장은 바로 위
+        // [PlateSummaryCard] 의 GOOD·BAD 제목을 이어 붙인 것이라
+        // ("단백질 충분, 발효식품 포함. 다만 나트륨 과다, 매운맛 자극.")
+        // 한 화면이 같은 말을 두 번 하게 된다.
+        if (plate case SkinPlate(:final aiTip?) when aiTip.isNotEmpty) ...[
+          const SizedBox(height: 12),
+          PlateTipCard(tip: aiTip),
+        ],
 
         if (FeatureFlags.actionSimulation && plate.actions.isNotEmpty) ...[
           const SizedBox(height: 20),
@@ -237,11 +249,6 @@ class _Content extends StatelessWidget {
       ],
     );
   }
-
-  /// AI 문장은 저장된 기록에만 있다(서버가 저장 때 만든다). PlateView 에
-  /// aiTip 을 올리지 않는 건 의도라([PlateView] 주석), 여기서만 내려본다.
-  static String _tipOf(PlateView plate) =>
-      plate is SkinPlate ? plate.aiTip ?? plate.summary : plate.summary;
 }
 
 /// 기록 확정 CTA. 이 버튼을 누르기 전까지 서버에는 아무것도 없다.

@@ -96,10 +96,12 @@ class _Body extends StatelessWidget {
         Text('분석 요약', style: Theme.of(context).textTheme.titleMedium),
         const SizedBox(height: 10),
         PlateSummaryCard(good: plate.good, caution: plate.caution),
-        const SizedBox(height: 12),
-        // AI 문장이 있으면 그걸, 없으면(생성 실패) 룰 요약으로 대신한다.
-        if ((plate.aiTip ?? plate.summary).isNotEmpty)
-          PlateTipCard(tip: plate.aiTip ?? plate.summary),
+        // 생성이 실패한 기록은 서버가 이 키를 뺀다. 룰 요약으로 메우지 않는다 —
+        // 결과 화면과 같은 규칙이다. "AI 맞춤 TIP" 은 AI 문장일 때만 뜬다.
+        if (plate.aiTip case final aiTip? when aiTip.isNotEmpty) ...[
+          const SizedBox(height: 12),
+          PlateTipCard(tip: aiTip),
+        ],
         const SizedBox(height: 26),
         Text.rich(
           TextSpan(
