@@ -1,3 +1,6 @@
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -8,6 +11,7 @@ import 'package:skinplate/features/auth/domain/entities/auth_user.dart';
 import 'package:skinplate/features/auth/domain/entities/skin_profile.dart';
 import 'package:skinplate/features/auth/presentation/pages/skin_profile_page.dart';
 import 'package:skinplate/features/auth/presentation/providers/auth_notifier.dart';
+import 'package:skinplate/features/skin_analysis/data/models/skin_dtos.dart';
 import 'package:skinplate/features/skin_analysis/domain/entities/skin_analysis.dart';
 import 'package:skinplate/features/skin_analysis/presentation/providers/skin_analysis_notifier.dart';
 import 'package:skinplate/shared/enums/highlight_status.dart';
@@ -136,6 +140,32 @@ void main() {
     ));
     await tester.pumpAndSettle();
 
+    expect(tester.takeException(), isNull);
+  });
+
+  /// 실서버 응답 원문을 그대로 파싱해 마이페이지까지 올린다. 손으로 만든 엔티티는
+  /// "내가 상상한 서버" 를 검증하게 된다.
+  testWidgets('실서버 피부 응답이 5지표 타일과 관리 칩으로 올라온다', (tester) async {
+    final body = jsonDecode(
+        File('test/fixtures/skin_latest_live.json').readAsStringSync());
+    final live = SkinAnalysisDto.fromJson(
+            (body as Map<String, dynamic>)['data'] as Map<String, dynamic>)
+        .toEntity();
+
+    await tester.binding.setSurfaceSize(designSize);
+    await tester.pumpWidget(host(latest: live));
+    await tester.pumpAndSettle();
+
+    for (final label in ['수분', '유분', '홍조', '트러블', '장벽']) {
+      expect(find.text(label), findsOneWidget, reason: '$label 타일이 없다');
+    }
+    // 상태어는 서버가 지표마다 매긴 등급에서 나온다.
+    expect(find.text('부족'), findsOneWidget);
+    expect(find.text('주의'), findsOneWidget);
+    expect(find.text('좋음'), findsNWidgets(2));
+    // 관리 방향은 고민(사용자가 고른 값)과 다른 섹션이다.
+    expect(find.text('지금 필요한 관리'), findsOneWidget);
+    expect(find.text('수분·장벽'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 

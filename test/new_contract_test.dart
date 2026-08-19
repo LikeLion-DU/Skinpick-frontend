@@ -294,6 +294,32 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
+    testWidgets('실서버 피부 응답이 화면까지 올라온다 — 관리 축·문단·지표 상태어',
+        (tester) async {
+      await tester.binding.setSurfaceSize(designSize);
+      await tester.pumpWidget(skinResult(data('skin_latest_live')));
+      await tester.pumpAndSettle();
+
+      // 서버가 지표마다 매긴 등급이 상태어로 올라온다. 수분 CAUTION 은 낮아서
+      // 나쁜 쪽이라 "부족", 홍조 CAUTION 은 높아서 나쁜 쪽이라 "주의"다.
+      expect(find.text('부족'), findsOneWidget);
+      expect(find.text('주의'), findsOneWidget);
+      expect(find.text('보통'), findsOneWidget);
+      expect(find.text('좋음'), findsNWidgets(2));
+
+      await tester.scrollUntilVisible(
+        find.text('지금 피부가 필요로 하는 관리'),
+        300,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('수분·장벽'), findsOneWidget);
+      expect(find.text('항산화'), findsOneWidget);
+      expect(find.textContaining('수분 유지에 도움이 되는 식습관'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+
     testWidgets('프로필 설정에 수부지 칸이 있고 서버 enum 이름으로 저장된다', (tester) async {
       await tester.binding.setSurfaceSize(designSize);
       await tester.pumpWidget(ProviderScope(

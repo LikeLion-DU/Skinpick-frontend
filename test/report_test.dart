@@ -439,6 +439,43 @@ void main() {
     });
   });
 
+  /// 실서버 응답 원문을 그대로 파싱해서 화면까지 올린다.
+  ///
+  /// 계약 테스트는 "키가 값으로 올라오는가" 까지만 본다. 그 값이 위젯으로 그려지는지는
+  /// 별개다 — 파싱은 됐는데 화면이 조건을 잘못 걸어 안 그리는 경우를 여기서 잡는다.
+  testWidgets('실서버 일일 응답이 화면까지 올라온다 — 피부 영양·고민 문장·등급',
+      (tester) async {
+    await pump(
+      tester,
+      host(
+        _FakeReportRepository(daily: Success(daily('report_daily_live'))),
+        DailyReportView(date: DateTime(2026, 8, 17)),
+      ),
+    );
+
+    // 피부 영양 포인트 3종. 서버가 준 라벨 그대로다.
+    expect(find.text('비타민C'), findsOneWidget);
+    expect(find.text('오메가3'), findsOneWidget);
+    expect(find.text('아연'), findsOneWidget);
+    // 표준 음식표에 매칭된 끼니가 없어 비타민C·아연은 못 잰 상태로 왔다.
+    // "부족" 이 아니라 "알 수 없음" 이어야 한다.
+    expect(find.text('알 수 없음'), findsNWidgets(2));
+
+    // 고민 문장과 태그. 앱이 짓지 않은 서버 문장이다.
+    expect(find.text('발효식품이 포함돼 있어요. 꾸준히 챙기면 도움이 될 수 있어요.'),
+        findsOneWidget);
+    // 같은 근거가 두 고민에 걸려서 칩도 둘이다(여드름·부기). 서버가 고민마다
+    // 따로 골라 주기 때문이고, 앱이 합치지 않는다.
+    expect(find.text('발효식품 포함'), findsWidgets);
+
+    // 끼니 줄에는 서버 등급 라벨만 있다. **주요영양 칩은 여기 없다** — 시안이
+    // 리포트의 "오늘 먹은 음식" 은 사진·이름·라벨 세 개로만 두고, 칩은 기록
+    // 화면(S09)의 카드에 둔다. 그쪽은 plate_delete_test 가 본다.
+    expect(find.text('BAD'), findsWidgets);
+    expect(find.text('돼지고기 김치찌개'), findsWidgets);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('네 끼 넘는 날은 남은 개수를 적는다 — 말없이 자르지 않는다', (tester) async {
     // 실서버 응답의 BEST DAY 가 5끼다. 썸네일 칸은 셋이라 둘이 남는다.
     await pump(
