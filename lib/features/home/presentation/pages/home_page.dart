@@ -73,10 +73,13 @@ class HomePage extends ConsumerWidget {
     // 사용자에게 "먼저 피부를 분석해야 해요" 라고 말하게 된다.
     final skinState = ref.watch(latestSkinAnalysisProvider);
     final hasSkinRecord = skinState.value?.dataOrNull != null;
-    final skinUnknown = !hasSkinRecord &&
-        (skinState.isLoading ||
-            skinState.hasError ||
-            skinState.value is FailureResult);
+    // 아직 오는 중인 것과 못 받은 것을 갈라 둔다. 하나로 묶으면 첫 화면에서
+    // 촬영을 누른 사용자에게 "확인하지 못했어요" 라고 말하는데, 그때 요청은
+    // 아직 진행 중이라 그 말이 사실이 아니다.
+    final skinLoading = !hasSkinRecord && skinState.isLoading;
+    final skinFailed = !hasSkinRecord &&
+        !skinState.isLoading &&
+        (skinState.hasError || skinState.value is FailureResult);
 
     final history = ref.watch(plateHistoryProvider);
     final today = ref.watch(todayRecordProvider);
@@ -89,7 +92,12 @@ class HomePage extends ConsumerWidget {
     void capture() {
       if (hasSkinRecord) {
         context.push(Routes.foodCapture);
-      } else if (skinUnknown) {
+      } else if (skinLoading) {
+        // 요청이 아직 진행 중이다. 실패라고 말하지 않고 기다려 달라고만 한다.
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('피부 기준을 확인하는 중이에요.')),
+        );
+      } else if (skinFailed) {
         // 없다고 단정하지 않는다. 모르는 것은 모른다고 말하고 다시 시도를 준다.
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -165,6 +173,8 @@ class HomePage extends ConsumerWidget {
                     score: today?.plateScore,
                     grade: today?.grade,
                     targetScore: today?.targetScore,
+                    // 히스토리를 아직 못 받았으면 히어로도 아무 말을 하지 않는다.
+                    scoreKnown: history.hasValue && historyFailure == null,
                   ),
                   // 문장은 기록 저장 때 서버가 만들어 둔 것이다. 없으면 카드째 숨긴다 —
                   // 빈 카드를 그리면 "뭔가 로딩 중인가"로 읽힌다.

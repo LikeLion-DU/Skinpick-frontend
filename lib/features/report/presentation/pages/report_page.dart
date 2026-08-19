@@ -115,11 +115,17 @@ class _TabSelector extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(21, 8, 21, 4),
-      child: Container(
-        // 시안 높이는 44 지만 **고정하지 않는다.** 글자 크기 2.0 에서 탭 라벨이
-        // 46 을 요구하는데, Tab 은 overflow: fade 라 예외 없이 페이드로 잘린다 —
-        // "오늘의 리…" / "주간 리…" 가 되어 두 탭을 구별할 수 없었다.
-        constraints: const BoxConstraints(minHeight: 44),
+      // 탭 라벨이 잘린 원인은 높이가 아니라 **폭**이었다. 402 폭을 반으로 나눈
+      // 칸에 16px 라벨을 2.0 으로 키우면 224 를 요구하는데 칸은 143 이고, Tab 은
+      // overflow: fade 라 예외 없이 "오늘의 리…" 로 페이드된다. 높이를 풀었더니
+      // 기본 크기에서 시안 44 가 58 로 커지기만 했다(Tab 의 기본 높이는 46 이다).
+      //
+      // 그래서 높이는 시안대로 두고 배율만 1.2 까지 따라간다 — 글자는 커지고
+      // 두 탭은 계속 구별된다.
+      child: MediaQuery.withClampedTextScaling(
+        maxScaleFactor: 1.2,
+        child: Container(
+        height: 44,
         padding: const EdgeInsets.all(5),
         decoration: BoxDecoration(
           color: const Color(0xFFF3F3F3),
@@ -144,9 +150,10 @@ class _TabSelector extends StatelessWidget {
               const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
           splashBorderRadius: BorderRadius.circular(10),
           tabs: [
-            // 높이를 비워 두면 Tab 이 라벨 높이를 따라간다.
-            for (final tab in ReportTab.values) Tab(text: tab.label),
+            for (final tab in ReportTab.values)
+              Tab(height: 34, text: tab.label),
           ],
+        ),
         ),
       ),
     );

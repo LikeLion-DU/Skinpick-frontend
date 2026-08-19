@@ -165,9 +165,20 @@ class PlateSummaryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // 룰이 하나도 안 걸렸는데 서버 문장까지 없으면 그릴 것이 없다. 테두리만 남은
+    // 빈 상자는 앱이 지어낸 문장보다 더 고장처럼 보인다.
+    if (good.isEmpty && caution.isEmpty && summary.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
     // 둘 다 비면 룰이 하나도 안 걸린 평범한 식사다. 실제로 있다 —
     // 그때 빈 카드 두 장을 그리면 고장으로 읽히므로 한 줄로 대신한다.
     if (good.isEmpty && caution.isEmpty) {
+      // 서버 문장까지 없으면 그릴 것이 없다 — 테두리만 남은 빈 상자는
+      // 앱이 지어낸 문장보다 더 고장처럼 보인다. `skin_plate.summary` 는
+      // V1 부터 nullable 이라 옛 기록에서 실제로 빌 수 있다.
+      if (summary.isEmpty) return const SizedBox.shrink();
+
       return Container(
         width: double.infinity,
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
@@ -381,8 +392,13 @@ class NutrientTiles extends StatelessWidget {
       (Icons.grain, '나트륨', '${_comma(sodiumMg)} mg'),
     ];
 
-    return Row(
-      children: [
+    // 네 칸의 높이를 서로 맞춘다. 최소 높이만 두면 한 칸의 값이 두 줄로 접히는
+    // 순간(2.0 배율의 "1,280 mg") 그 칸만 커지고 나머지 셋이 가운데 떠서 테두리
+    // 네 개가 어긋난다. 같은 파일의 GOOD/BAD 카드가 쓰는 방식이다.
+    return IntrinsicHeight(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
         for (final (index, tile) in tiles.indexed) ...[
           if (index > 0) const SizedBox(width: 16),
           Expanded(
@@ -390,7 +406,7 @@ class NutrientTiles extends StatelessWidget {
               // 네 칸을 나눠 쓰는 70px 짜리 칸이다. 높이를 92 로 박아 두면 글자
               // 크기를 키운 기기에서 "1,280 mg" 이 두 줄로 접히며 62px 넘친다.
               constraints: const BoxConstraints(minHeight: 92),
-              padding: const EdgeInsets.symmetric(vertical: 10),
+              padding: const EdgeInsets.symmetric(vertical: 6),
               decoration: BoxDecoration(
                 color: AppColors.background,
                 border: Border.all(color: AppColors.disabled),
@@ -419,7 +435,8 @@ class NutrientTiles extends StatelessWidget {
             ),
           ),
         ],
-      ],
+        ],
+      ),
     );
   }
 }

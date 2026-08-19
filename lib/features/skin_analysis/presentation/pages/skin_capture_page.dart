@@ -648,6 +648,9 @@ class _SkinCapturePageState extends ConsumerState<SkinCapturePage>
           builder: (context, constraints) => SingleChildScrollView(
             child: ConstrainedBox(
               constraints: BoxConstraints(minHeight: constraints.maxHeight),
+              // Spacer 가 살아나려면 Column 이 유한한 높이를 받아야 한다 —
+              // 스크롤 안에서는 무한이라 IntrinsicHeight 를 한 겹 끼운다.
+              child: IntrinsicHeight(
               child: Padding(
           padding: const EdgeInsets.all(AppTheme.pagePadding),
           child: Column(
@@ -659,16 +662,22 @@ class _SkinCapturePageState extends ConsumerState<SkinCapturePage>
               const SizedBox(height: 12),
               Text('정확한 분석을 위해 정면, 좌측, 우측 사진을\n촬영해주세요.',
                   style: Theme.of(context).textTheme.bodyMedium),
-              const SizedBox(height: 32),
+              const Spacer(),
               // 시안은 이 자리에 마스코트를 방사 눈금 고리 안에 세운다. 촬영 중
               // 얼굴 가이드와 같은 고리라, 안내에서 본 자리에 얼굴을 넣게 된다.
+              //
+              // 좁은 기기에서는 고리(300)가 폭을 넘기므로 들어갈 만큼 줄인다 —
+              // 세로 스크롤만으로는 가로로 넘친 것을 구할 수 없다.
               const Center(
-                child: RayRing(
-                  diameter: 300,
-                  child: SkinMascot(size: 176),
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: RayRing(
+                    diameter: 300,
+                    child: SkinMascot(size: 176),
+                  ),
                 ),
               ),
-              const SizedBox(height: 32),
+              const Spacer(),
               ElevatedButton(
                 onPressed: () {
                   // 로딩 화면이 이 플래그를 보고 분석을 기다리는 동안 프로필
@@ -694,9 +703,10 @@ class _SkinCapturePageState extends ConsumerState<SkinCapturePage>
                     : context.pop(),
                 child: const Text('넘어가기'),
               ),
-              const SizedBox(height: 24),
+              const Spacer(),
             ],
           ),
+              ),
               ),
             ),
           ),

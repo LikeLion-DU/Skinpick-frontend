@@ -1,3 +1,6 @@
+import 'dart:convert';
+import 'dart:io';
+import 'package:skinplate/features/report/data/models/report_dtos.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -200,6 +203,61 @@ void main() {
       expect(tester.getTopLeft(find.text(tags[0])).dy,
           tester.getTopLeft(find.text(tags[1])).dy);
     });
+  });
+
+  group('리뷰에서 나온 것들', () {
+    testWidgets('요약이 비면 카드를 그리지 않는다 — 빈 테두리만 남지 않게', (tester) async {
+      await tester.binding.setSurfaceSize(designSize);
+      await tester.pumpWidget(scaled(
+        const Scaffold(
+          body: PlateSummaryCard(summary: '', good: [], caution: []),
+        ),
+        scale: 1.0,
+      ));
+      await tester.pumpAndSettle();
+
+      // 룰도 문장도 없으면 그릴 것이 없다. `skin_plate.summary` 는 nullable 이라
+      // 옛 기록에서 실제로 빌 수 있다.
+      expect(find.byType(Container), findsNothing);
+    });
+
+    testWidgets('못 잰 영양 타일도 옆 타일과 같은 높이에 글자가 온다', (tester) async {
+      // 자리를 지우기만 했더니 spaceBetween 이 자식 수에 따라 위치를 다시 잡아
+      // 라벨이 47px 어긋났다. 실서버 응답이 바로 이 조합이다(오메가3만 측정됨).
+      final body = jsonDecode(
+          File('test/fixtures/report_daily_live.json').readAsStringSync());
+      final report = DailyReportDto.fromJson(
+              (body as Map<String, dynamic>)['data'] as Map<String, dynamic>)
+          .toEntity();
+
+      await tester.binding.setSurfaceSize(designSize);
+      await tester.pumpWidget(scaled(
+        Scaffold(
+          body: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: NutritionTiles(items: report.skinNutrients),
+          ),
+        ),
+        scale: 1.0,
+      ));
+      await tester.pumpAndSettle();
+
+      final tops = [
+        for (final label in ['비타민C', '오메가3', '아연'])
+          tester.getTopLeft(find.text(label)).dy,
+      ];
+      expect(tops[0], tops[1], reason: '비타민C 와 오메가3 라벨 높이');
+      expect(tops[1], tops[2], reason: '오메가3 와 아연 라벨 높이');
+      // 자리는 남기고 글자만 감춘다 — 위젯은 셋 다 트리에 있고 보이는 것은 하나다.
+      expect(find.text('0%'), findsNWidgets(3));
+      final visible = tester
+          .widgetList<Visibility>(find.byType(Visibility))
+          .where((v) => v.visible)
+          .length;
+      expect(visible, 2, reason: '측정된 항목의 비율·막대 둘만 보인다');
+      expect(find.text('알 수 없음'), findsNWidgets(2));
+    });
+
   });
 
   group('홈 기록 카드 — 세 상태가 구분된다', () {

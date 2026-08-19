@@ -25,7 +25,8 @@ class VerdictBadge extends StatelessWidget {
       // 81×29 를 요구하는데, 고정 상자는 예외를 던지지 않고 조용히 'GOO' 로
       // 자른다 — 그래서 배율 테스트도 통과했다.
       constraints: const BoxConstraints(minWidth: 53, minHeight: 19),
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      // 패딩 8 이면 'GOOD' 이 기본 크기에서도 57 이 되어 시안 53 을 넘긴다.
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
       decoration: BoxDecoration(
         // 주의 점수를 빨강으로 칠하지 않는다 — 빨강(bad)은 결과 화면의
         // BAD 카드 전용이고, 여기 라벨은 오렌지다.

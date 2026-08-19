@@ -85,6 +85,10 @@ class AppColors {
   // 배지에서 둘을 같은 오렌지로 칠했다. 의미가 다르므로 이름을 나눠 둔다 —
   // 나중에 디자이너가 주의색만 바꿔도 primary 를 건드리지 않게 된다.
   static const good = Color(0xFF6CBE46);
+
+  /// 높을수록 좋은 지표가 기준 아래일 때("부족"). 경고가 아니라 **모자람**이라
+  /// 빨강을 쓰지 않는다 — 수분 30 은 위험이 아니고 채워야 할 값이다.
+  static const metricLow = Color(0xFF3A85E2);
   static const bad = Color(0xFFDF0011);
   static const caution = Color(0xFFFF7D40);
 

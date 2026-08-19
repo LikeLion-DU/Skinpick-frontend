@@ -9,6 +9,10 @@ import 'skin_level.dart';
 /// `ScoredItemDto.of` 에서 방향을 맞춘 뒤 `SkinLevel.of` 로 매겼다 — 표가 두 벌이라
 /// 값이 딱 40·60 인 날 두 곳이 갈렸다. 이제 서버 `metricDetails[].level` 만 읽는다.
 ///
+/// 색은 `AppColors` 것을 쓴다. 예전에는 이 파일에 빨강 리터럴이 따로 있어서 같은
+/// 지표의 같은 CAUTION 이 막대 상태어에서는 #FA6154, 하이라이트 줄에서는 #DF0011 로
+/// 두 가지 빨강이 됐다.
+///
 /// 방향은 여전히 필요하다. **단어를 고르는 데만** 쓴다 — 수분이 낮으면 "부족"이고
 /// 홍조가 높으면 "주의"다. 서버는 둘 다 CAUTION 으로 보내므로(방향을 이미 맞춰
 /// 매긴다) 어느 쪽 말로 옮길지는 화면이 정한다. 판정이 아니라 어휘다.
@@ -17,9 +21,6 @@ class MetricBand {
 
   final String label;
   final Color color;
-
-  static const _blue = Color(0xFF3A85E2);
-  static const _red = Color(0xFFFA6154);
 
   /// 서버가 준 지표 등급을 상태어로 바꾼다.
   ///
@@ -33,8 +34,8 @@ class MetricBand {
         const MetricBand('좋음', AppColors.good),
       SkinLevel.normal => const MetricBand('보통', AppColors.primary),
       SkinLevel.caution || SkinLevel.severe => higherIsBetterMetric
-          ? const MetricBand('부족', _blue)
-          : const MetricBand('주의', _red),
+          ? const MetricBand('부족', AppColors.metricLow)
+          : const MetricBand('주의', AppColors.bad),
     };
   }
 }
