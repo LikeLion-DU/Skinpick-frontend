@@ -1061,10 +1061,16 @@ class CaptureBottomBar extends StatelessWidget {
   }
 }
 
-/// 시안의 셔터 — 흰 링 + 흰 원판. 게이트를 통과해야 켜진다.
+/// 시안의 셔터 — 흰 원판 + 오렌지 링 + 오렌지 글로우. 게이트를 통과해야 켜진다.
 ///
-/// 준비 여부는 색이 아니라 밝기로 가른다(켜짐 흰색 / 꺼짐 white38·white54).
-/// 예전에는 켜진 링이 오렌지였다.
+/// 값은 시안 360:822(`얼굴촬영(시작/정면)` 안)에서 그대로 가져왔다.
+/// 지름 101(테두리 바깥까지) · 링 5 · 흰 원판 지름 80 ·
+/// 링 색은 좌상 `#FF9362` → 우하 `#FF4D00` 그라디언트 ·
+/// 글로우는 `#FF4D00` 을 흐림 25 로 깐다(시안의 stdDeviation 12.5).
+///
+/// 한때 링을 흰색으로 바꿨다가 되돌렸다. 시안은 오렌지다 — 흰 배경(흰 벽·역광·
+/// 욕실 거울)에서 흰 링은 켜짐/꺼짐이 밝기로만 갈려 구분되지 않았다.
+/// 색상은 배경과 무관하게 살아남는다.
 class _CaptureShutter extends StatelessWidget {
   const _CaptureShutter({
     required this.enabled,
@@ -1072,39 +1078,68 @@ class _CaptureShutter extends StatelessWidget {
     required this.onTap,
   });
 
+  /// 시안 360:822 — 링 바깥지름 101, 흰 원판 지름 80(반지름 40.08).
+  static const _diameter = 101.0;
+  static const _ringWidth = 5.0;
+  static const _discDiameter = 80.0;
+
+  static const _ringGradient = LinearGradient(
+    colors: [Color(0xFFFF9362), Color(0xFFFF4D00)],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+  );
+
   final bool enabled;
   final bool busy;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    // 시안(360-815)의 셔터는 흰 링 + 흰 원판이다. 준비 여부는 색 대신 밝기로
-    // 가른다 — 준비 신호는 가이드 링(초록)과 하단 문구가 이미 말하고 있어서,
-    // 셔터까지 주황으로 칠하면 화면에 셔터가 두 개 있는 것처럼 읽힌다.
-    return GestureDetector(
-      onTap: enabled ? onTap : null,
-      child: Container(
-        width: 78,
-        height: 78,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          border: Border.all(
-            color: enabled ? Colors.white : Colors.white38,
-            width: 5,
-          ),
-        ),
-        padding: const EdgeInsets.all(6),
+    // 꺼짐은 시안에 없다. 새로 그리지 않고 같은 그림의 투명도만 낮춘다 —
+    // 링 색이 살아 있어서 밝은 배경에서도 켜짐과 구분된다.
+    return Opacity(
+      opacity: enabled ? 1 : 0.45,
+      child: GestureDetector(
+        onTap: enabled ? onTap : null,
         child: Container(
+          width: _diameter,
+          height: _diameter,
+          // 시안 그대로 세 겹이다. Border 는 그라디언트를 못 받아서 바깥 원을
+          // 통째로 칠하고 안쪽 원으로 덮어 링 두께(5)를 만든다.
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            color: enabled ? Colors.white : Colors.white54,
+            gradient: _ringGradient,
+            boxShadow: enabled
+                ? const [BoxShadow(color: Color(0xFFFF4D00), blurRadius: 25)]
+                : null,
           ),
-          child: busy
-              ? const Padding(
-                  padding: EdgeInsets.all(18),
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                )
-              : null,
+          child: Center(
+            child: Container(
+              width: _diameter - _ringWidth * 2,
+              height: _diameter - _ringWidth * 2,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                // 링과 원판 사이의 옅은 판. 시안의 #D9D9D9 20% 다.
+                color: const Color(0xFFD9D9D9).withValues(alpha: 0.2),
+              ),
+              child: Center(
+                child: Container(
+                  width: _discDiameter,
+                  height: _discDiameter,
+                  decoration: const BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: Colors.white,
+                  ),
+                  child: busy
+                      ? const Padding(
+                          padding: EdgeInsets.all(18),
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : null,
+                ),
+              ),
+            ),
+          ),
         ),
       ),
     );
