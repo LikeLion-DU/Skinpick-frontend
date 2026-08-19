@@ -92,6 +92,9 @@ class AppColors {
   static const bad = Color(0xFFDF0011);
   static const caution = Color(0xFFFF7D40);
 
+  /// 촬영 셔터 링 그라디언트의 시작색. 끝색은 [accentStrong] 이다(시안 360:822).
+  static const shutterRingStart = Color(0xFFFF9362);
+
   // ── 영양 타일 4종 ──────────────────────────────────────────
   // 칼로리·지방·당류·나트륨 아이콘. **판정이 아니라 구분이다.** 네 칸이 같은
   // 회색이면 훑을 때 칸이 안 나뉘어서 색을 주되, 초록·빨강·주황은 쓰지 않는다 —

@@ -3,98 +3,154 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:skinplate/features/skin_analysis/domain/entities/face_gate_result.dart';
 import 'package:skinplate/features/skin_analysis/domain/face_gate_rules.dart';
 import 'package:skinplate/features/skin_analysis/presentation/pages/skin_capture_page.dart';
+import 'package:skinplate/shared/widgets/capture_shutter.dart';
 
-/// 촬영 안내가 하단 안내·셔터와 겹치거나 순서가 뒤집히지 않는다.
+/// 촬영 화면 아래쪽 배치. **얼굴 가이드와 하단 인셋을 같이 세워 놓고 잰다.**
 ///
-/// 예전에는 방향 안내를 `Alignment(0, 0.47)` 로 따로 띄웠다. 그 0.47 은 SafeArea
-/// 높이 기준이고, 밑에 두려던 타원의 0.47 은 전체 화면 높이 기준이라
-/// (`_FaceGuidePainter`) 애초에 다른 좌표계였다 — 큰 화면에서만 우연히 맞았다.
-/// 360x640 에서는 하단 안내와 겹쳤고 320x568 에서는 순서까지 뒤집혔다.
+/// 예전 판은 `CaptureBottomBar` 만 띄우고 `setSurfaceSize` 로만 크기를 줬다.
+/// 그래서 가이드 타원도 없고 하단 인셋도 늘 0 이라, 셔터가 타원을 파고드는
+/// 회귀를 통과시켰다 — 있는데 아무것도 안 지키는 테스트였다.
 ///
-/// 지금은 한 Column 이라 겹침이 구조적으로 불가능하다. 이 테스트는 그 구조가
-/// 유지되는지를 본다 — 누가 다시 절대 좌표로 띄우면 여기서 걸린다.
+/// 지금은 타원 기하(`faceGuideOval`)를 프로덕션과 같은 함수에서 가져와 실제
+/// 위치 관계를 본다.
+///
+/// **한계 하나는 남는다.** 촬영 화면은 카메라 프리뷰가 열린 뒤에만 이 배치를
+/// 그려서 페이지를 통째로 띄울 수 없고, 여기서는 마운트 방식을 흉내 낸다.
+/// 그래서 "하단 블록을 어디에 매다는가" 자체가 바뀌는 회귀는 못 잡는다 —
+/// 예전처럼 절대 좌표 Align 으로 되돌려도 이 파일은 초록이다. 그 축은 타원과
+/// 하단 블록이 `faceGuideOval` 하나만 보게 만들어(좌표계가 두 벌이 될 수 없다)
+/// 구조로 막았다.
 void main() {
-  /// 실기기에서 좁은 축부터 넓은 축까지. 320x568 은 앱이 지원하는 가장 좁은 화면이다.
   const sizes = [Size(320, 568), Size(360, 640), Size(390, 844)];
+  const insets = [0.0, 24.0, 48.0];
 
-  Future<void> pumpBar(
+  /// 실기기에 있는 조합. 568·640 높이 기기는 홈 인디케이터가 없어 인셋이 0 이고,
+  /// 인셋이 큰 기기는 화면이 길다. 이 조합에서는 셔터가 타원 밖에 있어야 한다.
+  bool onRealDevice(Size size, double inset) =>
+      inset == 0 || size.height >= 844 || (size.height >= 640 && inset <= 24);
+
+  Future<void> pump(
     WidgetTester tester,
-    Size size, {
+    Size size,
+    double inset, {
     required FacePhotoType stage,
     String? guide,
+    bool ready = false,
+    bool busy = false,
   }) async {
     await tester.binding.setSurfaceSize(size);
     addTearDown(() => tester.binding.setSurfaceSize(null));
 
-    await tester.pumpWidget(MaterialApp(
-      home: Scaffold(
-        backgroundColor: Colors.black,
-        body: Stack(
-          fit: StackFit.expand,
-          children: [
-            SafeArea(
-              child: Stack(
-                children: [
-                  CaptureBottomBar(
-                    stage: stage,
-                    needsTurn: stage != FacePhotoType.front,
-                    instruction: '정면을 바라봐주세요',
-                    guide: guide,
-                    ready: false,
-                    busy: false,
-                    readiness: CaptureReadiness.invalid,
-                    onCapture: () {},
-                    onPickFromGallery: () {},
-                  ),
-                ],
+    await tester.pumpWidget(MediaQuery(
+      data: MediaQueryData(
+        size: size,
+        padding: EdgeInsets.only(bottom: inset),
+        viewPadding: EdgeInsets.only(bottom: inset),
+      ),
+      child: MaterialApp(
+        home: Scaffold(
+          backgroundColor: Colors.black,
+          body: Stack(
+            fit: StackFit.expand,
+            children: [
+              // 프로덕션과 같은 순서 — 가이드가 깔리고 그 위에 하단 블록이 온다.
+              CustomPaint(painter: _OvalStand(size)),
+              SafeArea(
+                top: false,
+                child: CaptureBottomBar(
+                  stage: stage,
+                  needsTurn: stage != FacePhotoType.front,
+                  instruction: '정면을 바라봐주세요',
+                  guide: guide,
+                  ready: ready,
+                  busy: busy,
+                  readiness: CaptureReadiness.invalid,
+                  onCapture: () {},
+                  onPickFromGallery: () {},
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     ));
   }
 
   for (final size in sizes) {
-    final label = '${size.width.toInt()}x${size.height.toInt()}';
+    for (final inset in insets) {
+      final label = '${size.width.toInt()}x${size.height.toInt()} 인셋${inset.toInt()}';
 
-    testWidgets('$label — 방향 안내가 하단 안내보다 위에 있고 겹치지 않는다', (tester) async {
-      await pumpBar(tester, size,
-          stage: FacePhotoType.front, guide: '얼굴이 너무 작아요 · 조금 더 가까이');
+      testWidgets('$label — 넘치지 않고 순서가 유지된다', (tester) async {
+        await pump(tester, size, inset,
+            stage: FacePhotoType.left, guide: '얼굴이 너무 작아요 · 조금 더 가까이');
 
-      final instruction = tester.getRect(find.text('정면을 바라봐주세요'));
-      final guide = tester.getRect(find.text('얼굴이 너무 작아요 · 조금 더 가까이'));
+        final instruction = tester.getRect(find.text('정면을 바라봐주세요'));
+        final guide = tester.getRect(find.text('얼굴이 너무 작아요 · 조금 더 가까이'));
+        final shutter = tester.getRect(find.byType(CaptureShutter));
+        final gallery = tester.getRect(find.text('갤러리에서 선택'));
 
-      expect(instruction.bottom, lessThanOrEqualTo(guide.top),
-          reason: '겹치거나 순서가 뒤집혔다');
-    });
+        expect(instruction.bottom, lessThanOrEqualTo(guide.top), reason: '순서 역전');
+        expect(guide.bottom, lessThanOrEqualTo(shutter.top), reason: '순서 역전');
+        expect(shutter.bottom, lessThanOrEqualTo(gallery.top), reason: '순서 역전');
 
-    testWidgets('$label — 측면 단계(회전 힌트 44px)에서도 셔터를 침범하지 않는다',
-        (tester) async {
-      await pumpBar(tester, size, stage: FacePhotoType.left);
+        // 화면 밖으로 밀려나면 셔터를 아예 누를 수 없다. 겹치는 것보다 나쁘다.
+        expect(gallery.bottom, lessThanOrEqualTo(size.height), reason: '화면 밖으로 밀려났다');
+        expect(tester.takeException(), isNull, reason: '세로가 모자라 넘쳤다');
+      });
 
-      final instruction = tester.getRect(find.text('정면을 바라봐주세요'));
-      final shutter = tester.getRect(find.text('갤러리에서 선택'));
+      if (onRealDevice(size, inset)) {
+        testWidgets('$label — 셔터가 얼굴 가이드를 침범하지 않는다', (tester) async {
+          await pump(tester, size, inset, stage: FacePhotoType.front);
 
-      expect(instruction.bottom, lessThanOrEqualTo(shutter.top));
-      expect(tester.takeException(), isNull, reason: '세로가 모자라 넘쳤다');
-    });
+          final oval = faceGuideOval(size);
+          final shutter = tester.getRect(find.byType(CaptureShutter));
+
+          expect(
+            shutter.top,
+            greaterThanOrEqualTo(oval.bottom),
+            reason: '셔터가 타원 안으로 들어갔다 — 사용자가 자기 턱을 못 본다',
+          );
+        });
+      }
+    }
   }
 
-  testWidgets('안내는 절대 좌표가 아니라 하단 블록과 같은 Column 에 있다', (tester) async {
-    await pumpBar(tester, sizes.first, stage: FacePhotoType.front);
+  testWidgets('촬영 중은 꺼짐과 다르게 보인다 — 스피너가 산다', (tester) async {
+    await pump(tester, sizes.last, 0, stage: FacePhotoType.front, busy: true);
 
-    // Column 은 자식을 겹칠 수 없다. 안내가 그 안에 있다는 것이 곧 겹치지 않는다는
-    // 보증이라, 좌표를 재는 위 테스트들보다 이쪽이 회귀를 먼저 잡는다.
-    expect(
-      find.ancestor(
-        of: find.text('정면을 바라봐주세요'),
-        matching: find.descendant(
-          of: find.byType(CaptureBottomBar),
-          matching: find.byType(Column),
-        ),
-      ),
-      findsWidgets,
-    );
+    // 흐리게만 처리하면 "그냥 안 되는 버튼" 으로 읽혀 사용자가 다시 누른다.
+    expect(find.byType(CircularProgressIndicator), findsOneWidget);
+
+    // 흐림은 그리는 색의 알파라 위젯 트리에 안 남는다. 규칙을 직접 본다.
+    expect(CaptureShutter.dimmedFor(enabled: false, busy: true), isFalse,
+        reason: '촬영 중을 꺼짐과 같이 흐리게 하면 스피너까지 사라진다');
+    expect(CaptureShutter.dimmedFor(enabled: false, busy: false), isTrue);
+    expect(CaptureShutter.dimmedFor(enabled: true, busy: false), isFalse);
   });
+
+  testWidgets('셔터를 스크린리더가 읽는다', (tester) async {
+    final handle = tester.ensureSemantics();
+
+    await pump(tester, sizes.last, 0, stage: FacePhotoType.front, ready: true);
+    expect(find.bySemanticsLabel('사진 촬영'), findsOneWidget);
+
+    await pump(tester, sizes.last, 0, stage: FacePhotoType.front, busy: true);
+    expect(find.bySemanticsLabel('사진 촬영 중'), findsOneWidget);
+
+    handle.dispose();
+  });
+}
+
+/// 프로덕션과 같은 기하로 타원을 세워 둔다. 위치 비교용이라 색은 상관없다.
+class _OvalStand extends CustomPainter {
+  const _OvalStand(this.frame);
+
+  final Size frame;
+
+  @override
+  void paint(Canvas canvas, Size size) =>
+      canvas.drawOval(faceGuideOval(size), Paint()..color = Colors.white24);
+
+  @override
+  bool shouldRepaint(_OvalStand oldDelegate) => false;
 }
