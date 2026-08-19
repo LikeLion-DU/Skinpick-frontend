@@ -47,7 +47,9 @@ void main() {
   group('글자 크기 2.0 — 배율 테스트가 없던 화면', () {
     testWidgets('로그인 — 링크 줄이 넘치지 않고 회원가입이 남는다', (tester) async {
       await tester.binding.setSurfaceSize(designSize);
-      await tester.pumpWidget(scaled(const ProviderScope(child: LoginPage())));
+      await tester.pumpWidget(scaled(ProviderScope(overrides: [
+        splashMinimumHoldProvider.overrideWithValue(Duration.zero),
+      ], child: const LoginPage())));
       await tester.pumpAndSettle();
 
       expect(tester.takeException(), isNull);
@@ -60,7 +62,9 @@ void main() {
       // Wrap 으로 바꾼 뒤 링크가 세 줄로 쪼개졌다(각 Container 가 폭을 다 먹었다).
       // 에뮬레이터 화면에서 눈으로 잡혔다.
       await tester.binding.setSurfaceSize(designSize);
-      await tester.pumpWidget(scaled(const ProviderScope(child: LoginPage()),
+      await tester.pumpWidget(scaled(ProviderScope(overrides: [
+        splashMinimumHoldProvider.overrideWithValue(Duration.zero),
+      ], child: const LoginPage()),
           scale: 1.0));
       await tester.pumpAndSettle();
 
@@ -71,7 +75,9 @@ void main() {
 
     testWidgets('로그인 — 링크 탭 영역이 44dp 이상이다', (tester) async {
       await tester.binding.setSurfaceSize(designSize);
-      await tester.pumpWidget(scaled(const ProviderScope(child: LoginPage()),
+      await tester.pumpWidget(scaled(ProviderScope(overrides: [
+        splashMinimumHoldProvider.overrideWithValue(Duration.zero),
+      ], child: const LoginPage()),
           scale: 1.0));
       await tester.pumpAndSettle();
 

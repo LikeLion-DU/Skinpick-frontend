@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
-/// S00 — 저장된 토큰을 확인하는 동안만 떠 있다.
-/// 화면 전환은 이 페이지가 하지 않는다. AuthState 가 바뀌면 라우터가 옮긴다.
+/// S00 — 저장된 토큰을 확인하는 동안 떠 있고, **최소 3초는 채운다**
+/// (auth_notifier 의 splashMinimumHoldProvider). 토큰 확인은 수백 ms 라
+/// 브랜드 화면이 깜빡이고 사라지는 걸 막는 값이다.
+/// 화면 전환은 이 페이지가 하지 않는다. AuthState 가 바뀌면 라우터가 옮긴다 —
+/// 그래서 노출 시간도 이 파일이 아니라 상태 쪽에 있다.
 ///
 /// 확정 시안이 흰 배경을 **오렌지 그라디언트 한 판**으로 바꾸고 로고를 흰색으로
 /// 뒤집었다. 앱을 켠 첫 화면이 브랜드 색으로 꽉 차면, 뒤이어 오렌지 히어로가
