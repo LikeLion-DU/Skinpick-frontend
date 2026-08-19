@@ -36,7 +36,10 @@ class NutritionItemDto with _$NutritionItemDto {
 
     /// `LOW` · `NORMAL` · `HIGH`. 모르는 값은 화면에서 회색이 된다.
     String? status,
-    @Default(false) bool higherIsWorse,
+    /// 초과가 문제인 항목인가. **기본값을 두지 않는다** — false 로 떨어뜨리면
+    /// 나트륨이 방향을 잃고 "충분"이 되어 463% 가 초록으로 뜬다. 서버는 primitive
+    /// 라 늘 보내지만, 그 전제가 깨지는 날 화면이 거짓말하게 두지 않는다.
+    bool? higherIsWorse,
   }) = _NutritionItemDto;
 
   factory NutritionItemDto.fromJson(Map<String, dynamic> json) =>
@@ -58,6 +61,16 @@ class ConcernScoreDto with _$ConcernScoreDto {
     ///
     /// **일일 응답에는 이 키가 없다.** 주간도 기록일이 하루뿐이면 없다.
     @JsonKey(name: 'changeFromFirstDay') int? change,
+
+    /// 이 고민에 관해 가장 크게 움직인 룰의 이유 문장. **서버가 저장해 둔 문장을
+    /// 그대로 고른 것이라 앱이 짓지 않는다.**
+    ///
+    /// V8 이전 기록이거나 걸린 룰이 없으면 키가 빠진다. 주간 응답에도 없다 —
+    /// 한 끼를 설명하는 문장이 기간 평균 옆에 붙으면 한 주를 설명하는 것처럼 읽힌다.
+    String? message,
+
+    /// 같은 근거의 짧은 라벨들("나트륨 과다"). 최대 2개. 없으면 빈 배열이다.
+    @Default(<String>[]) List<String> tags,
   }) = _ConcernScoreDto;
 
   factory ConcernScoreDto.fromJson(Map<String, dynamic> json) =>
@@ -71,6 +84,10 @@ class DayScoreDto with _$DayScoreDto {
     required DateTime date,
     @Default(0) int dailyScore,
     String? grade,
+
+    /// 그날 기록의 id. **BEST/WORST 카드에만 온다** — 추이 그래프 7칸에는 키가 없다.
+    /// 앱은 이 id 로 로컬 사진(`plates/{plateId}.jpg`)을 찾는다(PRD §9.6).
+    @Default(<int>[]) List<int> plateIds,
   }) = _DayScoreDto;
 
   factory DayScoreDto.fromJson(Map<String, dynamic> json) =>
@@ -103,6 +120,13 @@ class DailyReportDto with _$DailyReportDto {
     String? grade,
     @Default(0) int recordCount,
     @Default(<NutritionItemDto>[]) List<NutritionItemDto> nutrition,
+
+    /// 피부 영양 포인트 3종(비타민C·오메가3·아연). **영양 밸런스와 다른 배열이다** —
+    /// 시안이 다른 카드로 그리고, 측정 가능 여부도 다르다(표준 음식표에 매칭된
+    /// 끼니에서만 값이 나오므로 `status` 가 없을 수 있다).
+    ///
+    /// [NutritionItemDto] 와 같은 모양이라 화면도 같은 위젯을 쓴다.
+    @Default(<NutritionItemDto>[]) List<NutritionItemDto> skinNutrients,
     @Default(<ConcernScoreDto>[]) List<ConcernScoreDto> concerns,
 
     /// 히스토리와 **같은 DTO** 다. 서버가 하나로 내려주므로 앱도 하나로 받는다.
@@ -164,6 +188,8 @@ extension ConcernScoreDtoX on ConcernScoreDto {
         score: score,
         status: SkinLevel.fromJson(status),
         change: change,
+        message: message,
+        tags: tags,
       );
 }
 
@@ -172,6 +198,7 @@ extension DayScoreDtoX on DayScoreDto {
         date: date,
         dailyScore: dailyScore,
         grade: SkinLevel.fromJson(grade),
+        plateIds: plateIds,
       );
 }
 
@@ -191,6 +218,7 @@ extension DailyReportDtoX on DailyReportDto {
         grade: SkinLevel.fromJson(grade),
         recordCount: recordCount,
         nutrition: nutrition.map((item) => item.toEntity()).toList(),
+        skinNutrients: skinNutrients.map((item) => item.toEntity()).toList(),
         concerns: concerns.map((item) => item.toEntity()).toList(),
         // 끼니 순서를 여기서 세운다. 화면마다 정렬하면 한 곳을 빠뜨리고,
         // 같은 날이 홈과 리포트에서 반대로 그려진다. (히스토리 매퍼와 같은 규칙)
@@ -199,8 +227,10 @@ extension DailyReportDtoX on DailyReportDto {
                   plateId: meal.plateId,
                   foodName: meal.foodName,
                   plateScore: meal.plateScore,
+                  grade: SkinLevel.fromJson(meal.grade),
                   mealType: MealType.fromJson(meal.mealType),
                   recordedAt: meal.recordedAt,
+                  highlightTags: meal.highlightTags,
                 ))
             .toList()
           ..sort((a, b) => a.recordedAt.compareTo(b.recordedAt)),

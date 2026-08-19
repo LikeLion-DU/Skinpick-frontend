@@ -88,14 +88,18 @@ class _Body extends StatelessWidget {
         ),
         FoodTraitChips(food: plate.food),
         const SizedBox(height: 18),
-        PlateScoreCard(score: plate.plateScore),
+        PlateScoreCard(score: plate.plateScore, grade: plate.grade),
         const SizedBox(height: 26),
         // 저장된 기록도 같은 근거를 보여준다. 그때 채점에 쓰인 분석 id 로 읽으므로
         // 그 뒤에 피부를 다시 분석했어도 이 기록의 기준은 바뀌지 않는다.
         SkinBasisCard(skinAnalysisId: plate.skinAnalysisId),
         Text('분석 요약', style: Theme.of(context).textTheme.titleMedium),
         const SizedBox(height: 10),
-        PlateSummaryCard(good: plate.good, caution: plate.caution),
+        PlateSummaryCard(
+          good: plate.good,
+          caution: plate.caution,
+          summary: plate.summary,
+        ),
         // 생성이 실패한 기록은 서버가 이 키를 뺀다. 룰 요약으로 메우지 않는다 —
         // 결과 화면과 같은 규칙이다. "AI 맞춤 TIP" 은 AI 문장일 때만 뜬다.
         if (plate.aiTip case final aiTip? when aiTip.isNotEmpty) ...[

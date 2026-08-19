@@ -626,6 +626,8 @@ ScoredItemDto _$ScoredItemDtoFromJson(Map<String, dynamic> json) {
 mixin _$ScoredItemDto {
   String get key => throw _privateConstructorUsedError;
   int get score => throw _privateConstructorUsedError;
+
+  /// 이 필드가 없던 서버와 붙으면 빈 문자열이고, 그러면 상태어 자리가 빈다.
   String get level => throw _privateConstructorUsedError;
   List<String> get evidence => throw _privateConstructorUsedError;
 
@@ -756,6 +758,8 @@ class _$ScoredItemDtoImpl implements _ScoredItemDto {
   final String key;
   @override
   final int score;
+
+  /// 이 필드가 없던 서버와 붙으면 빈 문자열이고, 그러면 상태어 자리가 빈다.
   @override
   @JsonKey()
   final String level;
@@ -819,6 +823,8 @@ abstract class _ScoredItemDto implements ScoredItemDto {
   String get key;
   @override
   int get score;
+
+  /// 이 필드가 없던 서버와 붙으면 빈 문자열이고, 그러면 상태어 자리가 빈다.
   @override
   String get level;
   @override
@@ -1230,6 +1236,174 @@ abstract class _SkinAgeDto implements SkinAgeDto {
       throw _privateConstructorUsedError;
 }
 
+CareFocusDto _$CareFocusDtoFromJson(Map<String, dynamic> json) {
+  return _CareFocusDto.fromJson(json);
+}
+
+/// @nodoc
+mixin _$CareFocusDto {
+  String get focus => throw _privateConstructorUsedError;
+  String get label => throw _privateConstructorUsedError;
+
+  /// Serializes this CareFocusDto to a JSON map.
+  Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
+
+  /// Create a copy of CareFocusDto
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  $CareFocusDtoCopyWith<CareFocusDto> get copyWith =>
+      throw _privateConstructorUsedError;
+}
+
+/// @nodoc
+abstract class $CareFocusDtoCopyWith<$Res> {
+  factory $CareFocusDtoCopyWith(
+          CareFocusDto value, $Res Function(CareFocusDto) then) =
+      _$CareFocusDtoCopyWithImpl<$Res, CareFocusDto>;
+  @useResult
+  $Res call({String focus, String label});
+}
+
+/// @nodoc
+class _$CareFocusDtoCopyWithImpl<$Res, $Val extends CareFocusDto>
+    implements $CareFocusDtoCopyWith<$Res> {
+  _$CareFocusDtoCopyWithImpl(this._value, this._then);
+
+  // ignore: unused_field
+  final $Val _value;
+  // ignore: unused_field
+  final $Res Function($Val) _then;
+
+  /// Create a copy of CareFocusDto
+  /// with the given fields replaced by the non-null parameter values.
+  @pragma('vm:prefer-inline')
+  @override
+  $Res call({
+    Object? focus = null,
+    Object? label = null,
+  }) {
+    return _then(_value.copyWith(
+      focus: null == focus
+          ? _value.focus
+          : focus // ignore: cast_nullable_to_non_nullable
+              as String,
+      label: null == label
+          ? _value.label
+          : label // ignore: cast_nullable_to_non_nullable
+              as String,
+    ) as $Val);
+  }
+}
+
+/// @nodoc
+abstract class _$$CareFocusDtoImplCopyWith<$Res>
+    implements $CareFocusDtoCopyWith<$Res> {
+  factory _$$CareFocusDtoImplCopyWith(
+          _$CareFocusDtoImpl value, $Res Function(_$CareFocusDtoImpl) then) =
+      __$$CareFocusDtoImplCopyWithImpl<$Res>;
+  @override
+  @useResult
+  $Res call({String focus, String label});
+}
+
+/// @nodoc
+class __$$CareFocusDtoImplCopyWithImpl<$Res>
+    extends _$CareFocusDtoCopyWithImpl<$Res, _$CareFocusDtoImpl>
+    implements _$$CareFocusDtoImplCopyWith<$Res> {
+  __$$CareFocusDtoImplCopyWithImpl(
+      _$CareFocusDtoImpl _value, $Res Function(_$CareFocusDtoImpl) _then)
+      : super(_value, _then);
+
+  /// Create a copy of CareFocusDto
+  /// with the given fields replaced by the non-null parameter values.
+  @pragma('vm:prefer-inline')
+  @override
+  $Res call({
+    Object? focus = null,
+    Object? label = null,
+  }) {
+    return _then(_$CareFocusDtoImpl(
+      focus: null == focus
+          ? _value.focus
+          : focus // ignore: cast_nullable_to_non_nullable
+              as String,
+      label: null == label
+          ? _value.label
+          : label // ignore: cast_nullable_to_non_nullable
+              as String,
+    ));
+  }
+}
+
+/// @nodoc
+@JsonSerializable()
+class _$CareFocusDtoImpl implements _CareFocusDto {
+  const _$CareFocusDtoImpl({this.focus = '', this.label = ''});
+
+  factory _$CareFocusDtoImpl.fromJson(Map<String, dynamic> json) =>
+      _$$CareFocusDtoImplFromJson(json);
+
+  @override
+  @JsonKey()
+  final String focus;
+  @override
+  @JsonKey()
+  final String label;
+
+  @override
+  String toString() {
+    return 'CareFocusDto(focus: $focus, label: $label)';
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return identical(this, other) ||
+        (other.runtimeType == runtimeType &&
+            other is _$CareFocusDtoImpl &&
+            (identical(other.focus, focus) || other.focus == focus) &&
+            (identical(other.label, label) || other.label == label));
+  }
+
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  @override
+  int get hashCode => Object.hash(runtimeType, focus, label);
+
+  /// Create a copy of CareFocusDto
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  @override
+  @pragma('vm:prefer-inline')
+  _$$CareFocusDtoImplCopyWith<_$CareFocusDtoImpl> get copyWith =>
+      __$$CareFocusDtoImplCopyWithImpl<_$CareFocusDtoImpl>(this, _$identity);
+
+  @override
+  Map<String, dynamic> toJson() {
+    return _$$CareFocusDtoImplToJson(
+      this,
+    );
+  }
+}
+
+abstract class _CareFocusDto implements CareFocusDto {
+  const factory _CareFocusDto({final String focus, final String label}) =
+      _$CareFocusDtoImpl;
+
+  factory _CareFocusDto.fromJson(Map<String, dynamic> json) =
+      _$CareFocusDtoImpl.fromJson;
+
+  @override
+  String get focus;
+  @override
+  String get label;
+
+  /// Create a copy of CareFocusDto
+  /// with the given fields replaced by the non-null parameter values.
+  @override
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  _$$CareFocusDtoImplCopyWith<_$CareFocusDtoImpl> get copyWith =>
+      throw _privateConstructorUsedError;
+}
+
 SkinAnalysisDto _$SkinAnalysisDtoFromJson(Map<String, dynamic> json) {
   return _SkinAnalysisDto.fromJson(json);
 }
@@ -1238,6 +1412,10 @@ SkinAnalysisDto _$SkinAnalysisDtoFromJson(Map<String, dynamic> json) {
 mixin _$SkinAnalysisDto {
   int get skinAnalysisId => throw _privateConstructorUsedError;
   int get skinScore => throw _privateConstructorUsedError;
+
+  /// [skinScore] 의 등급. **서버가 매긴다** — 앱에 경계표를 두지 않는다.
+  /// 이 필드가 생기기 전 서버와 붙으면 null 이고, 그때는 배지를 안 그린다.
+  String? get grade => throw _privateConstructorUsedError;
   SkinMetricsDto get metrics =>
       throw _privateConstructorUsedError; // 같은 5개에 등급과 근거를 붙인 것. 이 기능 이전에 저장된 분석이면 근거가 비어 있다.
   List<ScoredItemDto> get metricDetails =>
@@ -1248,6 +1426,15 @@ mixin _$SkinAnalysisDto {
       throw _privateConstructorUsedError; // 예전 분석이면 서버가 키를 생략한다
   String get summary => throw _privateConstructorUsedError;
   List<HighlightDto> get highlights => throw _privateConstructorUsedError;
+
+  /// "지금 피부가 필요로 하는 관리" 축. 지표에서 규칙으로 도출하므로 **예전
+  /// 분석에도 온다**(highlights 와 같은 성격이다). 최소 하나는 오지만, 이 필드가
+  /// 생기기 전 서버와 붙어도 기본값이 빈 배열이라 화면이 칩 줄만 안 그린다.
+  List<CareFocusDto> get careFocus => throw _privateConstructorUsedError;
+
+  /// 위 축들의 권고를 이어 붙인 문단. **AI 문장이 아니다** — [summary](AI 가
+  /// 관찰한 것)와 다른 것을 말한다. 없으면 화면이 summary 로 떨어진다.
+  String? get careMessage => throw _privateConstructorUsedError;
   SkinTypeGapDto? get skinTypeGap =>
       throw _privateConstructorUsedError; // 미선택이면 서버가 키를 생략한다
   DateTime get analyzedAt => throw _privateConstructorUsedError;
@@ -1271,12 +1458,15 @@ abstract class $SkinAnalysisDtoCopyWith<$Res> {
   $Res call(
       {int skinAnalysisId,
       int skinScore,
+      String? grade,
       SkinMetricsDto metrics,
       List<ScoredItemDto> metricDetails,
       SkinTypeDto? skinType,
       SkinAgeDto? skinAge,
       String summary,
       List<HighlightDto> highlights,
+      List<CareFocusDto> careFocus,
+      String? careMessage,
       SkinTypeGapDto? skinTypeGap,
       DateTime analyzedAt});
 
@@ -1303,12 +1493,15 @@ class _$SkinAnalysisDtoCopyWithImpl<$Res, $Val extends SkinAnalysisDto>
   $Res call({
     Object? skinAnalysisId = null,
     Object? skinScore = null,
+    Object? grade = freezed,
     Object? metrics = null,
     Object? metricDetails = null,
     Object? skinType = freezed,
     Object? skinAge = freezed,
     Object? summary = null,
     Object? highlights = null,
+    Object? careFocus = null,
+    Object? careMessage = freezed,
     Object? skinTypeGap = freezed,
     Object? analyzedAt = null,
   }) {
@@ -1321,6 +1514,10 @@ class _$SkinAnalysisDtoCopyWithImpl<$Res, $Val extends SkinAnalysisDto>
           ? _value.skinScore
           : skinScore // ignore: cast_nullable_to_non_nullable
               as int,
+      grade: freezed == grade
+          ? _value.grade
+          : grade // ignore: cast_nullable_to_non_nullable
+              as String?,
       metrics: null == metrics
           ? _value.metrics
           : metrics // ignore: cast_nullable_to_non_nullable
@@ -1345,6 +1542,14 @@ class _$SkinAnalysisDtoCopyWithImpl<$Res, $Val extends SkinAnalysisDto>
           ? _value.highlights
           : highlights // ignore: cast_nullable_to_non_nullable
               as List<HighlightDto>,
+      careFocus: null == careFocus
+          ? _value.careFocus
+          : careFocus // ignore: cast_nullable_to_non_nullable
+              as List<CareFocusDto>,
+      careMessage: freezed == careMessage
+          ? _value.careMessage
+          : careMessage // ignore: cast_nullable_to_non_nullable
+              as String?,
       skinTypeGap: freezed == skinTypeGap
           ? _value.skinTypeGap
           : skinTypeGap // ignore: cast_nullable_to_non_nullable
@@ -1420,12 +1625,15 @@ abstract class _$$SkinAnalysisDtoImplCopyWith<$Res>
   $Res call(
       {int skinAnalysisId,
       int skinScore,
+      String? grade,
       SkinMetricsDto metrics,
       List<ScoredItemDto> metricDetails,
       SkinTypeDto? skinType,
       SkinAgeDto? skinAge,
       String summary,
       List<HighlightDto> highlights,
+      List<CareFocusDto> careFocus,
+      String? careMessage,
       SkinTypeGapDto? skinTypeGap,
       DateTime analyzedAt});
 
@@ -1454,12 +1662,15 @@ class __$$SkinAnalysisDtoImplCopyWithImpl<$Res>
   $Res call({
     Object? skinAnalysisId = null,
     Object? skinScore = null,
+    Object? grade = freezed,
     Object? metrics = null,
     Object? metricDetails = null,
     Object? skinType = freezed,
     Object? skinAge = freezed,
     Object? summary = null,
     Object? highlights = null,
+    Object? careFocus = null,
+    Object? careMessage = freezed,
     Object? skinTypeGap = freezed,
     Object? analyzedAt = null,
   }) {
@@ -1472,6 +1683,10 @@ class __$$SkinAnalysisDtoImplCopyWithImpl<$Res>
           ? _value.skinScore
           : skinScore // ignore: cast_nullable_to_non_nullable
               as int,
+      grade: freezed == grade
+          ? _value.grade
+          : grade // ignore: cast_nullable_to_non_nullable
+              as String?,
       metrics: null == metrics
           ? _value.metrics
           : metrics // ignore: cast_nullable_to_non_nullable
@@ -1496,6 +1711,14 @@ class __$$SkinAnalysisDtoImplCopyWithImpl<$Res>
           ? _value._highlights
           : highlights // ignore: cast_nullable_to_non_nullable
               as List<HighlightDto>,
+      careFocus: null == careFocus
+          ? _value._careFocus
+          : careFocus // ignore: cast_nullable_to_non_nullable
+              as List<CareFocusDto>,
+      careMessage: freezed == careMessage
+          ? _value.careMessage
+          : careMessage // ignore: cast_nullable_to_non_nullable
+              as String?,
       skinTypeGap: freezed == skinTypeGap
           ? _value.skinTypeGap
           : skinTypeGap // ignore: cast_nullable_to_non_nullable
@@ -1514,16 +1737,20 @@ class _$SkinAnalysisDtoImpl implements _SkinAnalysisDto {
   const _$SkinAnalysisDtoImpl(
       {required this.skinAnalysisId,
       required this.skinScore,
+      this.grade,
       required this.metrics,
       final List<ScoredItemDto> metricDetails = const <ScoredItemDto>[],
       this.skinType,
       this.skinAge,
       this.summary = '',
       final List<HighlightDto> highlights = const <HighlightDto>[],
+      final List<CareFocusDto> careFocus = const <CareFocusDto>[],
+      this.careMessage,
       this.skinTypeGap,
       required this.analyzedAt})
       : _metricDetails = metricDetails,
-        _highlights = highlights;
+        _highlights = highlights,
+        _careFocus = careFocus;
 
   factory _$SkinAnalysisDtoImpl.fromJson(Map<String, dynamic> json) =>
       _$$SkinAnalysisDtoImplFromJson(json);
@@ -1532,6 +1759,11 @@ class _$SkinAnalysisDtoImpl implements _SkinAnalysisDto {
   final int skinAnalysisId;
   @override
   final int skinScore;
+
+  /// [skinScore] 의 등급. **서버가 매긴다** — 앱에 경계표를 두지 않는다.
+  /// 이 필드가 생기기 전 서버와 붙으면 null 이고, 그때는 배지를 안 그린다.
+  @override
+  final String? grade;
   @override
   final SkinMetricsDto metrics;
 // 같은 5개에 등급과 근거를 붙인 것. 이 기능 이전에 저장된 분석이면 근거가 비어 있다.
@@ -1564,6 +1796,26 @@ class _$SkinAnalysisDtoImpl implements _SkinAnalysisDto {
     return EqualUnmodifiableListView(_highlights);
   }
 
+  /// "지금 피부가 필요로 하는 관리" 축. 지표에서 규칙으로 도출하므로 **예전
+  /// 분석에도 온다**(highlights 와 같은 성격이다). 최소 하나는 오지만, 이 필드가
+  /// 생기기 전 서버와 붙어도 기본값이 빈 배열이라 화면이 칩 줄만 안 그린다.
+  final List<CareFocusDto> _careFocus;
+
+  /// "지금 피부가 필요로 하는 관리" 축. 지표에서 규칙으로 도출하므로 **예전
+  /// 분석에도 온다**(highlights 와 같은 성격이다). 최소 하나는 오지만, 이 필드가
+  /// 생기기 전 서버와 붙어도 기본값이 빈 배열이라 화면이 칩 줄만 안 그린다.
+  @override
+  @JsonKey()
+  List<CareFocusDto> get careFocus {
+    if (_careFocus is EqualUnmodifiableListView) return _careFocus;
+    // ignore: implicit_dynamic_type
+    return EqualUnmodifiableListView(_careFocus);
+  }
+
+  /// 위 축들의 권고를 이어 붙인 문단. **AI 문장이 아니다** — [summary](AI 가
+  /// 관찰한 것)와 다른 것을 말한다. 없으면 화면이 summary 로 떨어진다.
+  @override
+  final String? careMessage;
   @override
   final SkinTypeGapDto? skinTypeGap;
 // 미선택이면 서버가 키를 생략한다
@@ -1572,7 +1824,7 @@ class _$SkinAnalysisDtoImpl implements _SkinAnalysisDto {
 
   @override
   String toString() {
-    return 'SkinAnalysisDto(skinAnalysisId: $skinAnalysisId, skinScore: $skinScore, metrics: $metrics, metricDetails: $metricDetails, skinType: $skinType, skinAge: $skinAge, summary: $summary, highlights: $highlights, skinTypeGap: $skinTypeGap, analyzedAt: $analyzedAt)';
+    return 'SkinAnalysisDto(skinAnalysisId: $skinAnalysisId, skinScore: $skinScore, grade: $grade, metrics: $metrics, metricDetails: $metricDetails, skinType: $skinType, skinAge: $skinAge, summary: $summary, highlights: $highlights, careFocus: $careFocus, careMessage: $careMessage, skinTypeGap: $skinTypeGap, analyzedAt: $analyzedAt)';
   }
 
   @override
@@ -1584,6 +1836,7 @@ class _$SkinAnalysisDtoImpl implements _SkinAnalysisDto {
                 other.skinAnalysisId == skinAnalysisId) &&
             (identical(other.skinScore, skinScore) ||
                 other.skinScore == skinScore) &&
+            (identical(other.grade, grade) || other.grade == grade) &&
             (identical(other.metrics, metrics) || other.metrics == metrics) &&
             const DeepCollectionEquality()
                 .equals(other._metricDetails, _metricDetails) &&
@@ -1593,6 +1846,10 @@ class _$SkinAnalysisDtoImpl implements _SkinAnalysisDto {
             (identical(other.summary, summary) || other.summary == summary) &&
             const DeepCollectionEquality()
                 .equals(other._highlights, _highlights) &&
+            const DeepCollectionEquality()
+                .equals(other._careFocus, _careFocus) &&
+            (identical(other.careMessage, careMessage) ||
+                other.careMessage == careMessage) &&
             (identical(other.skinTypeGap, skinTypeGap) ||
                 other.skinTypeGap == skinTypeGap) &&
             (identical(other.analyzedAt, analyzedAt) ||
@@ -1605,12 +1862,15 @@ class _$SkinAnalysisDtoImpl implements _SkinAnalysisDto {
       runtimeType,
       skinAnalysisId,
       skinScore,
+      grade,
       metrics,
       const DeepCollectionEquality().hash(_metricDetails),
       skinType,
       skinAge,
       summary,
       const DeepCollectionEquality().hash(_highlights),
+      const DeepCollectionEquality().hash(_careFocus),
+      careMessage,
       skinTypeGap,
       analyzedAt);
 
@@ -1635,12 +1895,15 @@ abstract class _SkinAnalysisDto implements SkinAnalysisDto {
   const factory _SkinAnalysisDto(
       {required final int skinAnalysisId,
       required final int skinScore,
+      final String? grade,
       required final SkinMetricsDto metrics,
       final List<ScoredItemDto> metricDetails,
       final SkinTypeDto? skinType,
       final SkinAgeDto? skinAge,
       final String summary,
       final List<HighlightDto> highlights,
+      final List<CareFocusDto> careFocus,
+      final String? careMessage,
       final SkinTypeGapDto? skinTypeGap,
       required final DateTime analyzedAt}) = _$SkinAnalysisDtoImpl;
 
@@ -1651,6 +1914,11 @@ abstract class _SkinAnalysisDto implements SkinAnalysisDto {
   int get skinAnalysisId;
   @override
   int get skinScore;
+
+  /// [skinScore] 의 등급. **서버가 매긴다** — 앱에 경계표를 두지 않는다.
+  /// 이 필드가 생기기 전 서버와 붙으면 null 이고, 그때는 배지를 안 그린다.
+  @override
+  String? get grade;
   @override
   SkinMetricsDto
       get metrics; // 같은 5개에 등급과 근거를 붙인 것. 이 기능 이전에 저장된 분석이면 근거가 비어 있다.
@@ -1666,6 +1934,17 @@ abstract class _SkinAnalysisDto implements SkinAnalysisDto {
   String get summary;
   @override
   List<HighlightDto> get highlights;
+
+  /// "지금 피부가 필요로 하는 관리" 축. 지표에서 규칙으로 도출하므로 **예전
+  /// 분석에도 온다**(highlights 와 같은 성격이다). 최소 하나는 오지만, 이 필드가
+  /// 생기기 전 서버와 붙어도 기본값이 빈 배열이라 화면이 칩 줄만 안 그린다.
+  @override
+  List<CareFocusDto> get careFocus;
+
+  /// 위 축들의 권고를 이어 붙인 문단. **AI 문장이 아니다** — [summary](AI 가
+  /// 관찰한 것)와 다른 것을 말한다. 없으면 화면이 summary 로 떨어진다.
+  @override
+  String? get careMessage;
   @override
   SkinTypeGapDto? get skinTypeGap; // 미선택이면 서버가 키를 생략한다
   @override

@@ -6,6 +6,7 @@ import '../../../../shared/enums/ingredient_tag.dart';
 import '../../../../shared/enums/meal_type.dart';
 import '../../../../shared/enums/plate_action_code.dart';
 import '../../../../shared/enums/skin_basis.dart';
+import '../../../../shared/enums/skin_level.dart';
 import '../../domain/entities/plate_analysis.dart' as domain;
 import '../../domain/entities/plate_history.dart' as domain;
 import '../../domain/entities/skin_plate.dart' as domain;
@@ -133,7 +134,13 @@ class PlateAnalysisDto with _$PlateAnalysisDto {
     String? skinBasis,
     DateTime? skinMeasuredAt,
     required int plateScore,
-    @Default(70) int baseScore,
+
+    /// [plateScore] 의 등급. **서버가 매겨서 보낸다** — 앱에 경계표를 두지 않는다.
+    /// 이 필드가 없던 서버와 붙으면 null 이고, 화면은 배지를 비운다.
+    String? grade,
+    /// 룰 적용 전 기준 점수. **기본값을 두지 않는다** — 값의 주인은 서버
+    /// `RuleConstants.BASE_SCORE` 다(목표 점수와 같은 이유).
+    int? baseScore,
     @Default('') String summary,
     required FoodAnalysisDto food,
     required FeedbackGroupDto feedbacks,
@@ -161,7 +168,13 @@ class SkinPlateDto with _$SkinPlateDto {
     DateTime? skinMeasuredAt,
 
     required int plateScore,
-    @Default(70) int baseScore,
+
+    /// [plateScore] 의 등급. **서버가 매겨서 보낸다** — 앱에 경계표를 두지 않는다.
+    /// 이 필드가 없던 서버와 붙으면 null 이고, 화면은 배지를 비운다.
+    String? grade,
+    /// 룰 적용 전 기준 점수. **기본값을 두지 않는다** — 값의 주인은 서버
+    /// `RuleConstants.BASE_SCORE` 다(목표 점수와 같은 이유).
+    int? baseScore,
     @Default('') String summary,
     required FoodAnalysisDto food,
     required FeedbackGroupDto feedbacks,
@@ -187,6 +200,7 @@ extension PlateAnalysisDtoX on PlateAnalysisDto {
         skinBasis: SkinBasis.fromJson(skinBasis),
         skinMeasuredAt: skinMeasuredAt,
         plateScore: plateScore,
+        grade: SkinLevel.fromJson(grade),
         baseScore: baseScore,
         summary: summary,
         food: food.toEntity(),
@@ -204,6 +218,7 @@ extension SkinPlateDtoX on SkinPlateDto {
         skinBasis: SkinBasis.fromJson(skinBasis),
         skinMeasuredAt: skinMeasuredAt,
         plateScore: plateScore,
+        grade: SkinLevel.fromJson(grade),
         baseScore: baseScore,
         summary: summary,
         food: food.toEntity(),
@@ -271,9 +286,21 @@ class PlateHistoryItemDto with _$PlateHistoryItemDto {
     required String foodName,
     @Default(0) int plateScore,
 
+    /// [plateScore] 의 등급. **서버가 매겨서 보낸다** — 앱이 점수에서 다시 내면
+    /// 경계표가 두 벌이 되고, 서버가 경계를 옮긴 날 한쪽만 따라간다.
+    /// 모르는 값이면 null 이고 화면은 배지를 비운다.
+    String? grade,
+
     /// 서버가 시각에서 파생해 보낸다. 모르는 값이면 화면이 배지를 비운다.
     String? mealType,
     required DateTime recordedAt,
+
+    /// 이 끼니에서 눈에 띄는 항목 두세 개("나트륨" · "단백질").
+    ///
+    /// **서버가 고른다.** 앱이 고르려면 목록에 영양값 전체를 실어야 하고, 그러면
+    /// "얼마부터 높은가"가 앱에도 한 벌 생긴다. 걸리는 항목이 없는 평범한 끼니는
+    /// 빈 배열이고, 이 필드가 생기기 전 서버와 붙어도 기본값이 빈 배열이라 안전하다.
+    @Default(<String>[]) List<String> highlightTags,
   }) = _PlateHistoryItemDto;
 
   factory PlateHistoryItemDto.fromJson(Map<String, dynamic> json) =>
@@ -300,8 +327,13 @@ class PlateHistoryDayDto with _$PlateHistoryDayDto {
     /// 상태다. null 이어야 카드가 시안대로 `OO점` 으로 빠진다.
     int? plateScore,
 
-    /// 시안의 "목표 80점". 서버가 못 보내도 화면이 0 을 그리지 않도록 기본값을 둔다.
-    @Default(80) int targetScore,
+    /// [plateScore] 의 등급. 서버가 매긴다 — 홈 히어로 배지가 이 값을 쓴다.
+    String? grade,
+
+    /// 시안의 "목표 80점". **값은 서버가 정한다** — 앱에 80 을 박지 않는다.
+    /// 지금은 모두에게 같은 상수지만 사용자별 목표가 생기는 날 앱 배포가 필요해진다.
+    /// 서버가 안 보내면 목표 막대를 그릴 근거가 없으므로 null 로 둔다.
+    int? targetScore,
 
     /// "오늘의 AI 코멘트". 없으면 서버가 키를 빼고, 앱은 카드를 그리지 않는다.
     String? aiComment,
@@ -331,6 +363,7 @@ extension PlateHistoryDtoX on PlateHistoryDto {
             date: day.date,
             skinScore: day.skinScore,
             plateScore: day.plateScore,
+            grade: SkinLevel.fromJson(day.grade),
             targetScore: day.targetScore,
             aiComment: day.aiComment,
             plates: day.plates
@@ -338,8 +371,10 @@ extension PlateHistoryDtoX on PlateHistoryDto {
                       plateId: item.plateId,
                       foodName: item.foodName,
                       plateScore: item.plateScore,
+                      grade: SkinLevel.fromJson(item.grade),
                       mealType: MealType.fromJson(item.mealType),
                       recordedAt: item.recordedAt,
+                      highlightTags: item.highlightTags,
                     ))
                 .toList()
               ..sort((a, b) => a.recordedAt.compareTo(b.recordedAt)),

@@ -1,6 +1,7 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
 
 import '../../../../shared/enums/highlight_status.dart';
+import '../../../../shared/enums/skin_level.dart';
 import '../../../../shared/enums/skin_type.dart';
 import '../../domain/entities/skin_analysis.dart';
 
@@ -48,15 +49,14 @@ class SkinTypeGapDto with _$SkinTypeGapDto {
 /// 점수 하나 + 등급 + 관찰 근거. 서버에서 피부 지표 5개와 나이 축 7개가
 /// 같은 모양으로 온다.
 ///
-/// `level` 은 서버가 방향을 맞춰 계산한 5단계(SEVERE/CAUTION/NORMAL/GOOD/EXCELLENT)다.
-/// 화면의 지표 색은 아직 `MetricBand`(60/40) 가 그린다 — 이미 여러 화면이 쓰는
-/// 표시 등급이라 여기서 갈아끼우면 같은 값이 화면마다 다른 색이 된다. 서버 등급으로
-/// 옮기는 것은 화면을 같이 손볼 때 한 번에 한다.
+/// `level` 은 서버가 **방향을 맞춰** 계산한 5단계다(홍조는 100-점수로 뒤집은 뒤 매긴다).
+/// 화면의 상태어는 이것을 접어서 만든다 — 앱에 지표 경계표를 두지 않는다.
 @freezed
 class ScoredItemDto with _$ScoredItemDto {
   const factory ScoredItemDto({
     required String key,
     required int score,
+    /// 이 필드가 없던 서버와 붙으면 빈 문자열이고, 그러면 상태어 자리가 빈다.
     @Default('') String level,
     @Default(<String>[]) List<String> evidence,
   }) = _ScoredItemDto;
@@ -103,11 +103,30 @@ class SkinAgeDto with _$SkinAgeDto {
       _$SkinAgeDtoFromJson(json);
 }
 
+/// 관리 축 하나. 서버가 지표에서 규칙으로 낸다 — AI 문장이 아니다.
+///
+/// enum 이름과 라벨이 함께 온다. 화면은 [focus] 를 키로만 쓰고 표시는 [label] 로
+/// 한다 — 그래야 서버가 축을 늘리거나 문구를 다듬을 때 앱을 고치지 않는다.
+@freezed
+class CareFocusDto with _$CareFocusDto {
+  const factory CareFocusDto({
+    @Default('') String focus,
+    @Default('') String label,
+  }) = _CareFocusDto;
+
+  factory CareFocusDto.fromJson(Map<String, dynamic> json) =>
+      _$CareFocusDtoFromJson(json);
+}
+
 @freezed
 class SkinAnalysisDto with _$SkinAnalysisDto {
   const factory SkinAnalysisDto({
     required int skinAnalysisId,
     required int skinScore,
+
+    /// [skinScore] 의 등급. **서버가 매긴다** — 앱에 경계표를 두지 않는다.
+    /// 이 필드가 생기기 전 서버와 붙으면 null 이고, 그때는 배지를 안 그린다.
+    String? grade,
     required SkinMetricsDto metrics,
     // 같은 5개에 등급과 근거를 붙인 것. 이 기능 이전에 저장된 분석이면 근거가 비어 있다.
     @Default(<ScoredItemDto>[]) List<ScoredItemDto> metricDetails,
@@ -117,6 +136,15 @@ class SkinAnalysisDto with _$SkinAnalysisDto {
     SkinAgeDto? skinAge,                // 예전 분석이면 서버가 키를 생략한다
     @Default('') String summary,
     @Default(<HighlightDto>[]) List<HighlightDto> highlights,
+
+    /// "지금 피부가 필요로 하는 관리" 축. 지표에서 규칙으로 도출하므로 **예전
+    /// 분석에도 온다**(highlights 와 같은 성격이다). 최소 하나는 오지만, 이 필드가
+    /// 생기기 전 서버와 붙어도 기본값이 빈 배열이라 화면이 칩 줄만 안 그린다.
+    @Default(<CareFocusDto>[]) List<CareFocusDto> careFocus,
+
+    /// 위 축들의 권고를 이어 붙인 문단. **AI 문장이 아니다** — [summary](AI 가
+    /// 관찰한 것)와 다른 것을 말한다. 없으면 화면이 summary 로 떨어진다.
+    String? careMessage,
     SkinTypeGapDto? skinTypeGap,        // 미선택이면 서버가 키를 생략한다
     required DateTime analyzedAt,
   }) = _SkinAnalysisDto;
@@ -129,6 +157,7 @@ extension SkinAnalysisDtoX on SkinAnalysisDto {
   SkinAnalysis toEntity() => SkinAnalysis(
         id: skinAnalysisId,
         skinScore: skinScore,
+        grade: SkinLevel.fromJson(grade),
         metrics: SkinMetrics(
           hydration: metrics.hydration,
           oil: metrics.oil,
@@ -146,16 +175,22 @@ extension SkinAnalysisDtoX on SkinAnalysisDto {
                   status: HighlightStatus.fromJson(h.status),
                 ))
             .toList(),
+        careFocus: careFocus
+            .map((item) => CareFocus(focus: item.focus, label: item.label))
+            .toList(),
+        careMessage: careMessage,
         skinTypeGap: skinTypeGap?.toEntity(),
         analyzedAt: analyzedAt,
       );
 }
 
 extension ScoredItemDtoX on ScoredItemDto {
-  /// level 은 도메인으로 넘기지 않는다 — 읽는 화면이 없다.
-  /// 계약이 어긋나는지는 이 DTO 를 보는 계약 테스트가 잡는다.
-  ScoredItem toEntity() =>
-      ScoredItem(key: key, score: score, evidence: evidence);
+  ScoredItem toEntity() => ScoredItem(
+        key: key,
+        score: score,
+        level: SkinLevel.fromJson(level),
+        evidence: evidence,
+      );
 }
 
 extension SkinTypeDtoX on SkinTypeDto {

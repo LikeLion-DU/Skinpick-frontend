@@ -1,27 +1,45 @@
 import '../../../../shared/enums/highlight_status.dart';
+import '../../../../shared/enums/skin_level.dart';
 import '../../../../shared/enums/skin_type.dart';
 
 class SkinAnalysis {
   const SkinAnalysis({
     required this.id,
     required this.skinScore,
+    this.grade,
     required this.metrics,
     this.metricDetails = const [],
     this.skinType,
     this.skinAge,
     required this.summary,
     required this.highlights,
+    this.careFocus = const <CareFocus>[],
+    this.careMessage,
     this.skinTypeGap,
     required this.analyzedAt,
   });
 
   final int id;
   final int skinScore;
+
+  /// [skinScore] 의 등급. **서버가 매긴다.** 모르면 배지를 그리지 않는다.
+  final SkinLevel? grade;
+
   final SkinMetrics metrics;
 
   /// [metrics] 와 같은 5개에 서버 등급과 관찰 근거를 붙인 것.
-  /// 이 기능 이전에 저장된 분석이면 근거가 비어 있다.
+  /// 이 기능 이전에 저장된 분석이면 근거가 비어 있다(등급은 저장된 지표에서
+  /// 서버가 계산하므로 옛 기록에도 온다).
   final List<ScoredItem> metricDetails;
+
+  /// 지표 등급을 key 로 찾는다. 상태어를 그리는 화면이 셋이라 여기에 둔다 —
+  /// 화면마다 metricDetails 를 다시 훑으면 한 곳이 빠진다.
+  SkinLevel? levelOf(String metricKey) {
+    for (final detail in metricDetails) {
+      if (detail.key == metricKey) return detail.level;
+    }
+    return null;
+  }
 
   /// 오늘의 피부 타입 + 상태. `primary` 는 [skinTypeGap]`.observed` 와 항상 같은 값이다 —
   /// 둘 다 서버가 같은 규칙으로 낸다. null 이면 화면이 자가 신고 타입으로 떨어진다.
@@ -34,6 +52,14 @@ class SkinAnalysis {
   final String summary;
   final List<Highlight> highlights;
 
+  /// "지금 피부가 필요로 하는 관리" 축. 서버가 지표에서 규칙으로 낸다 —
+  /// 앱이 지표를 보고 축을 고르지 않는다(그러면 기준이 두 곳에 생긴다).
+  final List<CareFocus> careFocus;
+
+  /// 위 축들의 권고 문단. **[summary] 와 다른 것을 말한다** — summary 는 AI 가
+  /// 사진에서 관찰한 것이고 이쪽은 그 관찰에서 나오는 식단 방향이다.
+  final String? careMessage;
+
   /// null = 사용자가 아직 피부 타입을 안 골랐다.
   /// 이 경우 S05 는 갭 카드 대신 "평소 본인 피부는?" 선택 칩을 띄운다.
   final SkinTypeGap? skinTypeGap;
@@ -41,16 +67,22 @@ class SkinAnalysis {
   final DateTime analyzedAt;
 }
 
-/// 점수 하나 + 관찰 근거. 피부 지표와 나이 축이 같이 쓴다.
-///
-/// 서버가 같이 주는 `level` 은 도메인까지 올리지 않는다. 화면 색은 `MetricBand` 가
-/// 그리고 있어서 읽는 곳이 없는데, 원시 문자열로 들고 있으면 이 저장소가 정한
-/// "wire enum 은 파서를 거친다" 규칙만 헐거워진다. 계약이 어긋나는지는 DTO 층의
-/// 계약 테스트가 본다.
+/// 관리 축 하나. 서버 enum 이름과 라벨을 함께 들고 있다 — 화면은 라벨만 그린다.
+class CareFocus {
+  const CareFocus({required this.focus, required this.label});
+
+  /// 서버 enum 이름(`HYDRATION` 등). 화면은 **키로만** 쓴다.
+  final String focus;
+
+  final String label;
+}
+
+/// 점수 하나 + 등급 + 관찰 근거. 피부 지표와 나이 축이 같이 쓴다.
 class ScoredItem {
   const ScoredItem({
     required this.key,
     required this.score,
+    this.level,
     required this.evidence,
   });
 
@@ -58,6 +90,10 @@ class ScoredItem {
 
   /// 서버가 준 원값. 방향을 뒤집지 않았으므로 바 길이는 이 값으로 그린다.
   final int score;
+
+  /// 서버가 **방향을 맞춰** 매긴 등급. 홍조 80 도 수분 20 도 나쁜 쪽이라 둘 다
+  /// CAUTION 계열로 온다 — 화면은 이것을 [MetricBand] 로 접어 상태어를 만든다.
+  final SkinLevel? level;
 
   final List<String> evidence;
 }
@@ -92,9 +128,6 @@ class SkinAge {
   /// 왜 그 나이로 봤는지. 서버가 만든 문장이라 앱이 고치지 않는다.
   final String assessment;
 
-  /// 서버가 이미 18~80 을 보장하지만 앱이 한 번 더 본다.
-  /// 회귀가 나면 "AI 추정 피부 나이 0세" 가 확신에 찬 설명 옆에 그려진다.
-  bool get isUsable => estimatedSkinAge >= 18 && estimatedSkinAge <= 80;
 }
 
 /// 자가 진단 ↔ 오늘 측정 비교. 서버가 계산해서 내려준다.

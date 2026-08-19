@@ -19,6 +19,20 @@ enum SkinConcern {
 
   const SkinConcern(this.wire, this.label);
 
+  /// 선택 타일에 쓰는 그림. 시안 아이콘 시트에서 글리프만 잘라 낸 파일이다
+  /// ([SkinType.glyph] 와 같은 시트·같은 규칙).
+  String get glyph => switch (this) {
+        acne => 'assets/icons/skin_concern_acne.png',
+        rednessSensitive => 'assets/icons/skin_concern_redness.png',
+        darkCircle => 'assets/icons/skin_concern_dark_circle.png',
+        drynessFlaking => 'assets/icons/skin_concern_dryness.png',
+        sebumOil => 'assets/icons/skin_concern_oiliness.png',
+        texture => 'assets/icons/skin_concern_texture.png',
+        pigmentation => 'assets/icons/skin_concern_pigmentation.png',
+        elasticity => 'assets/icons/skin_concern_elasticity.png',
+        puffiness => 'assets/icons/skin_concern_puffiness.png',
+      };
+
   final String wire;
   final String label;
 

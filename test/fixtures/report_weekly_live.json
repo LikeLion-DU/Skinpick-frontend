@@ -1,0 +1,140 @@
+{
+  "success": true,
+  "data": {
+    "from": "2026-08-11",
+    "to": "2026-08-17",
+    "averageDailyScore": 60,
+    "grade": "NORMAL",
+    "totalDays": 7,
+    "recordedDays": 1,
+    "recordCount": 5,
+    "dailyScores": [
+      {
+        "date": "2026-08-17",
+        "dailyScore": 60,
+        "grade": "NORMAL"
+      }
+    ],
+    "nutrition": [
+      {
+        "nutrient": "CALORIES",
+        "label": "칼로리",
+        "unit": "kcal",
+        "amount": 2600.0,
+        "target": 2000,
+        "percent": 130,
+        "status": "HIGH",
+        "higherIsWorse": true
+      },
+      {
+        "nutrient": "CARB",
+        "label": "탄수화물",
+        "unit": "g",
+        "amount": 160.0,
+        "target": 300,
+        "percent": 53,
+        "status": "LOW",
+        "higherIsWorse": true
+      },
+      {
+        "nutrient": "PROTEIN",
+        "label": "단백질",
+        "unit": "g",
+        "amount": 142.5,
+        "target": 55,
+        "percent": 259,
+        "status": "HIGH",
+        "higherIsWorse": false
+      },
+      {
+        "nutrient": "FAT",
+        "label": "지방",
+        "unit": "g",
+        "amount": 120.0,
+        "target": 50,
+        "percent": 240,
+        "status": "HIGH",
+        "higherIsWorse": true
+      },
+      {
+        "nutrient": "SODIUM",
+        "label": "나트륨",
+        "unit": "mg",
+        "amount": 9250.0,
+        "target": 2000,
+        "percent": 463,
+        "status": "HIGH",
+        "higherIsWorse": true
+      },
+      {
+        "nutrient": "SUGAR",
+        "label": "당류",
+        "unit": "g",
+        "amount": 31.0,
+        "target": 50,
+        "percent": 62,
+        "status": "LOW",
+        "higherIsWorse": true
+      }
+    ],
+    "concerns": [
+      {
+        "concern": "ACNE",
+        "label": "여드름",
+        "score": 74,
+        "status": "GOOD",
+        "tags": [
+          "발효식품 포함"
+        ]
+      },
+      {
+        "concern": "REDNESS",
+        "label": "민감/홍조",
+        "score": 58,
+        "status": "NORMAL",
+        "tags": [
+          "매운맛 자극"
+        ]
+      },
+      {
+        "concern": "PUFFINESS",
+        "label": "부기",
+        "score": 62,
+        "status": "GOOD",
+        "tags": [
+          "나트륨 과다"
+        ]
+      }
+    ],
+    "bestDay": {
+      "date": "2026-08-17",
+      "dailyScore": 60,
+      "grade": "NORMAL",
+      "plateIds": [
+        29,
+        28,
+        27,
+        26,
+        25
+      ]
+    },
+    "worstDay": {
+      "date": "2026-08-17",
+      "dailyScore": 60,
+      "grade": "NORMAL",
+      "plateIds": [
+        29,
+        28,
+        27,
+        26,
+        25
+      ]
+    },
+    "aiComment": {
+      "goodPoint": "발효식품과 단백질을 꾸준히 챙긴 한 주였어요.",
+      "improvePoint": "나트륨이 높은 끼니가 여러 번 함께 기록됐어요.",
+      "habit": "국물 요리가 반복해서 올라오고 있어요.",
+      "nextWeek": "다음 주에는 국물을 절반만 남기는 끼니를 세 번 만들어 볼까요?"
+    }
+  }
+}

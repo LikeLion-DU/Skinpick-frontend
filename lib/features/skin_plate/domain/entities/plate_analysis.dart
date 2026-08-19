@@ -1,5 +1,6 @@
 import '../../../../shared/enums/skin_basis.dart';
 import 'skin_plate.dart';
+import '../../../../shared/enums/skin_level.dart';
 
 /// 저장 전 **임시** 분석 결과. 서버에 아무것도 남지 않은 상태다.
 ///
@@ -16,7 +17,8 @@ class PlateAnalysis implements PlateView {
     this.skinBasis,
     this.skinMeasuredAt,
     required this.plateScore,
-    this.baseScore = 70,
+    this.grade,
+    this.baseScore,
     required this.summary,
     required this.food,
     required this.good,
@@ -42,8 +44,11 @@ class PlateAnalysis implements PlateView {
 
   @override
   final int plateScore;
+
   @override
-  final int baseScore;
+  final SkinLevel? grade;
+  @override
+  final int? baseScore;
   @override
   final String summary;
   @override

@@ -1,1 +1,159 @@
-{"success":true,"data":{"skinAnalysisId":26,"skinScore":55,"metrics":{"hydration":38,"oil":52,"redness":64,"trouble":25,"barrier":78},"metricDetails":[{"key":"hydration","score":38,"level":"CAUTION","evidence":["볼과 입가에 부분적인 각질이 보임"]},{"key":"oil","score":52,"level":"NORMAL","evidence":["T존에 중간 정도의 광택이 보임"]},{"key":"redness","score":64,"level":"CAUTION","evidence":["코와 볼 주변에 붉은기가 뚜렷함"]},{"key":"trouble","score":25,"level":"GOOD","evidence":["작은 융기가 소수만 보임"]},{"key":"barrier","score":78,"level":"GOOD","evidence":["전반적인 피부결이 균일한 편임"]}],"skinType":{"primary":"DRY","traits":["REDNESS_PRONE"],"label":"건성 · 붉은기"},"skinAge":{"estimatedSkinAge":29,"axes":[{"key":"skinTexture","score":72,"level":"GOOD","evidence":["볼과 이마의 피부결이 균일한 편임"]},{"key":"elasticity","score":76,"level":"GOOD","evidence":["턱선의 처짐이 뚜렷하지 않음"]},{"key":"wrinkles","score":28,"level":"GOOD","evidence":["이마에 얕은 선이 일부 보임"]},{"key":"skinTone","score":58,"level":"NORMAL","evidence":["볼 주변 톤이 다소 고르지 않음"]},{"key":"pores","score":42,"level":"NORMAL","evidence":["코 주변 모공이 일부 보임"]},{"key":"pigmentation","score":35,"level":"GOOD","evidence":["볼에 작은 색소가 일부 보임"]},{"key":"blemishMarks","score":30,"level":"GOOD","evidence":["작은 트러블 흔적이 일부 보임"]}],"assessment":"피부결과 탄력이 좋은 편이고 눈에 띄는 주름도 많지 않아 비교적 젊은 피부 외관으로 보여요. 다만 볼 주변의 붉은기와 톤 불균일이 피부 나이를 조금 높이는 요인으로 보여요."},"summary":"피부 장벽은 양호하지만 건조하고 홍조가 관찰됩니다.","highlights":[{"label":"피부 장벽 양호","status":"GOOD"},{"label":"건조 주의","status":"CAUTION"},{"label":"홍조 주의","status":"CAUTION"}],"skinTypeGap":{"declared":"OILY","observed":"DRY","matched":false,"message":"지성이라고 생각하셨지만 오늘은 유분보다 수분 부족이 두드러집니다. 유분기는 수분이 모자랄 때도 늘어날 수 있습니다."},"analyzedAt":"2026-08-17T02:16:58.239084"}}
+{
+  "success": true,
+  "data": {
+    "skinAnalysisId": 26,
+    "skinScore": 55,
+    "metrics": {
+      "hydration": 38,
+      "oil": 52,
+      "redness": 64,
+      "trouble": 25,
+      "barrier": 78
+    },
+    "metricDetails": [
+      {
+        "key": "hydration",
+        "score": 38,
+        "level": "CAUTION",
+        "evidence": [
+          "볼과 입가에 부분적인 각질이 보임"
+        ]
+      },
+      {
+        "key": "oil",
+        "score": 52,
+        "level": "NORMAL",
+        "evidence": [
+          "T존에 중간 정도의 광택이 보임"
+        ]
+      },
+      {
+        "key": "redness",
+        "score": 64,
+        "level": "CAUTION",
+        "evidence": [
+          "코와 볼 주변에 붉은기가 뚜렷함"
+        ]
+      },
+      {
+        "key": "trouble",
+        "score": 25,
+        "level": "GOOD",
+        "evidence": [
+          "작은 융기가 소수만 보임"
+        ]
+      },
+      {
+        "key": "barrier",
+        "score": 78,
+        "level": "GOOD",
+        "evidence": [
+          "전반적인 피부결이 균일한 편임"
+        ]
+      }
+    ],
+    "skinType": {
+      "primary": "DRY",
+      "traits": [
+        "REDNESS_PRONE"
+      ],
+      "label": "건성 · 붉은기"
+    },
+    "skinAge": {
+      "estimatedSkinAge": 29,
+      "axes": [
+        {
+          "key": "skinTexture",
+          "score": 72,
+          "level": "GOOD",
+          "evidence": [
+            "볼과 이마의 피부결이 균일한 편임"
+          ]
+        },
+        {
+          "key": "elasticity",
+          "score": 76,
+          "level": "GOOD",
+          "evidence": [
+            "턱선의 처짐이 뚜렷하지 않음"
+          ]
+        },
+        {
+          "key": "wrinkles",
+          "score": 28,
+          "level": "GOOD",
+          "evidence": [
+            "이마에 얕은 선이 일부 보임"
+          ]
+        },
+        {
+          "key": "skinTone",
+          "score": 58,
+          "level": "NORMAL",
+          "evidence": [
+            "볼 주변 톤이 다소 고르지 않음"
+          ]
+        },
+        {
+          "key": "pores",
+          "score": 42,
+          "level": "NORMAL",
+          "evidence": [
+            "코 주변 모공이 일부 보임"
+          ]
+        },
+        {
+          "key": "pigmentation",
+          "score": 35,
+          "level": "GOOD",
+          "evidence": [
+            "볼에 작은 색소가 일부 보임"
+          ]
+        },
+        {
+          "key": "blemishMarks",
+          "score": 30,
+          "level": "GOOD",
+          "evidence": [
+            "작은 트러블 흔적이 일부 보임"
+          ]
+        }
+      ],
+      "assessment": "피부결과 탄력이 좋은 편이고 눈에 띄는 주름도 많지 않아 비교적 젊은 피부 외관으로 보여요. 다만 볼 주변의 붉은기와 톤 불균일이 피부 나이를 조금 높이는 요인으로 보여요."
+    },
+    "summary": "피부 장벽은 양호하지만 건조하고 홍조가 관찰됩니다.",
+    "highlights": [
+      {
+        "label": "피부 장벽 양호",
+        "status": "GOOD"
+      },
+      {
+        "label": "건조 주의",
+        "status": "CAUTION"
+      },
+      {
+        "label": "홍조 주의",
+        "status": "CAUTION"
+      }
+    ],
+    "skinTypeGap": {
+      "declared": "OILY",
+      "observed": "DRY",
+      "matched": false,
+      "message": "지성이라고 생각하셨지만 오늘은 유분보다 수분 부족이 두드러집니다. 유분기는 수분이 모자랄 때도 늘어날 수 있습니다."
+    },
+    "analyzedAt": "2026-08-17T02:16:58.239084",
+    "careFocus": [
+      {
+        "focus": "HYDRATION",
+        "label": "수분·장벽"
+      },
+      {
+        "focus": "ANTIOXIDANT",
+        "label": "항산화"
+      }
+    ],
+    "careMessage": "수분이 부족하고 장벽이 약한 편이라, 수분 유지에 도움이 되는 식습관을 챙겨보세요. 붉은기와 트러블이 관찰되니, 채소와 과일처럼 항산화 성분이 풍부한 식품을 섭취해보세요.",
+    "grade": "NORMAL"
+  }
+}

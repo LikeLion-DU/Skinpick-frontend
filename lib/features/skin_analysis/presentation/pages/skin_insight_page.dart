@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../app/router/app_router.dart';
 import '../../../../app/theme/app_colors.dart';
+import '../../../../app/theme/metric_palette.dart';
 import '../../../../app/theme/app_theme.dart';
 import '../../../../core/di/providers.dart';
 import '../../../../core/widgets/app_widgets.dart';
@@ -155,7 +156,7 @@ class _Body extends ConsumerWidget {
           if (analysis != null) ...[
             const _SectionTitle('현재 피부 상태'),
             const SizedBox(height: 10),
-            _MetricsCard(metrics: analysis.metrics, changes: insight.changes),
+            _MetricsCard(analysis: analysis, changes: insight.changes),
             const SizedBox(height: 22),
           ],
           const _SectionTitle('현재 설정된 생활 상태'),
@@ -223,9 +224,9 @@ class _SectionTitle extends StatelessWidget {
 /// changes 가 5개 전부의 델타를 주고, 트러블 인사이트가 떴을 때 근거 지표가
 /// 화면에 없으면 설명이 붕 뜬다.
 class _MetricsCard extends StatelessWidget {
-  const _MetricsCard({required this.metrics, this.changes});
+  const _MetricsCard({required this.analysis, this.changes});
 
-  final SkinMetrics metrics;
+  final SkinAnalysis analysis;
   final SkinInsightChanges? changes;
 
   @override
@@ -234,14 +235,15 @@ class _MetricsCard extends StatelessWidget {
       cream: true,
       child: Column(
         children: [
-          for (final bar in metrics.toBars()) ...[
+          for (final bar in analysis.metrics.toBars()) ...[
             _MetricRow(
+              metricKey: bar.key,
               label: bar.label,
               value: bar.value,
-              // 결과 화면(S05)과 같은 밴드를 쓴다. ScoreGrade 로 매기면 경계가
-              // 75/60 이라 홍조 50 같은 평범한 값이 빨강이 되고, 한 탭 전에 본
-              // 같은 지표가 다른 색이 된다.
-              band: MetricBand.of(bar.value,
+              // 결과 화면(S05)과 같은 밴드를 쓴다 — 상태어의 출처는 서버가 그
+              // 지표에 매긴 등급 하나뿐이라, 한 탭 전에 본 같은 지표가 다른
+              // 상태어로 뜰 일이 없다.
+              band: MetricBand.of(analysis.levelOf(bar.key),
                   higherIsBetterMetric: bar.higherIsBetter),
               delta: changes?.byKey(bar.key),
             ),
@@ -263,15 +265,20 @@ class _MetricsCard extends StatelessWidget {
 
 class _MetricRow extends StatelessWidget {
   const _MetricRow({
+    required this.metricKey,
     required this.label,
     required this.value,
     required this.band,
     this.delta,
   });
 
+  /// `SkinMetrics.toBars()` 의 key. 막대 색(지표 이름표)을 고르는 데만 쓴다.
+  final String metricKey;
+
   final String label;
   final int value;
-  final MetricBand band;
+  /// 서버 등급을 모르면 null 이고, 그때는 상태어 자리를 비운다.
+  final MetricBand? band;
 
   /// null = 첫 분석이라 비교 대상이 없다.
   final int? delta;
@@ -279,6 +286,11 @@ class _MetricRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final change = delta;
+    // 막대는 **지표의 이름표 색**이다(피부 결과 화면과 같은 표). 상태색으로 칠하면
+    // 같은 유분 59 가 한 탭 건너 다른 색이 된다 — 그걸 막으려고 만든 표다.
+    final barColor = MetricPalette.of(metricKey).bar;
+    // 숫자만 상태색이다. 길이는 값, 색은 지표, 숫자 색은 판정으로 셋을 나눈다.
+    final valueColor = band?.color ?? AppColors.outline;
 
     return Row(
       children: [
@@ -295,7 +307,8 @@ class _MetricRow extends StatelessWidget {
               value: value / 100,
               minHeight: 6,
               backgroundColor: AppColors.background,
-              valueColor: AlwaysStoppedAnimation<Color>(band.color),
+              // 등급을 모르면 회색이다 — 상태색으로 아무 색이나 칠하지 않는다.
+              valueColor: AlwaysStoppedAnimation<Color>(barColor),
             ),
           ),
         ),
@@ -309,7 +322,7 @@ class _MetricRow extends StatelessWidget {
                 style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
-                    color: band.color,
+                    color: valueColor,
                     height: 1)),
           ),
         ),

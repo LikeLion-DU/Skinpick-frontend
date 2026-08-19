@@ -141,7 +141,8 @@ _$PlateAnalysisDtoImpl _$$PlateAnalysisDtoImplFromJson(
           ? null
           : DateTime.parse(json['skinMeasuredAt'] as String),
       plateScore: (json['plateScore'] as num).toInt(),
-      baseScore: (json['baseScore'] as num?)?.toInt() ?? 70,
+      grade: json['grade'] as String?,
+      baseScore: (json['baseScore'] as num?)?.toInt(),
       summary: json['summary'] as String? ?? '',
       food: FoodAnalysisDto.fromJson(json['food'] as Map<String, dynamic>),
       feedbacks:
@@ -160,6 +161,7 @@ Map<String, dynamic> _$$PlateAnalysisDtoImplToJson(
       'skinBasis': instance.skinBasis,
       'skinMeasuredAt': instance.skinMeasuredAt?.toIso8601String(),
       'plateScore': instance.plateScore,
+      'grade': instance.grade,
       'baseScore': instance.baseScore,
       'summary': instance.summary,
       'food': instance.food,
@@ -176,7 +178,8 @@ _$SkinPlateDtoImpl _$$SkinPlateDtoImplFromJson(Map<String, dynamic> json) =>
           ? null
           : DateTime.parse(json['skinMeasuredAt'] as String),
       plateScore: (json['plateScore'] as num).toInt(),
-      baseScore: (json['baseScore'] as num?)?.toInt() ?? 70,
+      grade: json['grade'] as String?,
+      baseScore: (json['baseScore'] as num?)?.toInt(),
       summary: json['summary'] as String? ?? '',
       food: FoodAnalysisDto.fromJson(json['food'] as Map<String, dynamic>),
       feedbacks:
@@ -196,6 +199,7 @@ Map<String, dynamic> _$$SkinPlateDtoImplToJson(_$SkinPlateDtoImpl instance) =>
       'skinBasis': instance.skinBasis,
       'skinMeasuredAt': instance.skinMeasuredAt?.toIso8601String(),
       'plateScore': instance.plateScore,
+      'grade': instance.grade,
       'baseScore': instance.baseScore,
       'summary': instance.summary,
       'food': instance.food,
@@ -211,8 +215,13 @@ _$PlateHistoryItemDtoImpl _$$PlateHistoryItemDtoImplFromJson(
       plateId: (json['plateId'] as num).toInt(),
       foodName: json['foodName'] as String,
       plateScore: (json['plateScore'] as num?)?.toInt() ?? 0,
+      grade: json['grade'] as String?,
       mealType: json['mealType'] as String?,
       recordedAt: DateTime.parse(json['recordedAt'] as String),
+      highlightTags: (json['highlightTags'] as List<dynamic>?)
+              ?.map((e) => e as String)
+              .toList() ??
+          const <String>[],
     );
 
 Map<String, dynamic> _$$PlateHistoryItemDtoImplToJson(
@@ -221,8 +230,10 @@ Map<String, dynamic> _$$PlateHistoryItemDtoImplToJson(
       'plateId': instance.plateId,
       'foodName': instance.foodName,
       'plateScore': instance.plateScore,
+      'grade': instance.grade,
       'mealType': instance.mealType,
       'recordedAt': instance.recordedAt.toIso8601String(),
+      'highlightTags': instance.highlightTags,
     };
 
 _$PlateHistoryDayDtoImpl _$$PlateHistoryDayDtoImplFromJson(
@@ -231,7 +242,8 @@ _$PlateHistoryDayDtoImpl _$$PlateHistoryDayDtoImplFromJson(
       date: DateTime.parse(json['date'] as String),
       skinScore: (json['skinScore'] as num?)?.toInt(),
       plateScore: (json['plateScore'] as num?)?.toInt(),
-      targetScore: (json['targetScore'] as num?)?.toInt() ?? 80,
+      grade: json['grade'] as String?,
+      targetScore: (json['targetScore'] as num?)?.toInt(),
       aiComment: json['aiComment'] as String?,
       plates: (json['plates'] as List<dynamic>?)
               ?.map((e) =>
@@ -246,6 +258,7 @@ Map<String, dynamic> _$$PlateHistoryDayDtoImplToJson(
       'date': instance.date.toIso8601String(),
       'skinScore': instance.skinScore,
       'plateScore': instance.plateScore,
+      'grade': instance.grade,
       'targetScore': instance.targetScore,
       'aiComment': instance.aiComment,
       'plates': instance.plates,

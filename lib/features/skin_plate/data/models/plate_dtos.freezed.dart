@@ -1548,7 +1548,14 @@ mixin _$PlateAnalysisDto {
   String? get skinBasis => throw _privateConstructorUsedError;
   DateTime? get skinMeasuredAt => throw _privateConstructorUsedError;
   int get plateScore => throw _privateConstructorUsedError;
-  int get baseScore => throw _privateConstructorUsedError;
+
+  /// [plateScore] 의 등급. **서버가 매겨서 보낸다** — 앱에 경계표를 두지 않는다.
+  /// 이 필드가 없던 서버와 붙으면 null 이고, 화면은 배지를 비운다.
+  String? get grade => throw _privateConstructorUsedError;
+
+  /// 룰 적용 전 기준 점수. **기본값을 두지 않는다** — 값의 주인은 서버
+  /// `RuleConstants.BASE_SCORE` 다(목표 점수와 같은 이유).
+  int? get baseScore => throw _privateConstructorUsedError;
   String get summary => throw _privateConstructorUsedError;
   FoodAnalysisDto get food => throw _privateConstructorUsedError;
   FeedbackGroupDto get feedbacks => throw _privateConstructorUsedError;
@@ -1576,7 +1583,8 @@ abstract class $PlateAnalysisDtoCopyWith<$Res> {
       String? skinBasis,
       DateTime? skinMeasuredAt,
       int plateScore,
-      int baseScore,
+      String? grade,
+      int? baseScore,
       String summary,
       FoodAnalysisDto food,
       FeedbackGroupDto feedbacks,
@@ -1606,7 +1614,8 @@ class _$PlateAnalysisDtoCopyWithImpl<$Res, $Val extends PlateAnalysisDto>
     Object? skinBasis = freezed,
     Object? skinMeasuredAt = freezed,
     Object? plateScore = null,
-    Object? baseScore = null,
+    Object? grade = freezed,
+    Object? baseScore = freezed,
     Object? summary = null,
     Object? food = null,
     Object? feedbacks = null,
@@ -1633,10 +1642,14 @@ class _$PlateAnalysisDtoCopyWithImpl<$Res, $Val extends PlateAnalysisDto>
           ? _value.plateScore
           : plateScore // ignore: cast_nullable_to_non_nullable
               as int,
-      baseScore: null == baseScore
+      grade: freezed == grade
+          ? _value.grade
+          : grade // ignore: cast_nullable_to_non_nullable
+              as String?,
+      baseScore: freezed == baseScore
           ? _value.baseScore
           : baseScore // ignore: cast_nullable_to_non_nullable
-              as int,
+              as int?,
       summary: null == summary
           ? _value.summary
           : summary // ignore: cast_nullable_to_non_nullable
@@ -1691,7 +1704,8 @@ abstract class _$$PlateAnalysisDtoImplCopyWith<$Res>
       String? skinBasis,
       DateTime? skinMeasuredAt,
       int plateScore,
-      int baseScore,
+      String? grade,
+      int? baseScore,
       String summary,
       FoodAnalysisDto food,
       FeedbackGroupDto feedbacks,
@@ -1721,7 +1735,8 @@ class __$$PlateAnalysisDtoImplCopyWithImpl<$Res>
     Object? skinBasis = freezed,
     Object? skinMeasuredAt = freezed,
     Object? plateScore = null,
-    Object? baseScore = null,
+    Object? grade = freezed,
+    Object? baseScore = freezed,
     Object? summary = null,
     Object? food = null,
     Object? feedbacks = null,
@@ -1748,10 +1763,14 @@ class __$$PlateAnalysisDtoImplCopyWithImpl<$Res>
           ? _value.plateScore
           : plateScore // ignore: cast_nullable_to_non_nullable
               as int,
-      baseScore: null == baseScore
+      grade: freezed == grade
+          ? _value.grade
+          : grade // ignore: cast_nullable_to_non_nullable
+              as String?,
+      baseScore: freezed == baseScore
           ? _value.baseScore
           : baseScore // ignore: cast_nullable_to_non_nullable
-              as int,
+              as int?,
       summary: null == summary
           ? _value.summary
           : summary // ignore: cast_nullable_to_non_nullable
@@ -1781,7 +1800,8 @@ class _$PlateAnalysisDtoImpl implements _PlateAnalysisDto {
       this.skinBasis,
       this.skinMeasuredAt,
       required this.plateScore,
-      this.baseScore = 70,
+      this.grade,
+      this.baseScore,
       this.summary = '',
       required this.food,
       required this.feedbacks,
@@ -1807,9 +1827,16 @@ class _$PlateAnalysisDtoImpl implements _PlateAnalysisDto {
   final DateTime? skinMeasuredAt;
   @override
   final int plateScore;
+
+  /// [plateScore] 의 등급. **서버가 매겨서 보낸다** — 앱에 경계표를 두지 않는다.
+  /// 이 필드가 없던 서버와 붙으면 null 이고, 화면은 배지를 비운다.
   @override
-  @JsonKey()
-  final int baseScore;
+  final String? grade;
+
+  /// 룰 적용 전 기준 점수. **기본값을 두지 않는다** — 값의 주인은 서버
+  /// `RuleConstants.BASE_SCORE` 다(목표 점수와 같은 이유).
+  @override
+  final int? baseScore;
   @override
   @JsonKey()
   final String summary;
@@ -1828,7 +1855,7 @@ class _$PlateAnalysisDtoImpl implements _PlateAnalysisDto {
 
   @override
   String toString() {
-    return 'PlateAnalysisDto(analysisToken: $analysisToken, skinAnalysisId: $skinAnalysisId, skinBasis: $skinBasis, skinMeasuredAt: $skinMeasuredAt, plateScore: $plateScore, baseScore: $baseScore, summary: $summary, food: $food, feedbacks: $feedbacks, appliedRules: $appliedRules)';
+    return 'PlateAnalysisDto(analysisToken: $analysisToken, skinAnalysisId: $skinAnalysisId, skinBasis: $skinBasis, skinMeasuredAt: $skinMeasuredAt, plateScore: $plateScore, grade: $grade, baseScore: $baseScore, summary: $summary, food: $food, feedbacks: $feedbacks, appliedRules: $appliedRules)';
   }
 
   @override
@@ -1846,6 +1873,7 @@ class _$PlateAnalysisDtoImpl implements _PlateAnalysisDto {
                 other.skinMeasuredAt == skinMeasuredAt) &&
             (identical(other.plateScore, plateScore) ||
                 other.plateScore == plateScore) &&
+            (identical(other.grade, grade) || other.grade == grade) &&
             (identical(other.baseScore, baseScore) ||
                 other.baseScore == baseScore) &&
             (identical(other.summary, summary) || other.summary == summary) &&
@@ -1865,6 +1893,7 @@ class _$PlateAnalysisDtoImpl implements _PlateAnalysisDto {
       skinBasis,
       skinMeasuredAt,
       plateScore,
+      grade,
       baseScore,
       summary,
       food,
@@ -1895,7 +1924,8 @@ abstract class _PlateAnalysisDto implements PlateAnalysisDto {
       final String? skinBasis,
       final DateTime? skinMeasuredAt,
       required final int plateScore,
-      final int baseScore,
+      final String? grade,
+      final int? baseScore,
       final String summary,
       required final FoodAnalysisDto food,
       required final FeedbackGroupDto feedbacks,
@@ -1920,8 +1950,16 @@ abstract class _PlateAnalysisDto implements PlateAnalysisDto {
   DateTime? get skinMeasuredAt;
   @override
   int get plateScore;
+
+  /// [plateScore] 의 등급. **서버가 매겨서 보낸다** — 앱에 경계표를 두지 않는다.
+  /// 이 필드가 없던 서버와 붙으면 null 이고, 화면은 배지를 비운다.
   @override
-  int get baseScore;
+  String? get grade;
+
+  /// 룰 적용 전 기준 점수. **기본값을 두지 않는다** — 값의 주인은 서버
+  /// `RuleConstants.BASE_SCORE` 다(목표 점수와 같은 이유).
+  @override
+  int? get baseScore;
   @override
   String get summary;
   @override
@@ -1957,7 +1995,14 @@ mixin _$SkinPlateDto {
   String? get skinBasis => throw _privateConstructorUsedError;
   DateTime? get skinMeasuredAt => throw _privateConstructorUsedError;
   int get plateScore => throw _privateConstructorUsedError;
-  int get baseScore => throw _privateConstructorUsedError;
+
+  /// [plateScore] 의 등급. **서버가 매겨서 보낸다** — 앱에 경계표를 두지 않는다.
+  /// 이 필드가 없던 서버와 붙으면 null 이고, 화면은 배지를 비운다.
+  String? get grade => throw _privateConstructorUsedError;
+
+  /// 룰 적용 전 기준 점수. **기본값을 두지 않는다** — 값의 주인은 서버
+  /// `RuleConstants.BASE_SCORE` 다(목표 점수와 같은 이유).
+  int? get baseScore => throw _privateConstructorUsedError;
   String get summary => throw _privateConstructorUsedError;
   FoodAnalysisDto get food => throw _privateConstructorUsedError;
   FeedbackGroupDto get feedbacks => throw _privateConstructorUsedError;
@@ -1991,7 +2036,8 @@ abstract class $SkinPlateDtoCopyWith<$Res> {
       String? skinBasis,
       DateTime? skinMeasuredAt,
       int plateScore,
-      int baseScore,
+      String? grade,
+      int? baseScore,
       String summary,
       FoodAnalysisDto food,
       FeedbackGroupDto feedbacks,
@@ -2023,7 +2069,8 @@ class _$SkinPlateDtoCopyWithImpl<$Res, $Val extends SkinPlateDto>
     Object? skinBasis = freezed,
     Object? skinMeasuredAt = freezed,
     Object? plateScore = null,
-    Object? baseScore = null,
+    Object? grade = freezed,
+    Object? baseScore = freezed,
     Object? summary = null,
     Object? food = null,
     Object? feedbacks = null,
@@ -2052,10 +2099,14 @@ class _$SkinPlateDtoCopyWithImpl<$Res, $Val extends SkinPlateDto>
           ? _value.plateScore
           : plateScore // ignore: cast_nullable_to_non_nullable
               as int,
-      baseScore: null == baseScore
+      grade: freezed == grade
+          ? _value.grade
+          : grade // ignore: cast_nullable_to_non_nullable
+              as String?,
+      baseScore: freezed == baseScore
           ? _value.baseScore
           : baseScore // ignore: cast_nullable_to_non_nullable
-              as int,
+              as int?,
       summary: null == summary
           ? _value.summary
           : summary // ignore: cast_nullable_to_non_nullable
@@ -2118,7 +2169,8 @@ abstract class _$$SkinPlateDtoImplCopyWith<$Res>
       String? skinBasis,
       DateTime? skinMeasuredAt,
       int plateScore,
-      int baseScore,
+      String? grade,
+      int? baseScore,
       String summary,
       FoodAnalysisDto food,
       FeedbackGroupDto feedbacks,
@@ -2150,7 +2202,8 @@ class __$$SkinPlateDtoImplCopyWithImpl<$Res>
     Object? skinBasis = freezed,
     Object? skinMeasuredAt = freezed,
     Object? plateScore = null,
-    Object? baseScore = null,
+    Object? grade = freezed,
+    Object? baseScore = freezed,
     Object? summary = null,
     Object? food = null,
     Object? feedbacks = null,
@@ -2179,10 +2232,14 @@ class __$$SkinPlateDtoImplCopyWithImpl<$Res>
           ? _value.plateScore
           : plateScore // ignore: cast_nullable_to_non_nullable
               as int,
-      baseScore: null == baseScore
+      grade: freezed == grade
+          ? _value.grade
+          : grade // ignore: cast_nullable_to_non_nullable
+              as String?,
+      baseScore: freezed == baseScore
           ? _value.baseScore
           : baseScore // ignore: cast_nullable_to_non_nullable
-              as int,
+              as int?,
       summary: null == summary
           ? _value.summary
           : summary // ignore: cast_nullable_to_non_nullable
@@ -2220,7 +2277,8 @@ class _$SkinPlateDtoImpl implements _SkinPlateDto {
       this.skinBasis,
       this.skinMeasuredAt,
       required this.plateScore,
-      this.baseScore = 70,
+      this.grade,
+      this.baseScore,
       this.summary = '',
       required this.food,
       required this.feedbacks,
@@ -2249,9 +2307,16 @@ class _$SkinPlateDtoImpl implements _SkinPlateDto {
   final DateTime? skinMeasuredAt;
   @override
   final int plateScore;
+
+  /// [plateScore] 의 등급. **서버가 매겨서 보낸다** — 앱에 경계표를 두지 않는다.
+  /// 이 필드가 없던 서버와 붙으면 null 이고, 화면은 배지를 비운다.
   @override
-  @JsonKey()
-  final int baseScore;
+  final String? grade;
+
+  /// 룰 적용 전 기준 점수. **기본값을 두지 않는다** — 값의 주인은 서버
+  /// `RuleConstants.BASE_SCORE` 다(목표 점수와 같은 이유).
+  @override
+  final int? baseScore;
   @override
   @JsonKey()
   final String summary;
@@ -2278,7 +2343,7 @@ class _$SkinPlateDtoImpl implements _SkinPlateDto {
 
   @override
   String toString() {
-    return 'SkinPlateDto(plateId: $plateId, skinAnalysisId: $skinAnalysisId, skinBasis: $skinBasis, skinMeasuredAt: $skinMeasuredAt, plateScore: $plateScore, baseScore: $baseScore, summary: $summary, food: $food, feedbacks: $feedbacks, appliedRules: $appliedRules, aiTip: $aiTip, createdAt: $createdAt)';
+    return 'SkinPlateDto(plateId: $plateId, skinAnalysisId: $skinAnalysisId, skinBasis: $skinBasis, skinMeasuredAt: $skinMeasuredAt, plateScore: $plateScore, grade: $grade, baseScore: $baseScore, summary: $summary, food: $food, feedbacks: $feedbacks, appliedRules: $appliedRules, aiTip: $aiTip, createdAt: $createdAt)';
   }
 
   @override
@@ -2295,6 +2360,7 @@ class _$SkinPlateDtoImpl implements _SkinPlateDto {
                 other.skinMeasuredAt == skinMeasuredAt) &&
             (identical(other.plateScore, plateScore) ||
                 other.plateScore == plateScore) &&
+            (identical(other.grade, grade) || other.grade == grade) &&
             (identical(other.baseScore, baseScore) ||
                 other.baseScore == baseScore) &&
             (identical(other.summary, summary) || other.summary == summary) &&
@@ -2317,6 +2383,7 @@ class _$SkinPlateDtoImpl implements _SkinPlateDto {
       skinBasis,
       skinMeasuredAt,
       plateScore,
+      grade,
       baseScore,
       summary,
       food,
@@ -2348,7 +2415,8 @@ abstract class _SkinPlateDto implements SkinPlateDto {
       final String? skinBasis,
       final DateTime? skinMeasuredAt,
       required final int plateScore,
-      final int baseScore,
+      final String? grade,
+      final int? baseScore,
       final String summary,
       required final FoodAnalysisDto food,
       required final FeedbackGroupDto feedbacks,
@@ -2376,8 +2444,16 @@ abstract class _SkinPlateDto implements SkinPlateDto {
   DateTime? get skinMeasuredAt;
   @override
   int get plateScore;
+
+  /// [plateScore] 의 등급. **서버가 매겨서 보낸다** — 앱에 경계표를 두지 않는다.
+  /// 이 필드가 없던 서버와 붙으면 null 이고, 화면은 배지를 비운다.
   @override
-  int get baseScore;
+  String? get grade;
+
+  /// 룰 적용 전 기준 점수. **기본값을 두지 않는다** — 값의 주인은 서버
+  /// `RuleConstants.BASE_SCORE` 다(목표 점수와 같은 이유).
+  @override
+  int? get baseScore;
   @override
   String get summary;
   @override
@@ -2413,9 +2489,21 @@ mixin _$PlateHistoryItemDto {
   String get foodName => throw _privateConstructorUsedError;
   int get plateScore => throw _privateConstructorUsedError;
 
+  /// [plateScore] 의 등급. **서버가 매겨서 보낸다** — 앱이 점수에서 다시 내면
+  /// 경계표가 두 벌이 되고, 서버가 경계를 옮긴 날 한쪽만 따라간다.
+  /// 모르는 값이면 null 이고 화면은 배지를 비운다.
+  String? get grade => throw _privateConstructorUsedError;
+
   /// 서버가 시각에서 파생해 보낸다. 모르는 값이면 화면이 배지를 비운다.
   String? get mealType => throw _privateConstructorUsedError;
   DateTime get recordedAt => throw _privateConstructorUsedError;
+
+  /// 이 끼니에서 눈에 띄는 항목 두세 개("나트륨" · "단백질").
+  ///
+  /// **서버가 고른다.** 앱이 고르려면 목록에 영양값 전체를 실어야 하고, 그러면
+  /// "얼마부터 높은가"가 앱에도 한 벌 생긴다. 걸리는 항목이 없는 평범한 끼니는
+  /// 빈 배열이고, 이 필드가 생기기 전 서버와 붙어도 기본값이 빈 배열이라 안전하다.
+  List<String> get highlightTags => throw _privateConstructorUsedError;
 
   /// Serializes this PlateHistoryItemDto to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
@@ -2437,8 +2525,10 @@ abstract class $PlateHistoryItemDtoCopyWith<$Res> {
       {int plateId,
       String foodName,
       int plateScore,
+      String? grade,
       String? mealType,
-      DateTime recordedAt});
+      DateTime recordedAt,
+      List<String> highlightTags});
 }
 
 /// @nodoc
@@ -2459,8 +2549,10 @@ class _$PlateHistoryItemDtoCopyWithImpl<$Res, $Val extends PlateHistoryItemDto>
     Object? plateId = null,
     Object? foodName = null,
     Object? plateScore = null,
+    Object? grade = freezed,
     Object? mealType = freezed,
     Object? recordedAt = null,
+    Object? highlightTags = null,
   }) {
     return _then(_value.copyWith(
       plateId: null == plateId
@@ -2475,6 +2567,10 @@ class _$PlateHistoryItemDtoCopyWithImpl<$Res, $Val extends PlateHistoryItemDto>
           ? _value.plateScore
           : plateScore // ignore: cast_nullable_to_non_nullable
               as int,
+      grade: freezed == grade
+          ? _value.grade
+          : grade // ignore: cast_nullable_to_non_nullable
+              as String?,
       mealType: freezed == mealType
           ? _value.mealType
           : mealType // ignore: cast_nullable_to_non_nullable
@@ -2483,6 +2579,10 @@ class _$PlateHistoryItemDtoCopyWithImpl<$Res, $Val extends PlateHistoryItemDto>
           ? _value.recordedAt
           : recordedAt // ignore: cast_nullable_to_non_nullable
               as DateTime,
+      highlightTags: null == highlightTags
+          ? _value.highlightTags
+          : highlightTags // ignore: cast_nullable_to_non_nullable
+              as List<String>,
     ) as $Val);
   }
 }
@@ -2499,8 +2599,10 @@ abstract class _$$PlateHistoryItemDtoImplCopyWith<$Res>
       {int plateId,
       String foodName,
       int plateScore,
+      String? grade,
       String? mealType,
-      DateTime recordedAt});
+      DateTime recordedAt,
+      List<String> highlightTags});
 }
 
 /// @nodoc
@@ -2519,8 +2621,10 @@ class __$$PlateHistoryItemDtoImplCopyWithImpl<$Res>
     Object? plateId = null,
     Object? foodName = null,
     Object? plateScore = null,
+    Object? grade = freezed,
     Object? mealType = freezed,
     Object? recordedAt = null,
+    Object? highlightTags = null,
   }) {
     return _then(_$PlateHistoryItemDtoImpl(
       plateId: null == plateId
@@ -2535,6 +2639,10 @@ class __$$PlateHistoryItemDtoImplCopyWithImpl<$Res>
           ? _value.plateScore
           : plateScore // ignore: cast_nullable_to_non_nullable
               as int,
+      grade: freezed == grade
+          ? _value.grade
+          : grade // ignore: cast_nullable_to_non_nullable
+              as String?,
       mealType: freezed == mealType
           ? _value.mealType
           : mealType // ignore: cast_nullable_to_non_nullable
@@ -2543,6 +2651,10 @@ class __$$PlateHistoryItemDtoImplCopyWithImpl<$Res>
           ? _value.recordedAt
           : recordedAt // ignore: cast_nullable_to_non_nullable
               as DateTime,
+      highlightTags: null == highlightTags
+          ? _value._highlightTags
+          : highlightTags // ignore: cast_nullable_to_non_nullable
+              as List<String>,
     ));
   }
 }
@@ -2554,8 +2666,11 @@ class _$PlateHistoryItemDtoImpl implements _PlateHistoryItemDto {
       {required this.plateId,
       required this.foodName,
       this.plateScore = 0,
+      this.grade,
       this.mealType,
-      required this.recordedAt});
+      required this.recordedAt,
+      final List<String> highlightTags = const <String>[]})
+      : _highlightTags = highlightTags;
 
   factory _$PlateHistoryItemDtoImpl.fromJson(Map<String, dynamic> json) =>
       _$$PlateHistoryItemDtoImplFromJson(json);
@@ -2568,15 +2683,41 @@ class _$PlateHistoryItemDtoImpl implements _PlateHistoryItemDto {
   @JsonKey()
   final int plateScore;
 
+  /// [plateScore] 의 등급. **서버가 매겨서 보낸다** — 앱이 점수에서 다시 내면
+  /// 경계표가 두 벌이 되고, 서버가 경계를 옮긴 날 한쪽만 따라간다.
+  /// 모르는 값이면 null 이고 화면은 배지를 비운다.
+  @override
+  final String? grade;
+
   /// 서버가 시각에서 파생해 보낸다. 모르는 값이면 화면이 배지를 비운다.
   @override
   final String? mealType;
   @override
   final DateTime recordedAt;
 
+  /// 이 끼니에서 눈에 띄는 항목 두세 개("나트륨" · "단백질").
+  ///
+  /// **서버가 고른다.** 앱이 고르려면 목록에 영양값 전체를 실어야 하고, 그러면
+  /// "얼마부터 높은가"가 앱에도 한 벌 생긴다. 걸리는 항목이 없는 평범한 끼니는
+  /// 빈 배열이고, 이 필드가 생기기 전 서버와 붙어도 기본값이 빈 배열이라 안전하다.
+  final List<String> _highlightTags;
+
+  /// 이 끼니에서 눈에 띄는 항목 두세 개("나트륨" · "단백질").
+  ///
+  /// **서버가 고른다.** 앱이 고르려면 목록에 영양값 전체를 실어야 하고, 그러면
+  /// "얼마부터 높은가"가 앱에도 한 벌 생긴다. 걸리는 항목이 없는 평범한 끼니는
+  /// 빈 배열이고, 이 필드가 생기기 전 서버와 붙어도 기본값이 빈 배열이라 안전하다.
+  @override
+  @JsonKey()
+  List<String> get highlightTags {
+    if (_highlightTags is EqualUnmodifiableListView) return _highlightTags;
+    // ignore: implicit_dynamic_type
+    return EqualUnmodifiableListView(_highlightTags);
+  }
+
   @override
   String toString() {
-    return 'PlateHistoryItemDto(plateId: $plateId, foodName: $foodName, plateScore: $plateScore, mealType: $mealType, recordedAt: $recordedAt)';
+    return 'PlateHistoryItemDto(plateId: $plateId, foodName: $foodName, plateScore: $plateScore, grade: $grade, mealType: $mealType, recordedAt: $recordedAt, highlightTags: $highlightTags)';
   }
 
   @override
@@ -2589,16 +2730,26 @@ class _$PlateHistoryItemDtoImpl implements _PlateHistoryItemDto {
                 other.foodName == foodName) &&
             (identical(other.plateScore, plateScore) ||
                 other.plateScore == plateScore) &&
+            (identical(other.grade, grade) || other.grade == grade) &&
             (identical(other.mealType, mealType) ||
                 other.mealType == mealType) &&
             (identical(other.recordedAt, recordedAt) ||
-                other.recordedAt == recordedAt));
+                other.recordedAt == recordedAt) &&
+            const DeepCollectionEquality()
+                .equals(other._highlightTags, _highlightTags));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
   int get hashCode => Object.hash(
-      runtimeType, plateId, foodName, plateScore, mealType, recordedAt);
+      runtimeType,
+      plateId,
+      foodName,
+      plateScore,
+      grade,
+      mealType,
+      recordedAt,
+      const DeepCollectionEquality().hash(_highlightTags));
 
   /// Create a copy of PlateHistoryItemDto
   /// with the given fields replaced by the non-null parameter values.
@@ -2622,8 +2773,10 @@ abstract class _PlateHistoryItemDto implements PlateHistoryItemDto {
       {required final int plateId,
       required final String foodName,
       final int plateScore,
+      final String? grade,
       final String? mealType,
-      required final DateTime recordedAt}) = _$PlateHistoryItemDtoImpl;
+      required final DateTime recordedAt,
+      final List<String> highlightTags}) = _$PlateHistoryItemDtoImpl;
 
   factory _PlateHistoryItemDto.fromJson(Map<String, dynamic> json) =
       _$PlateHistoryItemDtoImpl.fromJson;
@@ -2635,11 +2788,25 @@ abstract class _PlateHistoryItemDto implements PlateHistoryItemDto {
   @override
   int get plateScore;
 
+  /// [plateScore] 의 등급. **서버가 매겨서 보낸다** — 앱이 점수에서 다시 내면
+  /// 경계표가 두 벌이 되고, 서버가 경계를 옮긴 날 한쪽만 따라간다.
+  /// 모르는 값이면 null 이고 화면은 배지를 비운다.
+  @override
+  String? get grade;
+
   /// 서버가 시각에서 파생해 보낸다. 모르는 값이면 화면이 배지를 비운다.
   @override
   String? get mealType;
   @override
   DateTime get recordedAt;
+
+  /// 이 끼니에서 눈에 띄는 항목 두세 개("나트륨" · "단백질").
+  ///
+  /// **서버가 고른다.** 앱이 고르려면 목록에 영양값 전체를 실어야 하고, 그러면
+  /// "얼마부터 높은가"가 앱에도 한 벌 생긴다. 걸리는 항목이 없는 평범한 끼니는
+  /// 빈 배열이고, 이 필드가 생기기 전 서버와 붙어도 기본값이 빈 배열이라 안전하다.
+  @override
+  List<String> get highlightTags;
 
   /// Create a copy of PlateHistoryItemDto
   /// with the given fields replaced by the non-null parameter values.
@@ -2672,8 +2839,13 @@ mixin _$PlateHistoryDayDto {
   /// 상태다. null 이어야 카드가 시안대로 `OO점` 으로 빠진다.
   int? get plateScore => throw _privateConstructorUsedError;
 
-  /// 시안의 "목표 80점". 서버가 못 보내도 화면이 0 을 그리지 않도록 기본값을 둔다.
-  int get targetScore => throw _privateConstructorUsedError;
+  /// [plateScore] 의 등급. 서버가 매긴다 — 홈 히어로 배지가 이 값을 쓴다.
+  String? get grade => throw _privateConstructorUsedError;
+
+  /// 시안의 "목표 80점". **값은 서버가 정한다** — 앱에 80 을 박지 않는다.
+  /// 지금은 모두에게 같은 상수지만 사용자별 목표가 생기는 날 앱 배포가 필요해진다.
+  /// 서버가 안 보내면 목표 막대를 그릴 근거가 없으므로 null 로 둔다.
+  int? get targetScore => throw _privateConstructorUsedError;
 
   /// "오늘의 AI 코멘트". 없으면 서버가 키를 빼고, 앱은 카드를 그리지 않는다.
   String? get aiComment => throw _privateConstructorUsedError;
@@ -2699,7 +2871,8 @@ abstract class $PlateHistoryDayDtoCopyWith<$Res> {
       {DateTime date,
       int? skinScore,
       int? plateScore,
-      int targetScore,
+      String? grade,
+      int? targetScore,
       String? aiComment,
       List<PlateHistoryItemDto> plates});
 }
@@ -2722,7 +2895,8 @@ class _$PlateHistoryDayDtoCopyWithImpl<$Res, $Val extends PlateHistoryDayDto>
     Object? date = null,
     Object? skinScore = freezed,
     Object? plateScore = freezed,
-    Object? targetScore = null,
+    Object? grade = freezed,
+    Object? targetScore = freezed,
     Object? aiComment = freezed,
     Object? plates = null,
   }) {
@@ -2739,10 +2913,14 @@ class _$PlateHistoryDayDtoCopyWithImpl<$Res, $Val extends PlateHistoryDayDto>
           ? _value.plateScore
           : plateScore // ignore: cast_nullable_to_non_nullable
               as int?,
-      targetScore: null == targetScore
+      grade: freezed == grade
+          ? _value.grade
+          : grade // ignore: cast_nullable_to_non_nullable
+              as String?,
+      targetScore: freezed == targetScore
           ? _value.targetScore
           : targetScore // ignore: cast_nullable_to_non_nullable
-              as int,
+              as int?,
       aiComment: freezed == aiComment
           ? _value.aiComment
           : aiComment // ignore: cast_nullable_to_non_nullable
@@ -2767,7 +2945,8 @@ abstract class _$$PlateHistoryDayDtoImplCopyWith<$Res>
       {DateTime date,
       int? skinScore,
       int? plateScore,
-      int targetScore,
+      String? grade,
+      int? targetScore,
       String? aiComment,
       List<PlateHistoryItemDto> plates});
 }
@@ -2788,7 +2967,8 @@ class __$$PlateHistoryDayDtoImplCopyWithImpl<$Res>
     Object? date = null,
     Object? skinScore = freezed,
     Object? plateScore = freezed,
-    Object? targetScore = null,
+    Object? grade = freezed,
+    Object? targetScore = freezed,
     Object? aiComment = freezed,
     Object? plates = null,
   }) {
@@ -2805,10 +2985,14 @@ class __$$PlateHistoryDayDtoImplCopyWithImpl<$Res>
           ? _value.plateScore
           : plateScore // ignore: cast_nullable_to_non_nullable
               as int?,
-      targetScore: null == targetScore
+      grade: freezed == grade
+          ? _value.grade
+          : grade // ignore: cast_nullable_to_non_nullable
+              as String?,
+      targetScore: freezed == targetScore
           ? _value.targetScore
           : targetScore // ignore: cast_nullable_to_non_nullable
-              as int,
+              as int?,
       aiComment: freezed == aiComment
           ? _value.aiComment
           : aiComment // ignore: cast_nullable_to_non_nullable
@@ -2828,7 +3012,8 @@ class _$PlateHistoryDayDtoImpl implements _PlateHistoryDayDto {
       {required this.date,
       this.skinScore,
       this.plateScore,
-      this.targetScore = 80,
+      this.grade,
+      this.targetScore,
       this.aiComment,
       final List<PlateHistoryItemDto> plates = const <PlateHistoryItemDto>[]})
       : _plates = plates;
@@ -2856,10 +3041,15 @@ class _$PlateHistoryDayDtoImpl implements _PlateHistoryDayDto {
   @override
   final int? plateScore;
 
-  /// 시안의 "목표 80점". 서버가 못 보내도 화면이 0 을 그리지 않도록 기본값을 둔다.
+  /// [plateScore] 의 등급. 서버가 매긴다 — 홈 히어로 배지가 이 값을 쓴다.
   @override
-  @JsonKey()
-  final int targetScore;
+  final String? grade;
+
+  /// 시안의 "목표 80점". **값은 서버가 정한다** — 앱에 80 을 박지 않는다.
+  /// 지금은 모두에게 같은 상수지만 사용자별 목표가 생기는 날 앱 배포가 필요해진다.
+  /// 서버가 안 보내면 목표 막대를 그릴 근거가 없으므로 null 로 둔다.
+  @override
+  final int? targetScore;
 
   /// "오늘의 AI 코멘트". 없으면 서버가 키를 빼고, 앱은 카드를 그리지 않는다.
   @override
@@ -2875,7 +3065,7 @@ class _$PlateHistoryDayDtoImpl implements _PlateHistoryDayDto {
 
   @override
   String toString() {
-    return 'PlateHistoryDayDto(date: $date, skinScore: $skinScore, plateScore: $plateScore, targetScore: $targetScore, aiComment: $aiComment, plates: $plates)';
+    return 'PlateHistoryDayDto(date: $date, skinScore: $skinScore, plateScore: $plateScore, grade: $grade, targetScore: $targetScore, aiComment: $aiComment, plates: $plates)';
   }
 
   @override
@@ -2888,6 +3078,7 @@ class _$PlateHistoryDayDtoImpl implements _PlateHistoryDayDto {
                 other.skinScore == skinScore) &&
             (identical(other.plateScore, plateScore) ||
                 other.plateScore == plateScore) &&
+            (identical(other.grade, grade) || other.grade == grade) &&
             (identical(other.targetScore, targetScore) ||
                 other.targetScore == targetScore) &&
             (identical(other.aiComment, aiComment) ||
@@ -2897,8 +3088,15 @@ class _$PlateHistoryDayDtoImpl implements _PlateHistoryDayDto {
 
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
-  int get hashCode => Object.hash(runtimeType, date, skinScore, plateScore,
-      targetScore, aiComment, const DeepCollectionEquality().hash(_plates));
+  int get hashCode => Object.hash(
+      runtimeType,
+      date,
+      skinScore,
+      plateScore,
+      grade,
+      targetScore,
+      aiComment,
+      const DeepCollectionEquality().hash(_plates));
 
   /// Create a copy of PlateHistoryDayDto
   /// with the given fields replaced by the non-null parameter values.
@@ -2922,7 +3120,8 @@ abstract class _PlateHistoryDayDto implements PlateHistoryDayDto {
       {required final DateTime date,
       final int? skinScore,
       final int? plateScore,
-      final int targetScore,
+      final String? grade,
+      final int? targetScore,
       final String? aiComment,
       final List<PlateHistoryItemDto> plates}) = _$PlateHistoryDayDtoImpl;
 
@@ -2949,9 +3148,15 @@ abstract class _PlateHistoryDayDto implements PlateHistoryDayDto {
   @override
   int? get plateScore;
 
-  /// 시안의 "목표 80점". 서버가 못 보내도 화면이 0 을 그리지 않도록 기본값을 둔다.
+  /// [plateScore] 의 등급. 서버가 매긴다 — 홈 히어로 배지가 이 값을 쓴다.
   @override
-  int get targetScore;
+  String? get grade;
+
+  /// 시안의 "목표 80점". **값은 서버가 정한다** — 앱에 80 을 박지 않는다.
+  /// 지금은 모두에게 같은 상수지만 사용자별 목표가 생기는 날 앱 배포가 필요해진다.
+  /// 서버가 안 보내면 목표 막대를 그릴 근거가 없으므로 null 로 둔다.
+  @override
+  int? get targetScore;
 
   /// "오늘의 AI 코멘트". 없으면 서버가 키를 빼고, 앱은 카드를 그리지 않는다.
   @override

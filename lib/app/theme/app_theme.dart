@@ -17,6 +17,25 @@ class AppTheme {
   /// 시안 프레임에서 읽은 값. 카드가 버튼보다 아주 조금 더 둥글다.
   static const cardRadius = 9.0;
 
+  /// 오렌지 히어로 위에 떠 있는 카드. 곡률이 훨씬 크고 그림자를 쓴다.
+  ///
+  /// [cardRadius] 와 합치지 않는다 — 흰 배경 위 카드는 테두리로 면을 나누고
+  /// 히어로 위 카드는 그림자로 뜬다. 곡률까지 같게 하면 뜬 느낌이 사라진다.
+  static const floatingCardRadius = 24.0;
+
+  /// 히어로 위 카드의 그림자. 시안 값 `0 0 15.3 rgba(0,0,0,0.25)` 그대로다.
+  static const floatingCardShadow = BoxShadow(
+    color: Color(0x40000000),
+    blurRadius: 15.3,
+  );
+
+  /// 오렌지 히어로 위 흰 글자에 붙는 번짐. 시안이 모든 히어로 텍스트에 건다 —
+  /// 그라디언트가 아래로 밝아지는 구간에서 흰 글자가 배경에 묻히는 것을 막는다.
+  static const heroTextShadow = Shadow(
+    color: Color(0xFFFF4D00),
+    blurRadius: 13.6,
+  );
+
   /// 화면 좌우 여백. 시안은 제목이 32, 카드가 34 로 2px 어긋나 있는데
   /// 의도로 보기 어려워 32 로 맞춘다. 지적이 나오면 이 값만 바꾸면 된다.
   static const pagePadding = 32.0;
@@ -88,16 +107,18 @@ class AppTheme {
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: AppColors.background,
-        hintStyle: const TextStyle(color: AppColors.outline, fontSize: 14),
+        // 시안이 힌트와 테두리에 회색 계단(Gray-mid · Gray-Light)을 쓴다.
+        // 예전 `outline`(#898888)은 테두리가 너무 진해 입력창이 눌린 것처럼 보였다.
+        hintStyle: const TextStyle(color: AppColors.grayMid, fontSize: 15),
         contentPadding:
             const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(_radius),
-          borderSide: const BorderSide(color: AppColors.outline),
+          borderSide: const BorderSide(color: AppColors.grayLight),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(_radius),
-          borderSide: const BorderSide(color: AppColors.outline),
+          borderSide: const BorderSide(color: AppColors.grayLight),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(_radius),

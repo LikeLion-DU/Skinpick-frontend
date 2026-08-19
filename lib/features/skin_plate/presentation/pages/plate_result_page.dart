@@ -51,7 +51,18 @@ class _PlateResultPageState extends ConsumerState<PlateResultPage> {
     final view = state.view;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('분석 결과')),
+      appBar: AppBar(
+        // 시안은 제목을 오렌지 18 로 둔다. 기록 화면과 같은 이유로 테마를
+        // 건드리지 않고 이 화면만 덮는다.
+        title: const Text(
+          '분석 결과',
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
+            color: AppColors.accentStrong,
+          ),
+        ),
+      ),
       body: switch (state) {
         // 분석 자체가 실패했다. 만료·미인식은 FailureView 가 "다시 촬영하기"로 낸다.
         PlateState(status: PlateRecordStatus.analyzing, failure: final Failure error) =>
@@ -149,17 +160,26 @@ class _Content extends StatelessWidget {
           ),
         ),
 
-        // 이 점수가 **언제 찍은 피부**로 계산됐는지. 음식명 바로 아래에 두는 건
-        // 읽는 순서 때문이다 — 기준을 먼저 알아야 아래 점수를 제대로 읽는다.
+        // 시안 순서 — 음식 특성 칩이 음식명 바로 아래, 그다음 큰 점수, 그 아래
+        // 채점 기준 줄이다. 특성을 먼저 읽어야 점수가 어디서 왔는지 짐작이 되고,
+        // 기준(언제 잰 피부인가)은 점수를 본 다음에 확인하는 정보다.
+        FoodTraitChips(food: plate.food),
+        const SizedBox(height: 22),
+
+        // 행동을 실행해 본 뒤에는 숫자가 시뮬레이션 결과로 바뀐다. **그때 등급은
+        // 비운다** — 서버가 매긴 등급은 원래 점수(plateScore)의 것이고 시뮬레이션
+        // 응답에는 등급이 없다. 58점(보통)이 66점이 됐는데 배지가 그대로 "보통"
+        // 이면 화면이 옛 판정을 새 숫자에 붙이는 셈이다.
+        PlateScoreCard(
+          score: score,
+          grade: state.simulation == null ? plate.grade : null,
+        ),
+
         // 저장 직후에도 pastRecord 는 false 다. 그때의 "기록 당일"은 곧 오늘이다.
         SkinBasisLine(
           basis: plate.skinBasis,
           measuredAt: plate.skinMeasuredAt,
         ),
-        FoodTraitChips(food: plate.food),
-        const SizedBox(height: 18),
-
-        PlateScoreCard(score: score),
 
         if (FeatureFlags.actionSimulation && state.simulation != null) ...[
           const SizedBox(height: 12),
@@ -176,7 +196,11 @@ class _Content extends StatelessWidget {
         SkinBasisCard(skinAnalysisId: plate.skinAnalysisId),
         Text('분석 요약', style: Theme.of(context).textTheme.titleMedium),
         const SizedBox(height: 10),
-        PlateSummaryCard(good: plate.good, caution: plate.caution),
+        PlateSummaryCard(
+          good: plate.good,
+          caution: plate.caution,
+          summary: plate.summary,
+        ),
 
         // **AI 문장은 저장된 기록에만 있다.** 서버는 저장할 때 한 번 만들고,
         // `POST /plates/analyze` 응답에는 그 필드 자체가 없다.
@@ -317,9 +341,21 @@ class _SaveSection extends StatelessWidget {
           onRetake: onRetake,
         ),
 
-      _ => ElevatedButton(
-          onPressed: onSave,
-          child: const Text('기록에 저장하기'),
+      // 시안 버튼은 높이 50 · 곡률 14 다. 테마 기본값(48 · 8)을 이 자리만 덮는다 —
+      // 테마를 바꾸면 촬영·설문 화면 버튼까지 같이 커진다.
+      _ => SizedBox(
+          height: 50,
+          child: ElevatedButton(
+            onPressed: onSave,
+            style: ElevatedButton.styleFrom(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14),
+              ),
+              textStyle:
+                  const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+            ),
+            child: const Text('기록에 저장하기'),
+          ),
         ),
     };
   }

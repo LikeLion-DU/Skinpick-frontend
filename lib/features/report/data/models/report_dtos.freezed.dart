@@ -33,7 +33,11 @@ mixin _$NutritionItemDto {
 
   /// `LOW` · `NORMAL` · `HIGH`. 모르는 값은 화면에서 회색이 된다.
   String? get status => throw _privateConstructorUsedError;
-  bool get higherIsWorse => throw _privateConstructorUsedError;
+
+  /// 초과가 문제인 항목인가. **기본값을 두지 않는다** — false 로 떨어뜨리면
+  /// 나트륨이 방향을 잃고 "충분"이 되어 463% 가 초록으로 뜬다. 서버는 primitive
+  /// 라 늘 보내지만, 그 전제가 깨지는 날 화면이 거짓말하게 두지 않는다.
+  bool? get higherIsWorse => throw _privateConstructorUsedError;
 
   /// Serializes this NutritionItemDto to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
@@ -59,7 +63,7 @@ abstract class $NutritionItemDtoCopyWith<$Res> {
       int target,
       int percent,
       String? status,
-      bool higherIsWorse});
+      bool? higherIsWorse});
 }
 
 /// @nodoc
@@ -84,7 +88,7 @@ class _$NutritionItemDtoCopyWithImpl<$Res, $Val extends NutritionItemDto>
     Object? target = null,
     Object? percent = null,
     Object? status = freezed,
-    Object? higherIsWorse = null,
+    Object? higherIsWorse = freezed,
   }) {
     return _then(_value.copyWith(
       nutrient: null == nutrient
@@ -115,10 +119,10 @@ class _$NutritionItemDtoCopyWithImpl<$Res, $Val extends NutritionItemDto>
           ? _value.status
           : status // ignore: cast_nullable_to_non_nullable
               as String?,
-      higherIsWorse: null == higherIsWorse
+      higherIsWorse: freezed == higherIsWorse
           ? _value.higherIsWorse
           : higherIsWorse // ignore: cast_nullable_to_non_nullable
-              as bool,
+              as bool?,
     ) as $Val);
   }
 }
@@ -139,7 +143,7 @@ abstract class _$$NutritionItemDtoImplCopyWith<$Res>
       int target,
       int percent,
       String? status,
-      bool higherIsWorse});
+      bool? higherIsWorse});
 }
 
 /// @nodoc
@@ -162,7 +166,7 @@ class __$$NutritionItemDtoImplCopyWithImpl<$Res>
     Object? target = null,
     Object? percent = null,
     Object? status = freezed,
-    Object? higherIsWorse = null,
+    Object? higherIsWorse = freezed,
   }) {
     return _then(_$NutritionItemDtoImpl(
       nutrient: null == nutrient
@@ -193,10 +197,10 @@ class __$$NutritionItemDtoImplCopyWithImpl<$Res>
           ? _value.status
           : status // ignore: cast_nullable_to_non_nullable
               as String?,
-      higherIsWorse: null == higherIsWorse
+      higherIsWorse: freezed == higherIsWorse
           ? _value.higherIsWorse
           : higherIsWorse // ignore: cast_nullable_to_non_nullable
-              as bool,
+              as bool?,
     ));
   }
 }
@@ -212,7 +216,7 @@ class _$NutritionItemDtoImpl implements _NutritionItemDto {
       this.target = 0,
       this.percent = 0,
       this.status,
-      this.higherIsWorse = false});
+      this.higherIsWorse});
 
   factory _$NutritionItemDtoImpl.fromJson(Map<String, dynamic> json) =>
       _$$NutritionItemDtoImplFromJson(json);
@@ -243,9 +247,12 @@ class _$NutritionItemDtoImpl implements _NutritionItemDto {
   /// `LOW` · `NORMAL` · `HIGH`. 모르는 값은 화면에서 회색이 된다.
   @override
   final String? status;
+
+  /// 초과가 문제인 항목인가. **기본값을 두지 않는다** — false 로 떨어뜨리면
+  /// 나트륨이 방향을 잃고 "충분"이 되어 463% 가 초록으로 뜬다. 서버는 primitive
+  /// 라 늘 보내지만, 그 전제가 깨지는 날 화면이 거짓말하게 두지 않는다.
   @override
-  @JsonKey()
-  final bool higherIsWorse;
+  final bool? higherIsWorse;
 
   @override
   String toString() {
@@ -300,7 +307,7 @@ abstract class _NutritionItemDto implements NutritionItemDto {
       final int target,
       final int percent,
       final String? status,
-      final bool higherIsWorse}) = _$NutritionItemDtoImpl;
+      final bool? higherIsWorse}) = _$NutritionItemDtoImpl;
 
   factory _NutritionItemDto.fromJson(Map<String, dynamic> json) =
       _$NutritionItemDtoImpl.fromJson;
@@ -325,8 +332,12 @@ abstract class _NutritionItemDto implements NutritionItemDto {
   /// `LOW` · `NORMAL` · `HIGH`. 모르는 값은 화면에서 회색이 된다.
   @override
   String? get status;
+
+  /// 초과가 문제인 항목인가. **기본값을 두지 않는다** — false 로 떨어뜨리면
+  /// 나트륨이 방향을 잃고 "충분"이 되어 463% 가 초록으로 뜬다. 서버는 primitive
+  /// 라 늘 보내지만, 그 전제가 깨지는 날 화면이 거짓말하게 두지 않는다.
   @override
-  bool get higherIsWorse;
+  bool? get higherIsWorse;
 
   /// Create a copy of NutritionItemDto
   /// with the given fields replaced by the non-null parameter values.
@@ -355,6 +366,16 @@ mixin _$ConcernScoreDto {
   @JsonKey(name: 'changeFromFirstDay')
   int? get change => throw _privateConstructorUsedError;
 
+  /// 이 고민에 관해 가장 크게 움직인 룰의 이유 문장. **서버가 저장해 둔 문장을
+  /// 그대로 고른 것이라 앱이 짓지 않는다.**
+  ///
+  /// V8 이전 기록이거나 걸린 룰이 없으면 키가 빠진다. 주간 응답에도 없다 —
+  /// 한 끼를 설명하는 문장이 기간 평균 옆에 붙으면 한 주를 설명하는 것처럼 읽힌다.
+  String? get message => throw _privateConstructorUsedError;
+
+  /// 같은 근거의 짧은 라벨들("나트륨 과다"). 최대 2개. 없으면 빈 배열이다.
+  List<String> get tags => throw _privateConstructorUsedError;
+
   /// Serializes this ConcernScoreDto to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
 
@@ -376,7 +397,9 @@ abstract class $ConcernScoreDtoCopyWith<$Res> {
       String label,
       int score,
       String? status,
-      @JsonKey(name: 'changeFromFirstDay') int? change});
+      @JsonKey(name: 'changeFromFirstDay') int? change,
+      String? message,
+      List<String> tags});
 }
 
 /// @nodoc
@@ -399,6 +422,8 @@ class _$ConcernScoreDtoCopyWithImpl<$Res, $Val extends ConcernScoreDto>
     Object? score = null,
     Object? status = freezed,
     Object? change = freezed,
+    Object? message = freezed,
+    Object? tags = null,
   }) {
     return _then(_value.copyWith(
       concern: null == concern
@@ -421,6 +446,14 @@ class _$ConcernScoreDtoCopyWithImpl<$Res, $Val extends ConcernScoreDto>
           ? _value.change
           : change // ignore: cast_nullable_to_non_nullable
               as int?,
+      message: freezed == message
+          ? _value.message
+          : message // ignore: cast_nullable_to_non_nullable
+              as String?,
+      tags: null == tags
+          ? _value.tags
+          : tags // ignore: cast_nullable_to_non_nullable
+              as List<String>,
     ) as $Val);
   }
 }
@@ -438,7 +471,9 @@ abstract class _$$ConcernScoreDtoImplCopyWith<$Res>
       String label,
       int score,
       String? status,
-      @JsonKey(name: 'changeFromFirstDay') int? change});
+      @JsonKey(name: 'changeFromFirstDay') int? change,
+      String? message,
+      List<String> tags});
 }
 
 /// @nodoc
@@ -459,6 +494,8 @@ class __$$ConcernScoreDtoImplCopyWithImpl<$Res>
     Object? score = null,
     Object? status = freezed,
     Object? change = freezed,
+    Object? message = freezed,
+    Object? tags = null,
   }) {
     return _then(_$ConcernScoreDtoImpl(
       concern: null == concern
@@ -481,6 +518,14 @@ class __$$ConcernScoreDtoImplCopyWithImpl<$Res>
           ? _value.change
           : change // ignore: cast_nullable_to_non_nullable
               as int?,
+      message: freezed == message
+          ? _value.message
+          : message // ignore: cast_nullable_to_non_nullable
+              as String?,
+      tags: null == tags
+          ? _value._tags
+          : tags // ignore: cast_nullable_to_non_nullable
+              as List<String>,
     ));
   }
 }
@@ -493,7 +538,10 @@ class _$ConcernScoreDtoImpl implements _ConcernScoreDto {
       this.label = '',
       this.score = 0,
       this.status,
-      @JsonKey(name: 'changeFromFirstDay') this.change});
+      @JsonKey(name: 'changeFromFirstDay') this.change,
+      this.message,
+      final List<String> tags = const <String>[]})
+      : _tags = tags;
 
   factory _$ConcernScoreDtoImpl.fromJson(Map<String, dynamic> json) =>
       _$$ConcernScoreDtoImplFromJson(json);
@@ -519,9 +567,29 @@ class _$ConcernScoreDtoImpl implements _ConcernScoreDto {
   @JsonKey(name: 'changeFromFirstDay')
   final int? change;
 
+  /// 이 고민에 관해 가장 크게 움직인 룰의 이유 문장. **서버가 저장해 둔 문장을
+  /// 그대로 고른 것이라 앱이 짓지 않는다.**
+  ///
+  /// V8 이전 기록이거나 걸린 룰이 없으면 키가 빠진다. 주간 응답에도 없다 —
+  /// 한 끼를 설명하는 문장이 기간 평균 옆에 붙으면 한 주를 설명하는 것처럼 읽힌다.
+  @override
+  final String? message;
+
+  /// 같은 근거의 짧은 라벨들("나트륨 과다"). 최대 2개. 없으면 빈 배열이다.
+  final List<String> _tags;
+
+  /// 같은 근거의 짧은 라벨들("나트륨 과다"). 최대 2개. 없으면 빈 배열이다.
+  @override
+  @JsonKey()
+  List<String> get tags {
+    if (_tags is EqualUnmodifiableListView) return _tags;
+    // ignore: implicit_dynamic_type
+    return EqualUnmodifiableListView(_tags);
+  }
+
   @override
   String toString() {
-    return 'ConcernScoreDto(concern: $concern, label: $label, score: $score, status: $status, change: $change)';
+    return 'ConcernScoreDto(concern: $concern, label: $label, score: $score, status: $status, change: $change, message: $message, tags: $tags)';
   }
 
   @override
@@ -533,13 +601,15 @@ class _$ConcernScoreDtoImpl implements _ConcernScoreDto {
             (identical(other.label, label) || other.label == label) &&
             (identical(other.score, score) || other.score == score) &&
             (identical(other.status, status) || other.status == status) &&
-            (identical(other.change, change) || other.change == change));
+            (identical(other.change, change) || other.change == change) &&
+            (identical(other.message, message) || other.message == message) &&
+            const DeepCollectionEquality().equals(other._tags, _tags));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
-  int get hashCode =>
-      Object.hash(runtimeType, concern, label, score, status, change);
+  int get hashCode => Object.hash(runtimeType, concern, label, score, status,
+      change, message, const DeepCollectionEquality().hash(_tags));
 
   /// Create a copy of ConcernScoreDto
   /// with the given fields replaced by the non-null parameter values.
@@ -560,12 +630,13 @@ class _$ConcernScoreDtoImpl implements _ConcernScoreDto {
 
 abstract class _ConcernScoreDto implements ConcernScoreDto {
   const factory _ConcernScoreDto(
-          {final String concern,
-          final String label,
-          final int score,
-          final String? status,
-          @JsonKey(name: 'changeFromFirstDay') final int? change}) =
-      _$ConcernScoreDtoImpl;
+      {final String concern,
+      final String label,
+      final int score,
+      final String? status,
+      @JsonKey(name: 'changeFromFirstDay') final int? change,
+      final String? message,
+      final List<String> tags}) = _$ConcernScoreDtoImpl;
 
   factory _ConcernScoreDto.fromJson(Map<String, dynamic> json) =
       _$ConcernScoreDtoImpl.fromJson;
@@ -588,6 +659,18 @@ abstract class _ConcernScoreDto implements ConcernScoreDto {
   @JsonKey(name: 'changeFromFirstDay')
   int? get change;
 
+  /// 이 고민에 관해 가장 크게 움직인 룰의 이유 문장. **서버가 저장해 둔 문장을
+  /// 그대로 고른 것이라 앱이 짓지 않는다.**
+  ///
+  /// V8 이전 기록이거나 걸린 룰이 없으면 키가 빠진다. 주간 응답에도 없다 —
+  /// 한 끼를 설명하는 문장이 기간 평균 옆에 붙으면 한 주를 설명하는 것처럼 읽힌다.
+  @override
+  String? get message;
+
+  /// 같은 근거의 짧은 라벨들("나트륨 과다"). 최대 2개. 없으면 빈 배열이다.
+  @override
+  List<String> get tags;
+
   /// Create a copy of ConcernScoreDto
   /// with the given fields replaced by the non-null parameter values.
   @override
@@ -606,6 +689,10 @@ mixin _$DayScoreDto {
   int get dailyScore => throw _privateConstructorUsedError;
   String? get grade => throw _privateConstructorUsedError;
 
+  /// 그날 기록의 id. **BEST/WORST 카드에만 온다** — 추이 그래프 7칸에는 키가 없다.
+  /// 앱은 이 id 로 로컬 사진(`plates/{plateId}.jpg`)을 찾는다(PRD §9.6).
+  List<int> get plateIds => throw _privateConstructorUsedError;
+
   /// Serializes this DayScoreDto to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
 
@@ -622,7 +709,7 @@ abstract class $DayScoreDtoCopyWith<$Res> {
           DayScoreDto value, $Res Function(DayScoreDto) then) =
       _$DayScoreDtoCopyWithImpl<$Res, DayScoreDto>;
   @useResult
-  $Res call({DateTime date, int dailyScore, String? grade});
+  $Res call({DateTime date, int dailyScore, String? grade, List<int> plateIds});
 }
 
 /// @nodoc
@@ -643,6 +730,7 @@ class _$DayScoreDtoCopyWithImpl<$Res, $Val extends DayScoreDto>
     Object? date = null,
     Object? dailyScore = null,
     Object? grade = freezed,
+    Object? plateIds = null,
   }) {
     return _then(_value.copyWith(
       date: null == date
@@ -657,6 +745,10 @@ class _$DayScoreDtoCopyWithImpl<$Res, $Val extends DayScoreDto>
           ? _value.grade
           : grade // ignore: cast_nullable_to_non_nullable
               as String?,
+      plateIds: null == plateIds
+          ? _value.plateIds
+          : plateIds // ignore: cast_nullable_to_non_nullable
+              as List<int>,
     ) as $Val);
   }
 }
@@ -669,7 +761,7 @@ abstract class _$$DayScoreDtoImplCopyWith<$Res>
       __$$DayScoreDtoImplCopyWithImpl<$Res>;
   @override
   @useResult
-  $Res call({DateTime date, int dailyScore, String? grade});
+  $Res call({DateTime date, int dailyScore, String? grade, List<int> plateIds});
 }
 
 /// @nodoc
@@ -688,6 +780,7 @@ class __$$DayScoreDtoImplCopyWithImpl<$Res>
     Object? date = null,
     Object? dailyScore = null,
     Object? grade = freezed,
+    Object? plateIds = null,
   }) {
     return _then(_$DayScoreDtoImpl(
       date: null == date
@@ -702,6 +795,10 @@ class __$$DayScoreDtoImplCopyWithImpl<$Res>
           ? _value.grade
           : grade // ignore: cast_nullable_to_non_nullable
               as String?,
+      plateIds: null == plateIds
+          ? _value._plateIds
+          : plateIds // ignore: cast_nullable_to_non_nullable
+              as List<int>,
     ));
   }
 }
@@ -710,7 +807,11 @@ class __$$DayScoreDtoImplCopyWithImpl<$Res>
 @JsonSerializable()
 class _$DayScoreDtoImpl implements _DayScoreDto {
   const _$DayScoreDtoImpl(
-      {required this.date, this.dailyScore = 0, this.grade});
+      {required this.date,
+      this.dailyScore = 0,
+      this.grade,
+      final List<int> plateIds = const <int>[]})
+      : _plateIds = plateIds;
 
   factory _$DayScoreDtoImpl.fromJson(Map<String, dynamic> json) =>
       _$$DayScoreDtoImplFromJson(json);
@@ -723,9 +824,23 @@ class _$DayScoreDtoImpl implements _DayScoreDto {
   @override
   final String? grade;
 
+  /// 그날 기록의 id. **BEST/WORST 카드에만 온다** — 추이 그래프 7칸에는 키가 없다.
+  /// 앱은 이 id 로 로컬 사진(`plates/{plateId}.jpg`)을 찾는다(PRD §9.6).
+  final List<int> _plateIds;
+
+  /// 그날 기록의 id. **BEST/WORST 카드에만 온다** — 추이 그래프 7칸에는 키가 없다.
+  /// 앱은 이 id 로 로컬 사진(`plates/{plateId}.jpg`)을 찾는다(PRD §9.6).
+  @override
+  @JsonKey()
+  List<int> get plateIds {
+    if (_plateIds is EqualUnmodifiableListView) return _plateIds;
+    // ignore: implicit_dynamic_type
+    return EqualUnmodifiableListView(_plateIds);
+  }
+
   @override
   String toString() {
-    return 'DayScoreDto(date: $date, dailyScore: $dailyScore, grade: $grade)';
+    return 'DayScoreDto(date: $date, dailyScore: $dailyScore, grade: $grade, plateIds: $plateIds)';
   }
 
   @override
@@ -736,12 +851,14 @@ class _$DayScoreDtoImpl implements _DayScoreDto {
             (identical(other.date, date) || other.date == date) &&
             (identical(other.dailyScore, dailyScore) ||
                 other.dailyScore == dailyScore) &&
-            (identical(other.grade, grade) || other.grade == grade));
+            (identical(other.grade, grade) || other.grade == grade) &&
+            const DeepCollectionEquality().equals(other._plateIds, _plateIds));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
-  int get hashCode => Object.hash(runtimeType, date, dailyScore, grade);
+  int get hashCode => Object.hash(runtimeType, date, dailyScore, grade,
+      const DeepCollectionEquality().hash(_plateIds));
 
   /// Create a copy of DayScoreDto
   /// with the given fields replaced by the non-null parameter values.
@@ -763,7 +880,8 @@ abstract class _DayScoreDto implements DayScoreDto {
   const factory _DayScoreDto(
       {required final DateTime date,
       final int dailyScore,
-      final String? grade}) = _$DayScoreDtoImpl;
+      final String? grade,
+      final List<int> plateIds}) = _$DayScoreDtoImpl;
 
   factory _DayScoreDto.fromJson(Map<String, dynamic> json) =
       _$DayScoreDtoImpl.fromJson;
@@ -774,6 +892,11 @@ abstract class _DayScoreDto implements DayScoreDto {
   int get dailyScore;
   @override
   String? get grade;
+
+  /// 그날 기록의 id. **BEST/WORST 카드에만 온다** — 추이 그래프 7칸에는 키가 없다.
+  /// 앱은 이 id 로 로컬 사진(`plates/{plateId}.jpg`)을 찾는다(PRD §9.6).
+  @override
+  List<int> get plateIds;
 
   /// Create a copy of DayScoreDto
   /// with the given fields replaced by the non-null parameter values.
@@ -1012,6 +1135,14 @@ mixin _$DailyReportDto {
   String? get grade => throw _privateConstructorUsedError;
   int get recordCount => throw _privateConstructorUsedError;
   List<NutritionItemDto> get nutrition => throw _privateConstructorUsedError;
+
+  /// 피부 영양 포인트 3종(비타민C·오메가3·아연). **영양 밸런스와 다른 배열이다** —
+  /// 시안이 다른 카드로 그리고, 측정 가능 여부도 다르다(표준 음식표에 매칭된
+  /// 끼니에서만 값이 나오므로 `status` 가 없을 수 있다).
+  ///
+  /// [NutritionItemDto] 와 같은 모양이라 화면도 같은 위젯을 쓴다.
+  List<NutritionItemDto> get skinNutrients =>
+      throw _privateConstructorUsedError;
   List<ConcernScoreDto> get concerns => throw _privateConstructorUsedError;
 
   /// 히스토리와 **같은 DTO** 다. 서버가 하나로 내려주므로 앱도 하나로 받는다.
@@ -1042,6 +1173,7 @@ abstract class $DailyReportDtoCopyWith<$Res> {
       String? grade,
       int recordCount,
       List<NutritionItemDto> nutrition,
+      List<NutritionItemDto> skinNutrients,
       List<ConcernScoreDto> concerns,
       List<PlateHistoryItemDto> meals,
       String? aiComment,
@@ -1069,6 +1201,7 @@ class _$DailyReportDtoCopyWithImpl<$Res, $Val extends DailyReportDto>
     Object? grade = freezed,
     Object? recordCount = null,
     Object? nutrition = null,
+    Object? skinNutrients = null,
     Object? concerns = null,
     Object? meals = null,
     Object? aiComment = freezed,
@@ -1095,6 +1228,10 @@ class _$DailyReportDtoCopyWithImpl<$Res, $Val extends DailyReportDto>
       nutrition: null == nutrition
           ? _value.nutrition
           : nutrition // ignore: cast_nullable_to_non_nullable
+              as List<NutritionItemDto>,
+      skinNutrients: null == skinNutrients
+          ? _value.skinNutrients
+          : skinNutrients // ignore: cast_nullable_to_non_nullable
               as List<NutritionItemDto>,
       concerns: null == concerns
           ? _value.concerns
@@ -1134,6 +1271,7 @@ abstract class _$$DailyReportDtoImplCopyWith<$Res>
       String? grade,
       int recordCount,
       List<NutritionItemDto> nutrition,
+      List<NutritionItemDto> skinNutrients,
       List<ConcernScoreDto> concerns,
       List<PlateHistoryItemDto> meals,
       String? aiComment,
@@ -1159,6 +1297,7 @@ class __$$DailyReportDtoImplCopyWithImpl<$Res>
     Object? grade = freezed,
     Object? recordCount = null,
     Object? nutrition = null,
+    Object? skinNutrients = null,
     Object? concerns = null,
     Object? meals = null,
     Object? aiComment = freezed,
@@ -1185,6 +1324,10 @@ class __$$DailyReportDtoImplCopyWithImpl<$Res>
       nutrition: null == nutrition
           ? _value._nutrition
           : nutrition // ignore: cast_nullable_to_non_nullable
+              as List<NutritionItemDto>,
+      skinNutrients: null == skinNutrients
+          ? _value._skinNutrients
+          : skinNutrients // ignore: cast_nullable_to_non_nullable
               as List<NutritionItemDto>,
       concerns: null == concerns
           ? _value._concerns
@@ -1219,12 +1362,14 @@ class _$DailyReportDtoImpl implements _DailyReportDto {
       this.grade,
       this.recordCount = 0,
       final List<NutritionItemDto> nutrition = const <NutritionItemDto>[],
+      final List<NutritionItemDto> skinNutrients = const <NutritionItemDto>[],
       final List<ConcernScoreDto> concerns = const <ConcernScoreDto>[],
       final List<PlateHistoryItemDto> meals = const <PlateHistoryItemDto>[],
       this.aiComment,
       final List<String> goodPoints = const <String>[],
       final List<String> improvePoints = const <String>[]})
       : _nutrition = nutrition,
+        _skinNutrients = skinNutrients,
         _concerns = concerns,
         _meals = meals,
         _goodPoints = goodPoints,
@@ -1252,6 +1397,26 @@ class _$DailyReportDtoImpl implements _DailyReportDto {
     if (_nutrition is EqualUnmodifiableListView) return _nutrition;
     // ignore: implicit_dynamic_type
     return EqualUnmodifiableListView(_nutrition);
+  }
+
+  /// 피부 영양 포인트 3종(비타민C·오메가3·아연). **영양 밸런스와 다른 배열이다** —
+  /// 시안이 다른 카드로 그리고, 측정 가능 여부도 다르다(표준 음식표에 매칭된
+  /// 끼니에서만 값이 나오므로 `status` 가 없을 수 있다).
+  ///
+  /// [NutritionItemDto] 와 같은 모양이라 화면도 같은 위젯을 쓴다.
+  final List<NutritionItemDto> _skinNutrients;
+
+  /// 피부 영양 포인트 3종(비타민C·오메가3·아연). **영양 밸런스와 다른 배열이다** —
+  /// 시안이 다른 카드로 그리고, 측정 가능 여부도 다르다(표준 음식표에 매칭된
+  /// 끼니에서만 값이 나오므로 `status` 가 없을 수 있다).
+  ///
+  /// [NutritionItemDto] 와 같은 모양이라 화면도 같은 위젯을 쓴다.
+  @override
+  @JsonKey()
+  List<NutritionItemDto> get skinNutrients {
+    if (_skinNutrients is EqualUnmodifiableListView) return _skinNutrients;
+    // ignore: implicit_dynamic_type
+    return EqualUnmodifiableListView(_skinNutrients);
   }
 
   final List<ConcernScoreDto> _concerns;
@@ -1297,7 +1462,7 @@ class _$DailyReportDtoImpl implements _DailyReportDto {
 
   @override
   String toString() {
-    return 'DailyReportDto(date: $date, dailyScore: $dailyScore, grade: $grade, recordCount: $recordCount, nutrition: $nutrition, concerns: $concerns, meals: $meals, aiComment: $aiComment, goodPoints: $goodPoints, improvePoints: $improvePoints)';
+    return 'DailyReportDto(date: $date, dailyScore: $dailyScore, grade: $grade, recordCount: $recordCount, nutrition: $nutrition, skinNutrients: $skinNutrients, concerns: $concerns, meals: $meals, aiComment: $aiComment, goodPoints: $goodPoints, improvePoints: $improvePoints)';
   }
 
   @override
@@ -1313,6 +1478,8 @@ class _$DailyReportDtoImpl implements _DailyReportDto {
                 other.recordCount == recordCount) &&
             const DeepCollectionEquality()
                 .equals(other._nutrition, _nutrition) &&
+            const DeepCollectionEquality()
+                .equals(other._skinNutrients, _skinNutrients) &&
             const DeepCollectionEquality().equals(other._concerns, _concerns) &&
             const DeepCollectionEquality().equals(other._meals, _meals) &&
             (identical(other.aiComment, aiComment) ||
@@ -1332,6 +1499,7 @@ class _$DailyReportDtoImpl implements _DailyReportDto {
       grade,
       recordCount,
       const DeepCollectionEquality().hash(_nutrition),
+      const DeepCollectionEquality().hash(_skinNutrients),
       const DeepCollectionEquality().hash(_concerns),
       const DeepCollectionEquality().hash(_meals),
       aiComment,
@@ -1362,6 +1530,7 @@ abstract class _DailyReportDto implements DailyReportDto {
       final String? grade,
       final int recordCount,
       final List<NutritionItemDto> nutrition,
+      final List<NutritionItemDto> skinNutrients,
       final List<ConcernScoreDto> concerns,
       final List<PlateHistoryItemDto> meals,
       final String? aiComment,
@@ -1384,6 +1553,14 @@ abstract class _DailyReportDto implements DailyReportDto {
   int get recordCount;
   @override
   List<NutritionItemDto> get nutrition;
+
+  /// 피부 영양 포인트 3종(비타민C·오메가3·아연). **영양 밸런스와 다른 배열이다** —
+  /// 시안이 다른 카드로 그리고, 측정 가능 여부도 다르다(표준 음식표에 매칭된
+  /// 끼니에서만 값이 나오므로 `status` 가 없을 수 있다).
+  ///
+  /// [NutritionItemDto] 와 같은 모양이라 화면도 같은 위젯을 쓴다.
+  @override
+  List<NutritionItemDto> get skinNutrients;
   @override
   List<ConcernScoreDto> get concerns;
 

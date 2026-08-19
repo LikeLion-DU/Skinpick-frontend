@@ -7,8 +7,9 @@ import '../error/failure.dart';
 /// 화면 공용 위젯(실패 안내·안전 고지).
 ///
 /// 껍데기 시절의 ScoreGauge·MetricBar 는 확정 시안이 들어오며 지웠다.
-/// 점수 게이지는 이제 plate_score_card.dart 의 ScoreGauge 하나다 — 같은 이름을
-/// 여기 남겨 두면 두 파일을 같이 import 하는 화면에서 ambiguous import 가 난다.
+/// 점수 게이지는 이제 `shared/widgets/score_gauge.dart` 의 ScoreGauge 하나다 —
+/// 같은 이름을 여기 남겨 두면 두 파일을 같이 import 하는 화면에서
+/// ambiguous import 가 난다.
 
 /// 실패 안내 + 재시도. 화면마다 다른 문구를 짓지 않도록 통로를 하나로 둔다.
 class FailureView extends StatelessWidget {

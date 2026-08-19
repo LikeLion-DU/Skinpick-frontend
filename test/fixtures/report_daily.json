@@ -1,123 +1,182 @@
 {
-    "success": true,
-    "data": {
-        "date": "2026-08-17",
-        "dailyScore": 60,
-        "grade": "NORMAL",
-        "recordCount": 3,
-        "nutrition": [
-            {
-                "nutrient": "CALORIES",
-                "label": "칼로리",
-                "unit": "kcal",
-                "amount": 1560.0,
-                "target": 2000,
-                "percent": 78,
-                "status": "NORMAL",
-                "higherIsWorse": true
-            },
-            {
-                "nutrient": "CARB",
-                "label": "탄수화물",
-                "unit": "g",
-                "amount": 96.0,
-                "target": 300,
-                "percent": 32,
-                "status": "LOW",
-                "higherIsWorse": true
-            },
-            {
-                "nutrient": "PROTEIN",
-                "label": "단백질",
-                "unit": "g",
-                "amount": 85.5,
-                "target": 55,
-                "percent": 155,
-                "status": "HIGH",
-                "higherIsWorse": false
-            },
-            {
-                "nutrient": "FAT",
-                "label": "지방",
-                "unit": "g",
-                "amount": 72.0,
-                "target": 50,
-                "percent": 144,
-                "status": "HIGH",
-                "higherIsWorse": true
-            },
-            {
-                "nutrient": "SODIUM",
-                "label": "나트륨",
-                "unit": "mg",
-                "amount": 5550.0,
-                "target": 2000,
-                "percent": 278,
-                "status": "HIGH",
-                "higherIsWorse": true
-            },
-            {
-                "nutrient": "SUGAR",
-                "label": "당류",
-                "unit": "g",
-                "amount": 18.6,
-                "target": 50,
-                "percent": 37,
-                "status": "LOW",
-                "higherIsWorse": true
-            }
-        ],
-        "concerns": [
-            {
-                "concern": "ACNE",
-                "label": "여드름",
-                "score": 74,
-                "status": "GOOD"
-            },
-            {
-                "concern": "REDNESS",
-                "label": "민감/홍조",
-                "score": 58,
-                "status": "NORMAL"
-            },
-            {
-                "concern": "PUFFINESS",
-                "label": "부기",
-                "score": 62,
-                "status": "GOOD"
-            }
-        ],
-        "meals": [
-            {
-                "plateId": 27,
-                "foodName": "돼지고기 김치찌개",
-                "plateScore": 60,
-                "mealType": "LUNCH",
-                "recordedAt": "2026-08-17T14:13:27.681436"
-            },
-            {
-                "plateId": 26,
-                "foodName": "돼지고기 김치찌개",
-                "plateScore": 60,
-                "mealType": "LUNCH",
-                "recordedAt": "2026-08-17T14:13:27.618449"
-            },
-            {
-                "plateId": 25,
-                "foodName": "돼지고기 김치찌개",
-                "plateScore": 60,
-                "mealType": "LUNCH",
-                "recordedAt": "2026-08-17T14:13:27.547635"
-            }
-        ],
-        "aiComment": "발효식품과 단백질을 잘 챙긴 하루였어요. 내일은 나트륨을 조금만 줄여볼까요?",
-        "goodPoints": [
-            "단백질 충분",
-            "발효식품 포함"
-        ],
-        "improvePoints": [
-            "나트륨 과다",
-            "매운맛 자극"
+  "success": true,
+  "data": {
+    "date": "2026-08-17",
+    "dailyScore": 60,
+    "grade": "NORMAL",
+    "recordCount": 3,
+    "nutrition": [
+      {
+        "nutrient": "CALORIES",
+        "label": "칼로리",
+        "unit": "kcal",
+        "amount": 1560.0,
+        "target": 2000,
+        "percent": 78,
+        "status": "NORMAL",
+        "higherIsWorse": true
+      },
+      {
+        "nutrient": "CARB",
+        "label": "탄수화물",
+        "unit": "g",
+        "amount": 96.0,
+        "target": 300,
+        "percent": 32,
+        "status": "LOW",
+        "higherIsWorse": true
+      },
+      {
+        "nutrient": "PROTEIN",
+        "label": "단백질",
+        "unit": "g",
+        "amount": 85.5,
+        "target": 55,
+        "percent": 155,
+        "status": "HIGH",
+        "higherIsWorse": false
+      },
+      {
+        "nutrient": "FAT",
+        "label": "지방",
+        "unit": "g",
+        "amount": 72.0,
+        "target": 50,
+        "percent": 144,
+        "status": "HIGH",
+        "higherIsWorse": true
+      },
+      {
+        "nutrient": "SODIUM",
+        "label": "나트륨",
+        "unit": "mg",
+        "amount": 5550.0,
+        "target": 2000,
+        "percent": 278,
+        "status": "HIGH",
+        "higherIsWorse": true
+      },
+      {
+        "nutrient": "SUGAR",
+        "label": "당류",
+        "unit": "g",
+        "amount": 18.6,
+        "target": 50,
+        "percent": 37,
+        "status": "LOW",
+        "higherIsWorse": true
+      }
+    ],
+    "concerns": [
+      {
+        "concern": "ACNE",
+        "label": "여드름",
+        "score": 74,
+        "status": "GOOD",
+        "message": "당류가 높은 음식 섭취가 다소 많았어요.",
+        "tags": [
+          "당류 과다",
+          "튀김 조리"
         ]
-    }
+      },
+      {
+        "concern": "REDNESS",
+        "label": "민감/홍조",
+        "score": 58,
+        "status": "NORMAL",
+        "message": "채소와 과일 섭취가 충분했어요.",
+        "tags": [
+          "항산화 식품 양호"
+        ]
+      },
+      {
+        "concern": "PUFFINESS",
+        "label": "부기",
+        "score": 62,
+        "status": "GOOD",
+        "message": "나트륨이 높은 편이에요.",
+        "tags": [
+          "나트륨 과다"
+        ]
+      }
+    ],
+    "meals": [
+      {
+        "plateId": 27,
+        "foodName": "돼지고기 김치찌개",
+        "plateScore": 60,
+        "mealType": "LUNCH",
+        "recordedAt": "2026-08-17T14:13:27.681436",
+        "highlightTags": [
+          "나트륨",
+          "당류",
+          "단백질"
+        ],
+        "grade": "NORMAL"
+      },
+      {
+        "plateId": 26,
+        "foodName": "돼지고기 김치찌개",
+        "plateScore": 60,
+        "mealType": "LUNCH",
+        "recordedAt": "2026-08-17T14:13:27.618449",
+        "highlightTags": [
+          "나트륨",
+          "당류"
+        ],
+        "grade": "NORMAL"
+      },
+      {
+        "plateId": 25,
+        "foodName": "돼지고기 김치찌개",
+        "plateScore": 60,
+        "mealType": "LUNCH",
+        "recordedAt": "2026-08-17T14:13:27.547635",
+        "highlightTags": [
+          "나트륨"
+        ],
+        "grade": "NORMAL"
+      }
+    ],
+    "aiComment": "발효식품과 단백질을 잘 챙긴 하루였어요. 내일은 나트륨을 조금만 줄여볼까요?",
+    "goodPoints": [
+      "단백질 충분",
+      "발효식품 포함"
+    ],
+    "improvePoints": [
+      "나트륨 과다",
+      "매운맛 자극"
+    ],
+    "skinNutrients": [
+      {
+        "nutrient": "VITAMIN_C",
+        "label": "비타민C",
+        "unit": "mg",
+        "amount": 45.0,
+        "target": 100,
+        "percent": 45,
+        "status": "LOW",
+        "higherIsWorse": false
+      },
+      {
+        "nutrient": "OMEGA3",
+        "label": "오메가3",
+        "unit": "회",
+        "amount": 1.0,
+        "target": 1,
+        "percent": 100,
+        "status": "NORMAL",
+        "higherIsWorse": false
+      },
+      {
+        "nutrient": "ZINC",
+        "label": "아연",
+        "unit": "mg",
+        "amount": 0.0,
+        "target": 10,
+        "percent": 0,
+        "higherIsWorse": false
+      }
+    ]
+  }
 }

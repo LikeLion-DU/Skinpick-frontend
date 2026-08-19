@@ -16,7 +16,7 @@ _$NutritionItemDtoImpl _$$NutritionItemDtoImplFromJson(
       target: (json['target'] as num?)?.toInt() ?? 0,
       percent: (json['percent'] as num?)?.toInt() ?? 0,
       status: json['status'] as String?,
-      higherIsWorse: json['higherIsWorse'] as bool? ?? false,
+      higherIsWorse: json['higherIsWorse'] as bool?,
     );
 
 Map<String, dynamic> _$$NutritionItemDtoImplToJson(
@@ -40,6 +40,10 @@ _$ConcernScoreDtoImpl _$$ConcernScoreDtoImplFromJson(
       score: (json['score'] as num?)?.toInt() ?? 0,
       status: json['status'] as String?,
       change: (json['changeFromFirstDay'] as num?)?.toInt(),
+      message: json['message'] as String?,
+      tags:
+          (json['tags'] as List<dynamic>?)?.map((e) => e as String).toList() ??
+              const <String>[],
     );
 
 Map<String, dynamic> _$$ConcernScoreDtoImplToJson(
@@ -50,6 +54,8 @@ Map<String, dynamic> _$$ConcernScoreDtoImplToJson(
       'score': instance.score,
       'status': instance.status,
       'changeFromFirstDay': instance.change,
+      'message': instance.message,
+      'tags': instance.tags,
     };
 
 _$DayScoreDtoImpl _$$DayScoreDtoImplFromJson(Map<String, dynamic> json) =>
@@ -57,6 +63,10 @@ _$DayScoreDtoImpl _$$DayScoreDtoImplFromJson(Map<String, dynamic> json) =>
       date: DateTime.parse(json['date'] as String),
       dailyScore: (json['dailyScore'] as num?)?.toInt() ?? 0,
       grade: json['grade'] as String?,
+      plateIds: (json['plateIds'] as List<dynamic>?)
+              ?.map((e) => (e as num).toInt())
+              .toList() ??
+          const <int>[],
     );
 
 Map<String, dynamic> _$$DayScoreDtoImplToJson(_$DayScoreDtoImpl instance) =>
@@ -64,6 +74,7 @@ Map<String, dynamic> _$$DayScoreDtoImplToJson(_$DayScoreDtoImpl instance) =>
       'date': instance.date.toIso8601String(),
       'dailyScore': instance.dailyScore,
       'grade': instance.grade,
+      'plateIds': instance.plateIds,
     };
 
 _$WeeklyCommentDtoImpl _$$WeeklyCommentDtoImplFromJson(
@@ -91,6 +102,10 @@ _$DailyReportDtoImpl _$$DailyReportDtoImplFromJson(Map<String, dynamic> json) =>
       grade: json['grade'] as String?,
       recordCount: (json['recordCount'] as num?)?.toInt() ?? 0,
       nutrition: (json['nutrition'] as List<dynamic>?)
+              ?.map((e) => NutritionItemDto.fromJson(e as Map<String, dynamic>))
+              .toList() ??
+          const <NutritionItemDto>[],
+      skinNutrients: (json['skinNutrients'] as List<dynamic>?)
               ?.map((e) => NutritionItemDto.fromJson(e as Map<String, dynamic>))
               .toList() ??
           const <NutritionItemDto>[],
@@ -122,6 +137,7 @@ Map<String, dynamic> _$$DailyReportDtoImplToJson(
       'grade': instance.grade,
       'recordCount': instance.recordCount,
       'nutrition': instance.nutrition,
+      'skinNutrients': instance.skinNutrients,
       'concerns': instance.concerns,
       'meals': instance.meals,
       'aiComment': instance.aiComment,
