@@ -827,8 +827,8 @@ class _ConcernCard extends StatelessWidget {
               ],
             ),
           ),
-          if (status != null)
-            _StatusPill(label: status.label, accent: accent),
+          // 상태 칩(GOOD/CHECK)은 그리지 않는다 — 시안에는 있지만 반영하지
+          // 않기로 결정했다(2026-08-20). 상태는 카드 바탕색이 이미 말한다.
         ],
       ),
     );
@@ -861,32 +861,6 @@ class _ConcernTag extends StatelessWidget {
         fontSize: 11,
         fontWeight: FontWeight.w600,
         color: AppColors.textOnCard,
-      ),
-    );
-  }
-}
-
-/// 고민 상태 칩. 시안은 `GOOD`/`CHECK` 두 단인데 서버가 5단을 주므로
-/// 점수 카드와 같은 3단 어휘를 쓴다 — 한 화면에서 등급 어휘가 둘이면
-/// 사용자가 둘을 다른 축으로 읽는다.
-class _StatusPill extends StatelessWidget {
-  const _StatusPill({required this.label, required this.accent});
-
-  final String label;
-  final Color accent;
-
-  @override
-  Widget build(BuildContext context) {
-    return Pill(
-      minHeight: 24,
-      horizontalPadding: 12,
-      borderRadius: 16,
-      color: Color.lerp(accent, Colors.white, 0.78),
-      label: label,
-      style: TextStyle(
-        fontSize: 12,
-        fontWeight: FontWeight.w600,
-        color: accent,
       ),
     );
   }
