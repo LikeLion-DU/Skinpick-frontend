@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart' show debugPrint, kDebugMode;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 /// JWT를 기기 보안 저장소(iOS Keychain / Android Keystore)에 보관한다.
@@ -25,26 +24,16 @@ class TokenStorage {
   Future<void> save(String token) =>
       _storage.write(key: _accessTokenKey, value: token);
 
-  /// **여기서 던지지 않는다.** 읽지 못한 토큰은 없는 토큰과 같게 다룬다.
+  /// **던진다.** "토큰이 없다" 와 "토큰 저장소를 못 읽는다" 는 다른 사실이라
+  /// 여기서 뭉개지 않는다. null 로 접으면 헤더 없이 나간 요청이 401 을 받고,
+  /// 그 401 이 멀쩡한 세션을 지운다 — iOS 는 기기 복원 직후나 화면이 잠긴 동안
+  /// 키체인이 막히는데, 분석 업로드(25~32초) 중에 화면을 잠그면 바로 그 상황이다.
   ///
-  /// 부르는 곳이 셋이고(복원·요청 인터셉터·[hasToken]) 셋 다 예외를 받을 준비가
-  /// 안 돼 있다. 특히 복원에서 새면 AuthState 가 초기값에 멈추고, 라우터가 그
-  /// 상태를 스플래시로 고정해 재설치 말고는 빠져나갈 길이 없다. 인터셉터에서
-  /// 새면 로그인 요청 자체가 실패해서 다시 로그인할 수도 없다.
-  ///
-  /// **지우지는 않는다.** iOS 는 기기 복원 직후 첫 잠금 해제 전까지 키체인이
-  /// 막히는데, 그때 지우면 멀쩡한 세션이 날아간다. 값이 정말 깨진 경우는
-  /// `resetOnError` 가 이미 정리하고, 그 밖의 경우는 다음 로그인이 덮어쓴다.
-  Future<String?> read() async {
-    try {
-      return await _storage.read(key: _accessTokenKey);
-    } catch (error) {
-      if (kDebugMode) debugPrint('토큰 읽기 실패 — 없는 것으로 다룬다: $error');
-      return null;
-    }
-  }
+  /// 못 읽었을 때 무엇을 할지는 부르는 쪽이 정한다. 복원은 로그인 화면으로
+  /// 보내고(`AuthNotifier.restore`), 요청 인터셉터는 헤더 없이 보낸다
+  /// (`AuthInterceptor`). 둘의 답이 다르기 때문에 여기서 정할 수 없다.
+  Future<String?> read() => _storage.read(key: _accessTokenKey);
 
   Future<void> clear() => _storage.delete(key: _accessTokenKey);
 
-  Future<bool> get hasToken async => (await read()) != null;
 }

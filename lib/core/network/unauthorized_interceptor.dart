@@ -45,7 +45,16 @@ class UnauthorizedInterceptor extends Interceptor {
     DioException err,
     ErrorInterceptorHandler handler,
   ) async {
-    if (err.response?.statusCode == 401 && !_isCredentialRequest(err)) {
+    // 자격 증명을 **보내지 않은** 요청의 401 은 저장된 세션이 무효라는 증거가
+    // 아니다. 토큰을 못 읽어 헤더 없이 나간 요청이 대표적이다(화면이 잠긴 동안의
+    // 업로드 등) — 그걸 만료로 읽으면 멀쩡한 세션을 지우고 "로그인이
+    // 만료되었습니다" 까지 띄운다.
+    final sentCredentials =
+        err.requestOptions.headers.containsKey('Authorization');
+
+    if (err.response?.statusCode == 401 &&
+        sentCredentials &&
+        !_isCredentialRequest(err)) {
       await _tokenStorage.clear();
       _onUnauthorized();
     }

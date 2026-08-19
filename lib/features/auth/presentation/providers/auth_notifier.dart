@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show debugPrint, kDebugMode;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/di/providers.dart';
@@ -91,7 +92,25 @@ class AuthNotifier extends Notifier<AuthState> {
         ? Future<void>.value()
         : Future<void>.delayed(hold);
 
-    final AuthState resolved = await _resolveSession();
+    // 저장소를 못 읽으면 던진다. 여기서 새면 state 를 영영 못 써서 AuthState 가
+    // 초기값에 멈추고, 라우터가 그 상태를 스플래시로 고정해 재설치 말고는
+    // 빠져나갈 길이 없다 — 최소 노출 3초가 정상 동작이라 멈춘 것인지 기다리는
+    // 것인지 화면만 봐서는 구분도 안 되고, restore 는 관측되지 않는
+    // 마이크로태스크로 시작해서 예외가 아무 데도 안 남는다.
+    //
+    // **원인별로 막지 않고 여기서 한 번에 막는다.** 저장소든 프로바이더든
+    // 무엇이 던지든 결과는 같다 — 세션을 세울 수 없으니 로그인으로 보낸다.
+    // 만료로 세우지는 않는다. 기기 문제로 밀려난 사용자에게 "로그인이
+    // 만료되었습니다" 라고 말하게 된다.
+    AuthState resolved;
+    try {
+      resolved = await _resolveSession();
+    } catch (error, stackTrace) {
+      if (kDebugMode) {
+        debugPrint('세션 복원 실패 — 로그인으로 보낸다: $error\n$stackTrace');
+      }
+      resolved = const Unauthenticated();
+    }
 
     await minimumHold;
     state = resolved;
