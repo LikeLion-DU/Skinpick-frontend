@@ -9,6 +9,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../app/router/app_router.dart';
 import '../../../../app/theme/app_colors.dart';
+import '../../../../shared/widgets/capture_shutter.dart';
 import '../../../../core/camera/camera_error_message.dart';
 import '../../../../core/utils/photo_picker.dart';
 import '../../../../core/widgets/camera_preview_box.dart';
@@ -365,10 +366,7 @@ class _FoodCapturePageState extends ConsumerState<FoodCapturePage>
                 ),
                 const SizedBox(height: 32),
                 Center(
-                  child: _ShutterButton(
-                    busy: _busy,
-                    onTap: () => _pick(PhotoPicker.fromCamera),
-                  ),
+                  child: CaptureShutter(enabled: !_busy, busy: _busy, onTap: () => _pick(PhotoPicker.fromCamera)),
                 ),
                 const SizedBox(height: 12),
                 TextButton.icon(
@@ -430,7 +428,7 @@ class _FoodCapturePageState extends ConsumerState<FoodCapturePage>
                     children: [
                       _ZoomChips(current: _zoom, onSelect: _setZoom),
                       const SizedBox(height: 26),
-                      _ShutterButton(busy: _busy, onTap: _capture),
+                      CaptureShutter(enabled: !_busy, busy: _busy, onTap: _capture),
                       const SizedBox(height: 14),
                       const Text(
                         '분석은 AI가 자동으로 진행해요!',
@@ -575,41 +573,6 @@ class _BracketPainter extends CustomPainter {
       oldDelegate.detected != detected;
 }
 
-/// 시안의 셔터 — 흰 원 위에 오렌지 링.
-class _ShutterButton extends StatelessWidget {
-  const _ShutterButton({required this.busy, required this.onTap});
-
-  final bool busy;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: busy ? null : onTap,
-      child: Container(
-        width: 78,
-        height: 78,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          border: Border.all(color: AppColors.primary, width: 5),
-        ),
-        padding: const EdgeInsets.all(6),
-        child: Container(
-          decoration: const BoxDecoration(
-            shape: BoxShape.circle,
-            color: Colors.white,
-          ),
-          child: busy
-              ? const Padding(
-                  padding: EdgeInsets.all(18),
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                )
-              : null,
-        ),
-      ),
-    );
-  }
-}
 
 /// 0.5x / 1x / 2x. 현재 배율만 크고 밝게 — 시안 그대로다.
 class _ZoomChips extends StatelessWidget {

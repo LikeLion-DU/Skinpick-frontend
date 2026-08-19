@@ -17,6 +17,7 @@ import '../../../../core/camera/camera_error_message.dart';
 import '../../../../core/camera/preview_fit.dart';
 import '../../../../core/utils/photo_picker.dart';
 import '../../../../core/widgets/camera_preview_box.dart';
+import '../../../../shared/widgets/capture_shutter.dart';
 import '../../../../shared/widgets/ray_ring.dart';
 import '../../../../shared/widgets/skin_mascot.dart';
 import '../../data/datasources/face_gate.dart';
@@ -889,6 +890,31 @@ class _SkinCapturePageState extends ConsumerState<SkinCapturePage>
             stage: _stage,
             readiness: readiness,
           ),
+        // 방향 안내와 촬영 조작. **화면 아래에 붙인다.**
+        //
+        // 타원 아래로 밀어 내는 것도 해 봤는데, 짧은 화면에서는 그 아래 자리가
+        // 내용보다 작아서(320x568 에서 53px 모자란다) 셔터와 갤러리 버튼이 화면
+        // 밖으로 밀려났다 — 겹치는 것보다 나쁘다. 아예 누를 수 없게 된다.
+        //
+        // 그래서 아래에 붙이고 **간격이 먼저 줄어들게** 해서 블록을 최대한
+        // 납작하게 만든다. 그만큼 타원과의 여유가 늘어난다. 화면이 클수록 여유가
+        // 커지고, 아주 짧은 화면에서는 안내 문구가 타원 아래 테두리에 걸친다 —
+        // 셔터는 그때도 그 아래에 남는다. 좌표계가 갈리던 문제는 그대로 없다:
+        // 이제 어느 쪽도 화면 높이의 비율을 따로 쓰지 않는다.
+        SafeArea(
+          top: false,
+          child: CaptureBottomBar(
+            stage: _stage,
+            needsTurn: _needsTurn,
+            instruction: _instruction(_stage),
+            guide: guide,
+            ready: ready,
+            busy: _busy,
+            readiness: readiness,
+            onCapture: _capture,
+            onPickFromGallery: _pickFromGallery,
+          ),
+        ),
         if (kDebugMode && result?.debug != null)
           Positioned(top: 100, left: 8, child: _DebugOverlay(result!)),
         SafeArea(
@@ -929,23 +955,6 @@ class _SkinCapturePageState extends ConsumerState<SkinCapturePage>
                 ),
               ),
 
-              // 방향 안내와 촬영 조작을 **한 Column 에 세운다.** 예전에는 안내를
-              // `Alignment(0, 0.47)` 로 따로 띄웠는데, 그 0.47 은 SafeArea 높이
-              // 기준이고 타원의 0.47 은 전체 화면 높이 기준이라
-              // (_FaceGuidePainter) 서로 다른 좌표계였다. 큰 화면에서만 우연히
-              // 타원 아래에 놓였고, 360x640 에서는 하단 안내와 겹쳤으며
-              // 320x568 에서는 순서까지 뒤집혔다.
-              CaptureBottomBar(
-                stage: _stage,
-                needsTurn: _needsTurn,
-                instruction: _instruction(_stage),
-                guide: guide,
-                ready: ready,
-                busy: _busy,
-                readiness: readiness,
-                onCapture: _capture,
-                onPickFromGallery: _pickFromGallery,
-              ),
             ],
           ),
         ),
@@ -993,8 +1002,16 @@ class CaptureBottomBar extends StatelessWidget {
   Widget build(BuildContext context) {
     return Align(
       alignment: Alignment.bottomCenter,
+      // 기기 하단 인셋이 있으면 그만큼 덜 띄운다. SafeArea 가 이미 띄워 준
+      // 자리를 한 번 더 띄우면, 짧은 화면에서 셔터가 얼굴 가이드 쪽으로 그만큼
+      // 올라간다 — 여백이 아니라 침범을 사는 셈이다.
+      //
+      // paddingOf 가 아니라 viewPaddingOf 다. 위의 SafeArea 가 padding 을
+      // 이미 소비해서 여기서는 늘 0 으로 읽힌다.
       child: Padding(
-        padding: const EdgeInsets.only(bottom: 18),
+        padding: EdgeInsets.only(
+          bottom: (18 - MediaQuery.viewPaddingOf(context).bottom).clamp(0.0, 18.0),
+        ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -1010,18 +1027,16 @@ class CaptureBottomBar extends StatelessWidget {
                         child: _TurnHint(toLeft: stage == FacePhotoType.left))
                     : null,
               ),
-            Padding(
-              padding: const EdgeInsets.only(bottom: 24),
-              child: Text(
-                instruction,
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                ),
+            Text(
+              instruction,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
               ),
             ),
+            const SizedBox(height: 12),
             // 왜 안 찍히는지 말해 준다. 이유 없이 잠긴 셔터는 고장으로 읽힌다.
             if (guide != null)
               Padding(
@@ -1044,7 +1059,7 @@ class CaptureBottomBar extends StatelessWidget {
                 child: Text('좋아요 · 자세를 잠시 유지해주세요',
                     style: TextStyle(color: Colors.white70, fontSize: 12)),
               ),
-            _CaptureShutter(
+            CaptureShutter(
               enabled: ready && !busy,
               busy: busy,
               onTap: onCapture,
@@ -1061,55 +1076,6 @@ class CaptureBottomBar extends StatelessWidget {
   }
 }
 
-/// 시안의 셔터 — 흰 링 + 흰 원판. 게이트를 통과해야 켜진다.
-///
-/// 준비 여부는 색이 아니라 밝기로 가른다(켜짐 흰색 / 꺼짐 white38·white54).
-/// 예전에는 켜진 링이 오렌지였다.
-class _CaptureShutter extends StatelessWidget {
-  const _CaptureShutter({
-    required this.enabled,
-    required this.busy,
-    required this.onTap,
-  });
-
-  final bool enabled;
-  final bool busy;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    // 시안(360-815)의 셔터는 흰 링 + 흰 원판이다. 준비 여부는 색 대신 밝기로
-    // 가른다 — 준비 신호는 가이드 링(초록)과 하단 문구가 이미 말하고 있어서,
-    // 셔터까지 주황으로 칠하면 화면에 셔터가 두 개 있는 것처럼 읽힌다.
-    return GestureDetector(
-      onTap: enabled ? onTap : null,
-      child: Container(
-        width: 78,
-        height: 78,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          border: Border.all(
-            color: enabled ? Colors.white : Colors.white38,
-            width: 5,
-          ),
-        ),
-        padding: const EdgeInsets.all(6),
-        child: Container(
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: enabled ? Colors.white : Colors.white54,
-          ),
-          child: busy
-              ? const Padding(
-                  padding: EdgeInsets.all(18),
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                )
-              : null,
-        ),
-      ),
-    );
-  }
-}
 
 
 
@@ -1399,6 +1365,26 @@ class _DebugOverlay extends StatelessWidget {
   }
 }
 
+/// 얼굴 가이드 타원. **화면 전체 좌표계** 기준이다.
+///
+/// 그리는 쪽(_FaceGuidePainter)과 그 아래에 무엇을 놓을지 정하는 쪽이 같은 값을
+/// 봐야 한다. 예전에는 하단 블록이 `Alignment(0, 0.47)` 로 SafeArea 높이의 비율을
+/// 썼는데, 여기 0.47 은 전체 화면 높이 기준이라 좌표계가 서로 달랐다.
+///
+/// **높이 비율(0.45)을 건드리지 마라.** 게이트는 얼굴 높이가 프레임의 0.34~0.65
+/// 일 때 통과시킨다(`FaceGateConfig`). 이 타원이 그 구간 가운데를 가리키도록 맞춰
+/// 놓은 값이라, 지름을 폭 기준으로 바꾸면 기기 화면비에 따라 목표가 통과 구간
+/// 밖으로 밀린다 — 가이드에 얼굴을 맞췄는데 안 찍히는 화면이 된다.
+///
+/// 중심(0.47)도 마찬가지다. 게이트가 얼굴 중심을 프레임 중심과 비교하므로
+/// (`_checkCenter` 는 세로도 본다) 자리를 만들겠다고 타원을 위로 올리면
+/// 가이드에 맞춘 사용자가 "중앙에서 벗어났어요" 로 막힌다.
+Rect faceGuideOval(Size size) => Rect.fromCenter(
+      center: Offset(size.width / 2, size.height * 0.47),
+      width: size.width * 0.76,
+      height: size.height * 0.45,
+    );
+
 /// 얼굴을 어디에 두어야 하는지 보여주는 타원 가이드.
 ///
 /// 통과 여부를 **색으로** 바꾼다 — 문장을 읽지 않아도 초록이면 된 것이고,
@@ -1424,11 +1410,7 @@ class _FaceGuidePainter extends CustomPainter {
     // 0.34~0.65 일 때 통과시킨다(`FaceGateConfig`). 이 타원이 그 구간 가운데를
     // 가리키도록 맞춰 놓은 값이라, 지름을 폭 기준으로 바꾸면 기기 화면비에 따라
     // 목표가 통과 구간 밖으로 밀린다 — 가이드에 얼굴을 맞췄는데 안 찍히는 화면이 된다.
-    final oval = Rect.fromCenter(
-      center: Offset(size.width / 2, size.height * 0.47),
-      width: size.width * 0.76,
-      height: size.height * 0.45,
-    );
+    final oval = faceGuideOval(size);
 
     // 타원 바깥만 어둡게 깔면 "안"이 어디인지 설명 없이 보인다.
     canvas.drawPath(
