@@ -31,6 +31,8 @@ void main() {
   ProviderContainer container() {
     final made = ProviderContainer(overrides: [
       authRepositoryProvider.overrideWithValue(_StubRepository(user)),
+      // 스플래시 최소 노출(실기기 3초)을 끈다 — settled() 는 500ms 만 기다린다.
+      splashMinimumHoldProvider.overrideWithValue(Duration.zero),
     ]);
     addTearDown(made.dispose);
     return made;
