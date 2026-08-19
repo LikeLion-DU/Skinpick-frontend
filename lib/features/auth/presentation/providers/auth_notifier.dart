@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show debugPrint, kDebugMode;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/di/providers.dart';
@@ -91,7 +92,21 @@ class AuthNotifier extends Notifier<AuthState> {
         ? Future<void>.value()
         : Future<void>.delayed(hold);
 
-    final AuthState resolved = await _resolveSession();
+    // 던지면 state 를 영영 못 쓴다. 라우터가 AuthInitial 을 스플래시로 고정하니
+    // 재설치 말고는 빠져나갈 길이 없고, 최소 노출 3초가 정상 동작이라 멈춘
+    // 것인지 기다리는 것인지 화면만 봐서는 구분도 안 된다. 그리고 restore 는
+    // 관측되지 않는 마이크로태스크로 시작해서 예외가 아무 데도 안 남는다.
+    //
+    // 읽지 못한 토큰은 없는 토큰과 같게 다룬다 — 로그인으로 보내면 사용자가
+    // 다시 로그인해서 스스로 빠져나온다. (안드로이드 키스토어 리셋이나 iOS
+    // 기기 복원 직후 보안 저장소 읽기가 PlatformException 을 던진다)
+    AuthState resolved;
+    try {
+      resolved = await _resolveSession();
+    } catch (error, stackTrace) {
+      if (kDebugMode) debugPrint('restore 실패 — 로그인으로 보낸다: $error\n$stackTrace');
+      resolved = const Unauthenticated();
+    }
 
     await minimumHold;
     state = resolved;
