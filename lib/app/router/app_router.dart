@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../features/auth/presentation/pages/login_page.dart';
+import '../../features/auth/presentation/pages/onboarding_welcome_page.dart';
 import '../../features/auth/presentation/pages/signup_page.dart';
 import '../../features/auth/presentation/pages/skin_profile_page.dart';
 import '../../features/auth/presentation/pages/skin_type_page.dart';
@@ -27,6 +28,10 @@ class Routes {
   static const splash = '/splash';            // S00
   static const login = '/auth/login';         // S01
   static const signup = '/auth/signup';       // S01b
+  // 가입 직후 인사. 로그인으로 들어온 기존 사용자는 여기 오지 않는다 —
+  // 아래 redirect 가 Authenticated 를 홈으로 보내므로, 이 화면에 닿는 길은
+  // 가입 성공 뒤의 go 하나뿐이다.
+  static const onboardingWelcome = '/onboarding/welcome';
   static const skinType = '/onboarding/skin-type'; // S01c
   static const lifestyle = '/onboarding/lifestyle'; // 인사이트(S10) 진입 전 습관 입력
   // 촬영을 마치고 분석을 기다리는 동안(S04 위) 뜨는 프로필 설문. 같은 화면을
@@ -80,6 +85,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: Routes.splash, builder: (_, __) => const SplashPage()),
       GoRoute(path: Routes.login, builder: (_, __) => const LoginPage()),
       GoRoute(path: Routes.signup, builder: (_, __) => const SignupPage()),
+      GoRoute(
+        path: Routes.onboardingWelcome,
+        builder: (_, __) => const OnboardingWelcomePage(),
+      ),
       GoRoute(path: Routes.skinType, builder: (_, __) => const SkinTypePage()),
       // 인사이트가 습관을 받으러 보내는 화면. 같은 화면을 습관 전용 모드로 쓴다 —
       // 습관 UI 를 한 벌 더 만들면 둘 중 하나는 반드시 낡는다.
