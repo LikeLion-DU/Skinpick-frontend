@@ -11,6 +11,7 @@ import '../../../../core/widgets/app_widgets.dart';
 import '../../../../shared/enums/metric_band.dart';
 import '../../../../shared/enums/skin_type.dart';
 import '../../../../shared/widgets/highlight_row.dart';
+import '../../../../shared/widgets/metric_bar.dart';
 import '../../../../shared/widgets/pill.dart';
 import '../../../../shared/widgets/section_mark.dart';
 import '../../../../shared/widgets/skin_mascot.dart';
@@ -270,7 +271,7 @@ class _ResultHeader extends StatelessWidget {
                     style: const TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.w600,
-                      color: Color(0xFF1A1A1A),
+                      color: AppColors.headingInk,
                     ),
                   ),
                   // 타입 설명은 서버에 필드가 없어 enum 에 붙은 고정 UI 문구다
@@ -331,7 +332,7 @@ class _MetricBars extends StatelessWidget {
         for (final bar in analysis.metrics.toBars())
           Padding(
             padding: const EdgeInsets.only(bottom: 8),
-            child: _MetricBar(
+            child: MetricBar(
               label: bar.label,
               value: bar.value,
               color: MetricPalette.of(bar.key).bar,
@@ -341,131 +342,6 @@ class _MetricBars extends StatelessWidget {
             ),
           ),
       ],
-    );
-  }
-}
-
-class _MetricBar extends StatelessWidget {
-  const _MetricBar({
-    required this.label,
-    required this.value,
-    required this.color,
-    required this.band,
-  });
-
-  final String label;
-  final int value;
-  final Color color;
-
-  /// 서버 등급을 모르면 null 이고, 그때는 상태어 줄을 그리지 않는다.
-  final MetricBand? band;
-
-  @override
-  Widget build(BuildContext context) {
-    // **높이를 고정하지 않는다.** 시안 값(49)을 그대로 박아 두면 시스템 글자
-    // 크기 2.0 에서 이름·판정이 알약 밖으로 넘친다. 최소 높이로만 잡고
-    // 내용이 높이를 정하게 둔다.
-    return Container(
-      constraints: const BoxConstraints(minHeight: 49),
-      decoration: BoxDecoration(
-        color: AppColors.surfaceCardWarm,
-        borderRadius: BorderRadius.circular(14),
-      ),
-      child: IntrinsicHeight(
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          // 이름과 판정은 크림 위에, 막대와 눈금은 흰 판 위에 둔다 —
-          // 시안이 그렇게 갈랐고, 눈금 숫자가 색 위에 있으면 읽기 어렵다.
-          SizedBox(
-            width: 66,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  label,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
-                    color: Color(0xFF737373),
-                  ),
-                ),
-                if (band case final band?) ...[
-                  const SizedBox(height: 2),
-                  Text(
-                    band.label,
-                    style: TextStyle(
-                      fontSize: 10,
-                      fontWeight: FontWeight.w600,
-                      color: band.color,
-                    ),
-                  ),
-                ],
-              ],
-            ),
-          ),
-          Expanded(
-            child: Container(
-              margin: const EdgeInsets.fromLTRB(0, 1.7, 3, 1.7),
-              padding: const EdgeInsets.fromLTRB(12, 8, 12, 6),
-              decoration: BoxDecoration(
-                color: AppColors.background,
-                borderRadius: BorderRadius.circular(11),
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(9.5),
-                    child: LinearProgressIndicator(
-                      // 서버가 준 원값을 그대로 쓴다. 방향을 뒤집지 않는다 —
-                      // 뒤집으면 같은 숫자가 지표마다 다른 길이로 그려진다.
-                      value: (value / 100).clamp(0.0, 1.0),
-                      minHeight: 14,
-                      backgroundColor: AppColors.surfaceCardWarm,
-                      valueColor: AlwaysStoppedAnimation<Color>(color),
-                    ),
-                  ),
-                  const SizedBox(height: 5),
-                  const Row(
-                    children: [
-                      _AxisLabel('0'),
-                      Spacer(),
-                      _AxisLabel('50'),
-                      Spacer(),
-                      _AxisLabel('100'),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-        ),
-      ),
-    );
-  }
-}
-
-class _AxisLabel extends StatelessWidget {
-  const _AxisLabel(this.text);
-
-  final String text;
-
-  @override
-  Widget build(BuildContext context) {
-    return Text(
-      text,
-      style: const TextStyle(
-        fontSize: 8,
-        fontWeight: FontWeight.w600,
-        color: Color(0xFF545454),
-      ),
     );
   }
 }
@@ -569,7 +445,7 @@ class _CareSection extends StatelessWidget {
                     fontSize: 12,
                     fontWeight: FontWeight.w300,
                     height: 20 / 12,
-                    color: Color(0xFF4D1700),
+                    color: AppColors.sandInk,
                   ),
                 ),
               if (analysis.highlights.isNotEmpty) ...[
@@ -759,7 +635,7 @@ class _SkinAgeCard extends StatelessWidget {
                 style: const TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.w600,
-                  color: Color(0xFF1A1A1A),
+                  color: AppColors.headingInk,
                 ),
               ),
               if (skinAge.assessment.isNotEmpty) ...[
@@ -770,7 +646,7 @@ class _SkinAgeCard extends StatelessWidget {
                     fontSize: 12,
                     fontWeight: FontWeight.w300,
                     height: 20 / 12,
-                    color: Color(0xFF4D1700),
+                    color: AppColors.sandInk,
                   ),
                 ),
               ],
@@ -783,7 +659,7 @@ class _SkinAgeCard extends StatelessWidget {
                   fontSize: 9,
                   fontWeight: FontWeight.w300,
                   height: 1.5,
-                  color: Color(0xFF4D1700),
+                  color: AppColors.sandInk,
                 ),
               ),
             ],
@@ -901,7 +777,7 @@ class _GapCard extends StatelessWidget {
               fontSize: 12,
               fontWeight: FontWeight.w300,
               height: 20 / 12,
-              color: Color(0xFF4D1700),
+              color: AppColors.sandInk,
             ),
           ),
         ],

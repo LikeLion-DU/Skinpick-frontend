@@ -129,6 +129,22 @@ class AppColors {
   /// 지표 막대의 트랙과 결과 화면 카드 배경. 크림보다 노랗다.
   static const surfaceCardSand = Color(0xFFFEF4EA);
 
+  /// [surfaceCardSand] 카드 위의 본문. 회색이 아니라 **갈색 계열**이다 —
+  /// 시안이 모래색 판 위에서만 이 잉크를 쓴다. 흰 배경에 쓰면 탁해 보인다.
+  ///
+  /// 결과 화면(S05)과 인사이트(S10)가 같은 모래 카드를 쓰므로 토큰으로 둔다.
+  /// 리터럴로 두 화면에 흩어져 있으면 한쪽만 바뀌는 날이 온다.
+  static const sandInk = Color(0xFF4D1700);
+
+  /// 카드 안쪽 큰 제목(피부 타입 · 피부 나이 숫자). 순검정보다 한 톤 눅다.
+  static const headingInk = Color(0xFF1A1A1A);
+
+  /// 지표 막대의 이름표 글자.
+  static const metricLabel = Color(0xFF737373);
+
+  /// 지표 막대 아래 눈금(0 · 50 · 100).
+  static const axisInk = Color(0xFF545454);
+
   // ── 회색 계단 5종 ─────────────────────────────────────────
   // **시안에서 이름이 붙어 있는 유일한 색 묶음이다.** 로그인 프레임이
   // `Gray/Gray-baseDarkest` 처럼 스타일로 정의해 두었으므로 이름을 그대로 옮긴다 —
