@@ -31,15 +31,21 @@ class UnauthorizedInterceptor extends Interceptor {
     '/auth/test-login',
   ];
 
+  /// `contains` 가 아니라 `endsWith` 다. 부분 문자열로 보면 나중에 생길
+  /// `/auth/login-history` 같은 세션 요청이 `/auth/login` 에 걸려 조용히 빠져나가,
+  /// 이 파일이 막은 누수가 그대로 다시 열린다. 끝에서 맞추면 baseUrl 이 붙은
+  /// `/api/v1/auth/login` 은 잡고 `/auth/login-history` 는 놓아준다.
+  bool _isCredentialRequest(DioException err) {
+    final path = err.requestOptions.path;
+    return _credentialPaths.any(path.endsWith);
+  }
+
   @override
   Future<void> onError(
     DioException err,
     ErrorInterceptorHandler handler,
   ) async {
-    final isCredentialRequest =
-        _credentialPaths.any(err.requestOptions.path.contains);
-
-    if (err.response?.statusCode == 401 && !isCredentialRequest) {
+    if (err.response?.statusCode == 401 && !_isCredentialRequest(err)) {
       await _tokenStorage.clear();
       _onUnauthorized();
     }
