@@ -772,15 +772,28 @@ class _ConcernCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  item.label,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.bodyInk,
-                  ),
+                // 시안(383:332/336)은 칩을 카드 오른쪽 끝이 아니라 **고민 이름
+                // 바로 옆**에 둔다. 오른쪽 끝에 두면 배율을 키웠을 때 칩이
+                // 가져간 폭만큼 본문이 좁아져 넘친다.
+                Row(
+                  children: [
+                    Flexible(
+                      child: Text(
+                        item.label,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.bodyInk,
+                        ),
+                      ),
+                    ),
+                    if (status != null) ...[
+                      const SizedBox(width: 8),
+                      _StatusPill(grade: status),
+                    ],
+                  ],
                 ),
                 const SizedBox(height: 5),
                 Row(
@@ -827,8 +840,6 @@ class _ConcernCard extends StatelessWidget {
               ],
             ),
           ),
-          // 상태 칩(GOOD/CHECK)은 그리지 않는다 — 시안에는 있지만 반영하지
-          // 않기로 결정했다(2026-08-20). 상태는 카드 바탕색이 이미 말한다.
         ],
       ),
     );
@@ -861,6 +872,43 @@ class _ConcernTag extends StatelessWidget {
         fontSize: 11,
         fontWeight: FontWeight.w600,
         color: AppColors.textOnCard,
+      ),
+    );
+  }
+}
+
+/// 고민 상태 칩. 시안 383:336~340.
+///
+/// **한때 지웠다가 되살렸다.** 없애면 등급이 카드 바탕색으로만 남는데, 그 바탕은
+/// `Color.lerp(accentColor, white, 0.93)` 이라 좋음 #F6FAF3 · 보통 #FFF6F1 ·
+/// 주의 ≈#FDF2F2 로 셋 다 흰색에 가깝다 — 서로 구분되지 않는다. 스크린리더는
+/// 색을 못 읽어 등급을 아예 전달받지 못했다. 이 칩이 상태를 **글자로** 들고
+/// 있는 유일한 자리다.
+///
+/// 색은 [SkinLevel] 이 소유한 것을 그대로 쓴다. 시안은 GOOD·CHECK 두 벌만
+/// 정의하는데 서버 등급은 셋으로 접히므로, 두 벌로 접으면 보통과 주의가 완전히
+/// 같은 칩이 된다 — 구분하려고 되살린 칩이 구분을 못 하게 된다.
+class _StatusPill extends StatelessWidget {
+  const _StatusPill({required this.grade});
+
+  final SkinLevel grade;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      // 태그들 뒤에 등급 낱말만 읽히면 또 하나의 태그로 들린다.
+      label: '상태 ${grade.label}',
+      child: Pill(
+        minHeight: 24,
+        horizontalPadding: 12,
+        borderRadius: 16,
+        color: grade.tintColor,
+        label: grade.label,
+        style: TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
+          color: grade.chipTextColor,
+        ),
       ),
     );
   }

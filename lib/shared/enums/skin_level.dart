@@ -56,6 +56,22 @@ enum SkinLevel {
         SkinLevel.caution || SkinLevel.severe => const Color(0xFFFCC0C0),
       };
 
+  /// [tintColor] 위에 **작은 글자**를 얹을 때의 색. [accentColor] 를 어둡게 한
+  /// 것이다.
+  ///
+  /// 큰 점수 옆 배지는 [accentColor] 로 충분하지만, 고민 카드의 12px 상태 칩은
+  /// 같은 색을 쓰면 대비가 1.9~3.2:1 이라 WCAG AA(4.5:1)에 못 미친다 — 등급을
+  /// 글자로 읽으라고 넣은 칩인데 정작 저시력 사용자가 못 읽는다. 색상은 그대로
+  /// 두고 명도만 낮춰 4.6:1 이상으로 맞춘다.
+  ///
+  /// 여기 두는 이유는 [accentColor]·[tintColor] 와 같다 — 화면마다 switch 를
+  /// 따로 쓰면 등급이 늘었을 때 한쪽만 고쳐진다.
+  Color get chipTextColor => switch (this) {
+        SkinLevel.excellent || SkinLevel.good => const Color(0xFF41722A),
+        SkinLevel.normal => const Color(0xFF994B26),
+        SkinLevel.caution || SkinLevel.severe => const Color(0xFFB2000E),
+      };
+
   /// 등급 표정. 기록 카드와 결과 게이지가 같은 얼굴을 쓴다 —
   /// 화면마다 switch 를 따로 쓰면 등급이 늘었을 때 한쪽만 고쳐진다.
   IconData get faceIcon => switch (this) {

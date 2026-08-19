@@ -1,5 +1,7 @@
+import 'dart:math' as math;
 import 'dart:io';
 
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:skinplate/shared/enums/skin_level.dart';
 
@@ -66,6 +68,43 @@ void main() {
     test('모르는 등급은 null 이다 — 아무 등급으로나 떨어뜨리지 않는다', () {
       expect(SkinLevel.fromJson('PERFECT'), isNull);
       expect(SkinLevel.fromJson(null), isNull);
+    });
+  });
+
+  group('상태 칩 글자 — 저시력 사용자가 읽을 수 있어야 한다', () {
+    /// WCAG 상대 휘도.
+    double luminance(Color color) {
+      double channel(double raw) => raw <= 0.03928
+          ? raw / 12.92
+          : math.pow((raw + 0.055) / 1.055, 2.4).toDouble();
+      return 0.2126 * channel(color.r) +
+          0.7152 * channel(color.g) +
+          0.0722 * channel(color.b);
+    }
+
+    double contrast(Color a, Color b) {
+      final high = math.max(luminance(a), luminance(b));
+      final low = math.min(luminance(a), luminance(b));
+      return (high + 0.05) / (low + 0.05);
+    }
+
+    test('칩 글자가 배경 대비 4.5:1 을 넘는다', () {
+      // 등급을 글자로 읽으라고 넣은 칩이다. 12px w600 은 "큰 글자"가 아니라
+      // AA 기준이 4.5:1 이고, accentColor 를 그대로 쓰면 1.9~3.2:1 밖에 안 나온다.
+      for (final level in SkinLevel.values) {
+        expect(
+          contrast(level.chipTextColor, level.tintColor),
+          greaterThanOrEqualTo(4.5),
+          reason: '${level.name} 칩 글자가 배경에 묻힌다',
+        );
+      }
+    });
+
+    test('등급마다 배경이 다르다 — 두 벌로 접으면 보통과 주의가 같아진다', () {
+      final tints = {for (final level in SkinLevel.values) level.label: level.tintColor};
+
+      expect(tints.values.toSet(), hasLength(tints.length),
+          reason: '접힌 등급끼리 배경이 같으면 칩이 등급을 구분하지 못한다');
     });
   });
 }

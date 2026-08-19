@@ -187,6 +187,67 @@ void main() {
       expect(find.text('60'), findsOneWidget);
     });
 
+    testWidgets('고민 상태가 색이 아니라 글자로도 뜬다 — 스크린리더가 읽는다', (tester) async {
+      // 없애면 등급이 카드 바탕색에만 남는데, 그 바탕은 셋 다 흰색에 가까워
+      // 서로 구분되지 않고 스크린리더는 색을 못 읽는다.
+      final report = daily('report_daily');
+      expect(report.concerns, isNotEmpty, reason: '픽스처에 고민이 없으면 아무것도 못 본다');
+      // status 가 전부 null 이면 아래 루프가 통째로 비어 아무것도 검증하지 않는다.
+      expect(report.concerns.any((concern) => concern.status != null), isTrue,
+          reason: '픽스처의 등급이 전부 null 이면 이 테스트는 빈 껍데기다');
+
+      await pump(
+        tester,
+        host(
+          _FakeReportRepository(daily: Success(report)),
+          DailyReportView(date: DateTime(2026, 8, 17)),
+        ),
+      );
+
+      for (final concern in report.concerns) {
+        final status = concern.status;
+        if (status == null) continue;
+        expect(
+          // **고민 카드 안으로 좁힌다.** 화면 전체에서 찾으면 점수 카드가 그린
+          // '보통' 이 대신 잡혀서, 칩을 비-좋음 등급에서 전부 없애도 통과한다.
+          find.descendant(
+            of: find.byType(ConcernList),
+            matching: find.text(status.label),
+          ),
+          findsWidgets,
+          reason: '${concern.label} 의 등급이 글자로 없다 — 색만 남으면 아무도 못 읽는다',
+        );
+      }
+    });
+
+    testWidgets('주간 탭에서도 상태 칩이 산다 — 변화량까지 든 좁은 줄이다', (tester) async {
+      // 같은 ConcernList 를 주간이 다시 쓴다. 그쪽 줄에는 변화량 라벨이 더 붙어
+      // 가장 빡빡한 배치라, 여기서만 접히는 회귀가 나올 수 있다.
+      final report = weekly('report_weekly');
+      final graded =
+          report.concerns.where((concern) => concern.status != null).toList();
+      expect(graded, isNotEmpty);
+
+      await pump(
+        tester,
+        host(
+          _FakeReportRepository(weekly: Success(report)),
+          const WeeklyReportView(),
+        ),
+      );
+
+      for (final concern in graded) {
+        expect(
+          find.descendant(
+            of: find.byType(ConcernList),
+            matching: find.text(concern.status!.label),
+          ),
+          findsWidgets,
+          reason: '주간 ${concern.label} 의 등급이 글자로 없다',
+        );
+      }
+    });
+
     testWidgets('AI 문장이 없어도 점수와 영양은 그대로 뜬다', (tester) async {
       final report = daily('report_daily');
       final withoutAi = DailyReport(
