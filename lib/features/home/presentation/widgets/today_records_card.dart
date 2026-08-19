@@ -27,6 +27,9 @@ class TodayRecordsCard extends StatelessWidget {
     required this.onCapture,
     required this.onItemTap,
     required this.onSeeAll,
+    this.loading = false,
+    this.failureMessage,
+    this.onRetry,
   });
 
   final List<PlateHistoryItem> items;
@@ -35,6 +38,15 @@ class TodayRecordsCard extends StatelessWidget {
   final Directory? imageDirectory;
 
   final VoidCallback onCapture;
+
+  /// 아직 응답을 못 받았다. 빈 날과 다르게 그린다.
+  final bool loading;
+
+  /// 불러오지 못했다. **서버가 준 문구를 그대로 쓴다.**
+  final String? failureMessage;
+
+  /// 실패했을 때 다시 시도. 실패가 아니면 쓰이지 않는다.
+  final VoidCallback? onRetry;
   final ValueChanged<PlateHistoryItem> onItemTap;
 
   /// 기록 화면으로 가는 **유일한 문**이다. 하단 네비에서 기록 자리를 리포트에
@@ -56,7 +68,23 @@ class TodayRecordsCard extends StatelessWidget {
         children: [
           _Header(onSeeAll: onSeeAll),
           const SizedBox(height: 20),
-          if (items.isEmpty)
+          // **세 상태를 한 화면으로 접지 않는다.** 예전에는 불러오는 중·실패·정말
+          // 안 먹은 날이 모두 같은 예시 카드로 보여서, 네트워크가 흔들린 것을
+          // "오늘 아직 안 먹었다"로 읽었다.
+          if (loading)
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 24),
+              child: Center(
+                child: SizedBox(
+                  width: 22,
+                  height: 22,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
+              ),
+            )
+          else if (failureMessage != null)
+            _Failed(message: failureMessage!, onRetry: onRetry)
+          else if (items.isEmpty)
             _Empty(onCapture: onCapture)
           else
             for (final item in items)
@@ -68,6 +96,37 @@ class TodayRecordsCard extends StatelessWidget {
                   onTap: () => onItemTap(item),
                 ),
               ),
+        ],
+      ),
+    );
+  }
+}
+
+/// 불러오지 못한 상태. 빈 날과 섞이지 않게 이유와 재시도를 함께 둔다.
+class _Failed extends StatelessWidget {
+  const _Failed({required this.message, this.onRetry});
+
+  final String message;
+  final VoidCallback? onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 16),
+      child: Column(
+        children: [
+          Text(
+            message,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              fontSize: 12,
+              color: AppColors.textSecondary,
+            ),
+          ),
+          if (onRetry != null) ...[
+            const SizedBox(height: 8),
+            TextButton(onPressed: onRetry, child: const Text('다시 시도')),
+          ],
         ],
       ),
     );

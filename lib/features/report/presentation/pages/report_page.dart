@@ -116,7 +116,10 @@ class _TabSelector extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.fromLTRB(21, 8, 21, 4),
       child: Container(
-        height: 44,
+        // 시안 높이는 44 지만 **고정하지 않는다.** 글자 크기 2.0 에서 탭 라벨이
+        // 46 을 요구하는데, Tab 은 overflow: fade 라 예외 없이 페이드로 잘린다 —
+        // "오늘의 리…" / "주간 리…" 가 되어 두 탭을 구별할 수 없었다.
+        constraints: const BoxConstraints(minHeight: 44),
         padding: const EdgeInsets.all(5),
         decoration: BoxDecoration(
           color: const Color(0xFFF3F3F3),
@@ -141,7 +144,8 @@ class _TabSelector extends StatelessWidget {
               const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
           splashBorderRadius: BorderRadius.circular(10),
           tabs: [
-            for (final tab in ReportTab.values) Tab(height: 34, text: tab.label),
+            // 높이를 비워 두면 Tab 이 라벨 높이를 따라간다.
+            for (final tab in ReportTab.values) Tab(text: tab.label),
           ],
         ),
       ),

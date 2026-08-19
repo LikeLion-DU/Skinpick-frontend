@@ -21,8 +21,11 @@ class VerdictBadge extends StatelessWidget {
     final isGood = grade.isGood;
 
     return Container(
-      width: 53,
-      height: 19,
+      // 시안 값은 53×19 지만 **고정하지 않는다.** 글자 크기 2.0 에서 'GOOD' 이
+      // 81×29 를 요구하는데, 고정 상자는 예외를 던지지 않고 조용히 'GOO' 로
+      // 자른다 — 그래서 배율 테스트도 통과했다.
+      constraints: const BoxConstraints(minWidth: 53, minHeight: 19),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
       alignment: Alignment.center,
       decoration: BoxDecoration(
         // 주의 점수를 빨강으로 칠하지 않는다 — 빨강(bad)은 결과 화면의

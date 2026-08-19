@@ -46,12 +46,18 @@ class NutritionItem {
   /// 모르는 값이면 null. 그때는 색을 입히지 않고 회색으로 둔다.
   final NutrientStatus? status;
 
-  /// 초과가 문제인 항목이면 true. 단백질만 부족이 문제다.
-  final bool higherIsWorse;
+  /// 초과가 문제인 항목이면 true. 단백질·미량영양소는 부족이 문제다.
+  /// **모르면 null** — 방향 없이는 같은 숫자가 좋은지 나쁜지 말할 수 없다.
+  final bool? higherIsWorse;
+
+  /// 상태를 말할 수 있는가. 위치(status)와 방향(higherIsWorse)이 **둘 다** 있어야
+  /// 한다 — 하나만 있으면 앱이 나머지를 추측하는 셈이다.
+  bool get isKnown => status != null && higherIsWorse != null;
 
   /// 경고색으로 칠할지. 서버가 준 위치와 방향을 조합할 뿐이다.
-  bool get isWarning =>
-      status?.isWarning(higherIsWorse: higherIsWorse) ?? false;
+  bool get isWarning => isKnown
+      ? status!.isWarning(higherIsWorse: higherIsWorse!)
+      : false;
 }
 
 /// 자가 신고 피부 고민 하나에 대한 식단 점수.

@@ -142,7 +142,7 @@ _$PlateAnalysisDtoImpl _$$PlateAnalysisDtoImplFromJson(
           : DateTime.parse(json['skinMeasuredAt'] as String),
       plateScore: (json['plateScore'] as num).toInt(),
       grade: json['grade'] as String?,
-      baseScore: (json['baseScore'] as num?)?.toInt() ?? 70,
+      baseScore: (json['baseScore'] as num?)?.toInt(),
       summary: json['summary'] as String? ?? '',
       food: FoodAnalysisDto.fromJson(json['food'] as Map<String, dynamic>),
       feedbacks:
@@ -179,7 +179,7 @@ _$SkinPlateDtoImpl _$$SkinPlateDtoImplFromJson(Map<String, dynamic> json) =>
           : DateTime.parse(json['skinMeasuredAt'] as String),
       plateScore: (json['plateScore'] as num).toInt(),
       grade: json['grade'] as String?,
-      baseScore: (json['baseScore'] as num?)?.toInt() ?? 70,
+      baseScore: (json['baseScore'] as num?)?.toInt(),
       summary: json['summary'] as String? ?? '',
       food: FoodAnalysisDto.fromJson(json['food'] as Map<String, dynamic>),
       feedbacks:

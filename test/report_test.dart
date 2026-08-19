@@ -153,17 +153,36 @@ void main() {
       expect(find.text('기록이 없어 영양을 계산할 수 없어요'), findsOneWidget);
     });
 
-    testWidgets('concerns 가 빈 배열이어도 화면이 깨지지 않는다', (tester) async {
+    testWidgets('기록은 있는데 고민이 비면 골라 보라고 안내한다', (tester) async {
+      // 고민을 안 골랐거나, 고른 고민이 전부 식단으로 설명할 수 없는 것(다크서클)
+      // 이다. 서버는 둘을 같은 빈 배열로 주므로 앱이 원인을 하나로 단정하지 않는다.
+      final report = daily('report_daily');
+      final withoutConcerns = DailyReport(
+        date: report.date,
+        dailyScore: report.dailyScore,
+        grade: report.grade,
+        recordCount: report.recordCount,
+        nutrition: report.nutrition,
+        skinNutrients: report.skinNutrients,
+        concerns: const [],
+        meals: report.meals,
+        aiComment: report.aiComment,
+        goodPoints: report.goodPoints,
+        improvePoints: report.improvePoints,
+      );
+
       await pump(
         tester,
         host(
-          _FakeReportRepository(daily: Success(daily('report_daily_empty'))),
+          _FakeReportRepository(daily: Success(withoutConcerns)),
           DailyReportView(date: DateTime(2026, 8, 17)),
         ),
       );
 
       // 앱이 점수를 지어내지 않는다. 왜 비었는지만 알린다.
       expect(find.textContaining('식단으로 볼 수 있는 피부 고민이 없어요'), findsOneWidget);
+      // 기록은 있으니 점수·영양은 그대로 있다.
+      expect(find.text('60'), findsOneWidget);
     });
 
     testWidgets('AI 문장이 없어도 점수와 영양은 그대로 뜬다', (tester) async {
@@ -490,6 +509,22 @@ void main() {
     expect(find.text('+2'), findsNWidgets(2));
   });
 
+  /// 에뮬레이터 QA(2026-08-19)에서 잡힌 것. 오늘 기록이 없는 날 고민 카드가
+  /// "프로필에서 고민을 골라 보세요" 라고 했는데, 테스트 계정은 이미 고민을 셋
+  /// 골라 둔 상태였다 — 원인을 잘못 짚으면 사용자가 시키는 대로 해도 화면이 그대로다.
+  testWidgets('기록이 없는 날 고민 카드는 프로필 탓을 하지 않는다', (tester) async {
+    await pump(
+      tester,
+      host(
+        _FakeReportRepository(daily: Success(daily('report_daily_empty'))),
+        DailyReportView(date: DateTime(2026, 8, 19)),
+      ),
+    );
+
+    expect(find.text('기록이 없어 고민별 점수를 낼 수 없어요'), findsOneWidget);
+    expect(find.textContaining('프로필에서 고민을 골라'), findsNothing);
+  });
+
   // ---------- 시스템 글자 크기 ----------
 
   /// 접근성 설정을 최대로 올린 기기. **가로 오버플로는 여기서만 드러난다** —
@@ -508,6 +543,44 @@ void main() {
         scaled(host(
           _FakeReportRepository(daily: Success(daily('report_daily'))),
           DailyReportView(date: DateTime(2026, 8, 17)),
+        )),
+      );
+
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('100점짜리 날이 있어도 그래프가 넘치지 않는다', (tester) async {
+      // 눈금판 높이가 고정이라 라벨이 커지면 100 점 막대가 판을 넘긴다.
+      final report = weekly('report_weekly_multiday');
+      final maxed = WeeklyReport(
+        from: report.from,
+        to: report.to,
+        averageDailyScore: 100,
+        grade: report.grade,
+        totalDays: report.totalDays,
+        recordedDays: report.recordedDays,
+        recordCount: report.recordCount,
+        dailyScores: [
+          for (final day in report.dailyScores)
+            DayScore(
+              date: day.date,
+              dailyScore: 100,
+              grade: day.grade,
+              plateIds: day.plateIds,
+            ),
+        ],
+        nutrition: report.nutrition,
+        concerns: report.concerns,
+        bestDay: report.bestDay,
+        worstDay: report.worstDay,
+        aiComment: report.aiComment,
+      );
+
+      await pump(
+        tester,
+        scaled(host(
+          _FakeReportRepository(weekly: Success(maxed)),
+          const WeeklyReportView(),
         )),
       );
 

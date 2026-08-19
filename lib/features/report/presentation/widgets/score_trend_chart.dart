@@ -27,8 +27,16 @@ class ScoreTrendChart extends StatelessWidget {
   /// 스크롤을 시작해야 한다.
   static const double _plotHeight = 210;
 
-  /// 점수 라벨 자리. 이만큼 안 비우면 100 점 막대의 라벨이 잘린다.
-  static const double _labelSpace = 20;
+  /// 점수 라벨과 막대 사이 간격.
+  static const double _labelGap = 4;
+
+  /// 점수 라벨 자리. **막대 높이와 합이 판 높이가 되도록 고정한다.**
+  ///
+  /// 20 은 기본 글자 크기 기준이었다 — 글자를 키우면 라벨이 커지면서 100 점
+  /// 막대를 판 위로 밀어냈다. 이제 라벨은 이 칸 안에서만 커지고(넘치면 줄어든다),
+  /// 막대 높이는 점수에만 비례한다. 7 일 막대의 높이 비교가 그래프의 요점이라
+  /// 막대를 줄이는 쪽은 답이 아니다.
+  static const double _labelSpace = 26;
 
   /// 가로 안내선 개수(바닥선 제외).
   static const int _gridLines = 4;
@@ -102,21 +110,26 @@ class _Bar extends StatelessWidget {
     return Column(
       mainAxisAlignment: MainAxisAlignment.end,
       children: [
-        // 눈금판 높이(_plotHeight)가 고정이라 이 숫자만 배율을 1.3 까지 따른다.
-        // 2.0 을 그대로 따르면 막대가 판 위로 33px 밀려 나간다 — 그러면 7 일
-        // 막대의 높이 비교가 깨져서 그래프가 뜻을 잃는다.
-        MediaQuery.withClampedTextScaling(
-          maxScaleFactor: 1.3,
-          child: Text(
-            '$score',
-            style: const TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w400,
-              color: Color(0xFF1A1A1A),
+        // 라벨은 자기 칸(_labelSpace) 안에서만 큰다. 배율을 1.3 까지 따르고,
+        // 그래도 칸을 넘으면 줄인다 — 그래야 막대 높이가 점수에만 비례한다.
+        SizedBox(
+          height: ScoreTrendChart._labelSpace - ScoreTrendChart._labelGap,
+          child: MediaQuery.withClampedTextScaling(
+            maxScaleFactor: 1.3,
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                '$score',
+                style: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w400,
+                  color: Color(0xFF1A1A1A),
+                ),
+              ),
             ),
           ),
         ),
-        const SizedBox(height: 4),
+        const SizedBox(height: ScoreTrendChart._labelGap),
         Container(
           width: 14,
           height: ScoreTrendChart._plotHeight * (score / 100),

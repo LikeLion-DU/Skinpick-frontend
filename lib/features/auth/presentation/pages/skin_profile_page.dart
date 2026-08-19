@@ -69,10 +69,14 @@ class SkinProfilePage extends ConsumerWidget {
                 children: [
                   Align(
                     alignment: Alignment.centerLeft,
+                    // 아이콘은 시안대로 19 지만 누를 곳은 44 다. constraints 를
+                    // 비워 두면 IconButton 이 아이콘 크기로 쪼그라들어서, 이 화면의
+                    // 유일한 출구가 19dp 짜리 과녁이 된다.
                     child: IconButton(
                       onPressed: () => context.pop(),
                       padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(),
+                      constraints: const BoxConstraints(
+                          minWidth: 44, minHeight: 44),
                       tooltip: '뒤로',
                       icon: const Icon(Icons.arrow_back_ios_new,
                           size: 19, color: AppColors.textPrimary),
@@ -489,8 +493,10 @@ class _CareFocusChips extends StatelessWidget {
       children: [
         for (final item in focus)
           Container(
-            height: 22,
-            padding: const EdgeInsets.symmetric(horizontal: 14),
+            // 높이를 박지 않는다 — 시안 값을 고정하면 글자 크기를 키운 기기에서
+            // 알약이 글자를 자른다(예외가 안 나서 테스트도 통과한다).
+            constraints: const BoxConstraints(minHeight: 22),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
             alignment: Alignment.center,
             decoration: BoxDecoration(
               color: AppColors.background,
@@ -532,8 +538,10 @@ class _ConcernChips extends StatelessWidget {
       children: [
         for (final concern in concerns)
           Container(
-            height: 22,
-            padding: const EdgeInsets.symmetric(horizontal: 14),
+            // 높이를 박지 않는다 — 시안 값을 고정하면 글자 크기를 키운 기기에서
+            // 알약이 글자를 자른다(예외가 안 나서 테스트도 통과한다).
+            constraints: const BoxConstraints(minHeight: 22),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
             alignment: Alignment.center,
             decoration: BoxDecoration(
               color: AppColors.background,

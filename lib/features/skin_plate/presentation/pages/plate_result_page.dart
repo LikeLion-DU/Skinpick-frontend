@@ -166,7 +166,14 @@ class _Content extends StatelessWidget {
         FoodTraitChips(food: plate.food),
         const SizedBox(height: 22),
 
-        PlateScoreCard(score: score, grade: plate.grade),
+        // 행동을 실행해 본 뒤에는 숫자가 시뮬레이션 결과로 바뀐다. **그때 등급은
+        // 비운다** — 서버가 매긴 등급은 원래 점수(plateScore)의 것이고 시뮬레이션
+        // 응답에는 등급이 없다. 58점(보통)이 66점이 됐는데 배지가 그대로 "보통"
+        // 이면 화면이 옛 판정을 새 숫자에 붙이는 셈이다.
+        PlateScoreCard(
+          score: score,
+          grade: state.simulation == null ? plate.grade : null,
+        ),
 
         // 저장 직후에도 pastRecord 는 false 다. 그때의 "기록 당일"은 곧 오늘이다.
         SkinBasisLine(
@@ -189,7 +196,11 @@ class _Content extends StatelessWidget {
         SkinBasisCard(skinAnalysisId: plate.skinAnalysisId),
         Text('분석 요약', style: Theme.of(context).textTheme.titleMedium),
         const SizedBox(height: 10),
-        PlateSummaryCard(good: plate.good, caution: plate.caution),
+        PlateSummaryCard(
+          good: plate.good,
+          caution: plate.caution,
+          summary: plate.summary,
+        ),
 
         // **AI 문장은 저장된 기록에만 있다.** 서버는 저장할 때 한 번 만들고,
         // `POST /plates/analyze` 응답에는 그 필드 자체가 없다.

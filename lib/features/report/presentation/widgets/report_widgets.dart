@@ -209,12 +209,15 @@ class ReportScoreCard extends StatelessWidget {
               size: 108,
               trackColor: Color.lerp(accent, Colors.white, 0.82)!,
               // 링 지름(108)은 고정 그래픽이다. 글자 크기 2.0 을 그대로 따르면
-              // "60점"이 링을 49px 넘겨 나간다. 배율을 1.3 까지만 따라간다 —
-              // 숫자는 커지지만 링 안에 남는다. 같은 점수가 아래 문장에도
-              // 등급으로 적혀 있어 여기서 잘리면 읽을 곳이 없다.
+              // "60점"이 링을 49px 넘겨 나간다. 배율은 1.3 까지만 따라가고,
+              // 그래도 안 들어가면(세 자리 점수) 링 안에서 줄인다 — 1.3 은 두 자리
+              // 기준으로 고른 값이라 100 점에서 36px 넘쳤다.
               child: MediaQuery.withClampedTextScaling(
                 maxScaleFactor: 1.3,
-                child: _RingLabel(score: '$score', grade: grade),
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: _RingLabel(score: '$score', grade: grade),
+                ),
               ),
             ),
           const SizedBox(width: 14),
@@ -324,7 +327,12 @@ class _EmptyRing extends StatelessWidget {
         shape: BoxShape.circle,
         border: Border.all(color: AppColors.borderEmptySlot, width: 8),
       ),
-      child: Row(
+      // 링 지름이 고정이라 글자가 안쪽(92px)을 넘으면 줄인다. 글자 크기 2.0 에서
+      // 'OO' 가 120px 이 되어 링을 57px 터뜨렸다 — 점수가 있는 링과 같은 방식으로
+      // 막는다(둘 다 안에서만 줄인다).
+      child: FittedBox(
+        fit: BoxFit.scaleDown,
+        child: Row(
         crossAxisAlignment: CrossAxisAlignment.baseline,
         textBaseline: TextBaseline.alphabetic,
         mainAxisSize: MainAxisSize.min,
@@ -347,7 +355,8 @@ class _EmptyRing extends StatelessWidget {
               color: AppColors.outline,
             ),
           ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -357,14 +366,18 @@ class _EmptyRing extends StatelessWidget {
 ///
 /// 상태를 모르면 색을 입히지 않는다. 모르는 값을 초록으로 칠하면 서버가
 /// 새 상태를 보낸 날 경고가 조용히 "정상"이 된다.
-Color _nutritionColor(NutritionItem item) => switch (item.status) {
-      null => AppColors.outline,
+Color _nutritionColor(NutritionItem item) => switch (item) {
+      // 위치나 방향 하나만 있어도 색을 입히지 않는다 — 방향 없이 칠하면
+      // 나트륨 463% 가 초록이 된다.
+      _ when !item.isKnown => AppColors.outline,
       _ when item.isWarning => AppColors.accentStrong,
       _ => AppColors.good,
     };
 
 String _nutritionLabel(NutritionItem item) =>
-    item.status?.label(higherIsWorse: item.higherIsWorse) ?? '알 수 없음';
+    item.isKnown
+        ? item.status!.label(higherIsWorse: item.higherIsWorse!)
+        : '알 수 없음';
 
 /// 일일 리포트의 영양 타일. 3열 격자다.
 ///
@@ -449,18 +462,25 @@ class _NutritionTile extends StatelessWidget {
                   color: color,
                 ),
               ),
-              const SizedBox(height: 2),
-              Text(
-                '${item.percent}%',
-                style: const TextStyle(
-                  fontSize: 10,
-                  fontWeight: FontWeight.w400,
-                  color: AppColors.textSecondary,
+              // **못 잰 항목은 비율도 막대도 그리지 않는다.** 서버가 status 를
+              // 비워 보낸 항목은 amount·percent 가 0 인데, 그 0 은 "안 먹었다"가
+              // 아니라 자리를 채운 값이다. "알 수 없음" 옆에 0% 를 적으면 방금
+              // 한 말을 되돌린다.
+              if (item.isKnown) ...[
+                const SizedBox(height: 2),
+                Text(
+                  '${item.percent}%',
+                  style: const TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w400,
+                    color: AppColors.textSecondary,
+                  ),
                 ),
-              ),
+              ],
             ],
           ),
-          ClipRRect(
+          if (item.isKnown)
+            ClipRRect(
             borderRadius: BorderRadius.circular(3.6),
             child: LinearProgressIndicator(
               // 기준을 넘긴 항목은 막대가 꽉 찬다. clamp 를 빼면 1.0 을 넘겨
@@ -636,15 +656,27 @@ class _NutritionRow extends StatelessWidget {
 /// 둘 다 없을 수 있다. V8 이전 기록이면 문장이 없고, 그 고민에 걸린 룰이 하나도
 /// 없으면 태그도 비어 있다 — 그때는 점수와 상태 칩만 남는다.
 class ConcernList extends StatelessWidget {
-  const ConcernList({super.key, required this.items});
+  const ConcernList({super.key, required this.items, required this.hasRecords});
 
   final List<ConcernScore> items;
+
+  /// 그 기간에 기록이 하나라도 있는가. **빈 목록의 원인이 이것으로 갈린다.**
+  ///
+  /// 기록이 없으면 서버는 고민을 셀 대상이 없어 빈 배열을 준다. 그때 "프로필에서
+  /// 고민을 골라 보세요" 라고 하면 이미 고민을 고른 사용자에게 틀린 원인을
+  /// 말하는 것이고, 시키는 대로 해도 화면이 그대로다.
+  final bool hasRecords;
 
   @override
   Widget build(BuildContext context) {
     if (items.isEmpty) {
-      // 고민을 안 골랐을 수도, 고른 고민이 전부 식단으로 설명할 수 없는
-      // 것(다크서클)일 수도 있다. 서버는 둘을 같은 빈 배열로 주므로
+      if (!hasRecords) {
+        // 같은 카드의 영양 밸런스와 같은 이유·같은 말투로 적는다.
+        return const ReportEmpty(message: '기록이 없어 고민별 점수를 낼 수 없어요');
+      }
+
+      // 기록은 있는데 비었다 — 고민을 안 골랐거나, 고른 고민이 전부 식단으로
+      // 설명할 수 없는 것(다크서클)이다. 서버는 둘을 같은 빈 배열로 주므로
       // 앱이 원인을 단정하지 않고 두 경우를 다 덮는 문구를 쓴다.
       return const ReportEmpty(
         message: '식단으로 볼 수 있는 피부 고민이 없어요.\n프로필에서 고민을 골라 보세요.',
@@ -782,8 +814,10 @@ class _ConcernTag extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 21,
-      padding: const EdgeInsets.symmetric(horizontal: 10),
+      // 높이를 박지 않는다 — 시안 값을 고정하면 글자 크기를 키운 기기에서
+      // 알약이 글자를 자른다(예외가 안 나서 테스트도 통과한다).
+      constraints: const BoxConstraints(minHeight: 21),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
       alignment: Alignment.center,
       decoration: BoxDecoration(
         color: Color.lerp(accent, Colors.white, 0.82),
@@ -813,8 +847,8 @@ class _StatusPill extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 24,
-      padding: const EdgeInsets.symmetric(horizontal: 12),
+      constraints: const BoxConstraints(minHeight: 24),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
       alignment: Alignment.center,
       decoration: BoxDecoration(
         color: Color.lerp(accent, Colors.white, 0.78),
@@ -887,8 +921,10 @@ class PointList extends StatelessWidget {
       children: [
         for (final point in points)
           Container(
-            height: 21,
-            padding: const EdgeInsets.symmetric(horizontal: 10),
+            // 높이를 박지 않는다 — 시안 값을 고정하면 글자 크기를 키운 기기에서
+            // 알약이 글자를 자른다(예외가 안 나서 테스트도 통과한다).
+            constraints: const BoxConstraints(minHeight: 21),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
             alignment: Alignment.center,
             decoration: BoxDecoration(
               color: Color.lerp(accent, Colors.white, 0.82),

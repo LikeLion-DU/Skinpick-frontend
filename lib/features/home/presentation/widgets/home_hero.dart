@@ -59,12 +59,13 @@ class HomeHero extends StatelessWidget {
             shadows: [AppTheme.heroTextShadow],
           ),
         ),
-        // 점수가 없거나 목표가 없으면 숫자 자리를 만들지 않는다. 둘은 늘 함께
-        // 오거나 함께 없다(기록이 있는 날만 서버가 둘 다 준다).
-        if (score == null || targetScore == null)
+        // 점수가 없으면 숫자 자리를 만들지 않는다. **목표만 없는 경우는 다르다** —
+        // 그때는 목표 막대만 접고 점수는 그린다. 둘을 함께 묶어 두었더니 목표
+        // 키가 빠진 응답에서 오늘 먹은 기록이 있는데도 "뭘 드셨나요" 가 떴다.
+        if (score == null)
           _EmptyBubble(nickname: nickname)
         else
-          _ScoreBlock(score: score, grade: grade, targetScore: targetScore!),
+          _ScoreBlock(score: score, grade: grade, targetScore: targetScore),
       ],
     );
   }
@@ -144,11 +145,13 @@ class _ScoreBlock extends StatelessWidget {
   /// 다시 매기면 경계표가 두 벌이 되고, 서버가 경계를 옮긴 날 한쪽만 따라간다.
   final SkinLevel? grade;
 
-  final int targetScore;
+  /// 서버가 정한 목표. 없으면 막대와 "목표 N점" 줄을 그리지 않는다.
+  final int? targetScore;
 
   @override
   Widget build(BuildContext context) {
     final grade = this.grade;
+    final targetScore = this.targetScore;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -225,31 +228,33 @@ class _ScoreBlock extends StatelessWidget {
             shadows: [AppTheme.heroTextShadow],
           ),
         ),
-        const SizedBox(height: 9),
-        ClipRRect(
-          borderRadius: BorderRadius.circular(4),
-          child: LinearProgressIndicator(
-            // 목표를 넘긴 날 막대가 넘치지 않도록 자른다. 100 점을 목표 80 으로
-            // 나누면 1.25 가 되는데, 그대로 넘기면 렌더가 깨진다.
-            value: (score / targetScore).clamp(0.0, 1.0),
-            minHeight: 8,
-            backgroundColor: Colors.white,
-            valueColor: const AlwaysStoppedAnimation(AppColors.progressFill),
-          ),
-        ),
-        const SizedBox(height: 6),
-        Align(
-          alignment: Alignment.centerRight,
-          child: Text(
-            '목표 $targetScore점',
-            style: const TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w400,
-              color: Colors.white,
-              shadows: [AppTheme.heroTextShadow],
+        if (targetScore != null) ...[
+          const SizedBox(height: 9),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(4),
+            child: LinearProgressIndicator(
+              // 목표를 넘긴 날 막대가 넘치지 않도록 자른다. 100 점을 목표 80 으로
+              // 나누면 1.25 가 되는데, 그대로 넘기면 렌더가 깨진다.
+              value: (score / targetScore).clamp(0.0, 1.0),
+              minHeight: 8,
+              backgroundColor: Colors.white,
+              valueColor: const AlwaysStoppedAnimation(AppColors.progressFill),
             ),
           ),
-        ),
+          const SizedBox(height: 6),
+          Align(
+            alignment: Alignment.centerRight,
+            child: Text(
+              '목표 $targetScore점',
+              style: const TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w400,
+                color: Colors.white,
+                shadows: [AppTheme.heroTextShadow],
+              ),
+            ),
+          ),
+        ],
       ],
     );
   }

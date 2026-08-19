@@ -138,8 +138,12 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                     : const Text('로그인'),
               ),
               const SizedBox(height: 18),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
+              // 글자 크기를 키운 기기에서는 세 링크가 한 줄에 안 들어간다.
+              // Row 로 두었더니 2.0 에서 88px 넘쳐 "회원가입" 이 화면 밖으로
+              // 밀렸다 — 가입 입구가 사라지는 자리다. 넘치면 줄을 접는다.
+              Wrap(
+                alignment: WrapAlignment.center,
+                crossAxisAlignment: WrapCrossAlignment.center,
                 children: [
                   _link('아이디 찾기', _notReady),
                   _divider(),
@@ -220,11 +224,15 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     );
   }
 
+  /// 시안 글자는 11.5 라 그대로 두고 **탭 영역만 44 로 넓힌다.** 세로 4 패딩이면
+  /// 24dp 라 손가락 기준의 절반이고, 세 링크가 6px 간격으로 붙어 있어 오탭이 난다.
   Widget _link(String label, VoidCallback? onTap) => GestureDetector(
         onTap: onTap,
         behavior: HitTestBehavior.opaque,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+        child: Container(
+          constraints: const BoxConstraints(minHeight: 44),
+          alignment: Alignment.center,
+          padding: const EdgeInsets.symmetric(horizontal: 8),
           child: Text(label,
               style: const TextStyle(
                 fontSize: 11.5,

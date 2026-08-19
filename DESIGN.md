@@ -68,14 +68,18 @@ logo: assets/icons/logo_skinpick.svg
 > | 마이페이지 | 없음(피부 프로필 화면) | 마스코트 · 타입 카드 · 지표 5칸 · 습관 카드 |
 >
 > **새로 생긴 토큰** — `surfaceCardWarm` `surfaceCardSand` `accentStrong`
-> `progressFill` `badgeNeutralBg` `navPill` `mascotGlow` `bubble` `bodyInk`
+> `progressFill` `badgeNeutralBg` `mascotGlow` `bubble` `bodyInk`
 > `metricBar*`(5) `gray*`(5) · `AppTheme.floatingCardRadius`
 > `floatingCardShadow` `heroTextShadow`.
 >
-> **시안에 있고 서버에 없어서 안 그린 것** — "민감도 높음" 배지 · 관리 방향 칩
-> (수분·장벽 / 향산화 / 건강한 지방 섭취) · 고민별 설명 문장과 해시태그 ·
-> 피부 영양 포인트(비타민C·오메가3·아연) · 기록 카드의 주요영양 칩 ·
-> BEST/개선일 썸네일 · 피부 타입 "수부지".
+> **시안에 있고 서버에 없어서 안 그린 것 (2026-08-19 갱신)** — 이제 하나뿐이다:
+> **"민감도 높음" 배지**. 서버에 그 값이 없어서 그 자리를 실제 데이터로 채웠다
+> (마이페이지=측정일 · 피부 결과=종합 점수).
+>
+> 나머지는 백엔드가 값을 내려주기 시작해 전부 그린다 — 관리 방향 칩 · 고민별
+> 설명 문장과 태그 · 피부 영양 포인트(비타민C·오메가3·아연) · 기록 카드의
+> 주요영양 칩 · BEST/개선일 썸네일 · 피부 타입 "수부지". 값의 출처는 모두
+> 이미 저장된 데이터이고 마이그레이션은 없었다.
 
 
 ## Brand & Style

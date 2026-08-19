@@ -1552,7 +1552,10 @@ mixin _$PlateAnalysisDto {
   /// [plateScore] 의 등급. **서버가 매겨서 보낸다** — 앱에 경계표를 두지 않는다.
   /// 이 필드가 없던 서버와 붙으면 null 이고, 화면은 배지를 비운다.
   String? get grade => throw _privateConstructorUsedError;
-  int get baseScore => throw _privateConstructorUsedError;
+
+  /// 룰 적용 전 기준 점수. **기본값을 두지 않는다** — 값의 주인은 서버
+  /// `RuleConstants.BASE_SCORE` 다(목표 점수와 같은 이유).
+  int? get baseScore => throw _privateConstructorUsedError;
   String get summary => throw _privateConstructorUsedError;
   FoodAnalysisDto get food => throw _privateConstructorUsedError;
   FeedbackGroupDto get feedbacks => throw _privateConstructorUsedError;
@@ -1581,7 +1584,7 @@ abstract class $PlateAnalysisDtoCopyWith<$Res> {
       DateTime? skinMeasuredAt,
       int plateScore,
       String? grade,
-      int baseScore,
+      int? baseScore,
       String summary,
       FoodAnalysisDto food,
       FeedbackGroupDto feedbacks,
@@ -1612,7 +1615,7 @@ class _$PlateAnalysisDtoCopyWithImpl<$Res, $Val extends PlateAnalysisDto>
     Object? skinMeasuredAt = freezed,
     Object? plateScore = null,
     Object? grade = freezed,
-    Object? baseScore = null,
+    Object? baseScore = freezed,
     Object? summary = null,
     Object? food = null,
     Object? feedbacks = null,
@@ -1643,10 +1646,10 @@ class _$PlateAnalysisDtoCopyWithImpl<$Res, $Val extends PlateAnalysisDto>
           ? _value.grade
           : grade // ignore: cast_nullable_to_non_nullable
               as String?,
-      baseScore: null == baseScore
+      baseScore: freezed == baseScore
           ? _value.baseScore
           : baseScore // ignore: cast_nullable_to_non_nullable
-              as int,
+              as int?,
       summary: null == summary
           ? _value.summary
           : summary // ignore: cast_nullable_to_non_nullable
@@ -1702,7 +1705,7 @@ abstract class _$$PlateAnalysisDtoImplCopyWith<$Res>
       DateTime? skinMeasuredAt,
       int plateScore,
       String? grade,
-      int baseScore,
+      int? baseScore,
       String summary,
       FoodAnalysisDto food,
       FeedbackGroupDto feedbacks,
@@ -1733,7 +1736,7 @@ class __$$PlateAnalysisDtoImplCopyWithImpl<$Res>
     Object? skinMeasuredAt = freezed,
     Object? plateScore = null,
     Object? grade = freezed,
-    Object? baseScore = null,
+    Object? baseScore = freezed,
     Object? summary = null,
     Object? food = null,
     Object? feedbacks = null,
@@ -1764,10 +1767,10 @@ class __$$PlateAnalysisDtoImplCopyWithImpl<$Res>
           ? _value.grade
           : grade // ignore: cast_nullable_to_non_nullable
               as String?,
-      baseScore: null == baseScore
+      baseScore: freezed == baseScore
           ? _value.baseScore
           : baseScore // ignore: cast_nullable_to_non_nullable
-              as int,
+              as int?,
       summary: null == summary
           ? _value.summary
           : summary // ignore: cast_nullable_to_non_nullable
@@ -1798,7 +1801,7 @@ class _$PlateAnalysisDtoImpl implements _PlateAnalysisDto {
       this.skinMeasuredAt,
       required this.plateScore,
       this.grade,
-      this.baseScore = 70,
+      this.baseScore,
       this.summary = '',
       required this.food,
       required this.feedbacks,
@@ -1829,9 +1832,11 @@ class _$PlateAnalysisDtoImpl implements _PlateAnalysisDto {
   /// 이 필드가 없던 서버와 붙으면 null 이고, 화면은 배지를 비운다.
   @override
   final String? grade;
+
+  /// 룰 적용 전 기준 점수. **기본값을 두지 않는다** — 값의 주인은 서버
+  /// `RuleConstants.BASE_SCORE` 다(목표 점수와 같은 이유).
   @override
-  @JsonKey()
-  final int baseScore;
+  final int? baseScore;
   @override
   @JsonKey()
   final String summary;
@@ -1920,7 +1925,7 @@ abstract class _PlateAnalysisDto implements PlateAnalysisDto {
       final DateTime? skinMeasuredAt,
       required final int plateScore,
       final String? grade,
-      final int baseScore,
+      final int? baseScore,
       final String summary,
       required final FoodAnalysisDto food,
       required final FeedbackGroupDto feedbacks,
@@ -1950,8 +1955,11 @@ abstract class _PlateAnalysisDto implements PlateAnalysisDto {
   /// 이 필드가 없던 서버와 붙으면 null 이고, 화면은 배지를 비운다.
   @override
   String? get grade;
+
+  /// 룰 적용 전 기준 점수. **기본값을 두지 않는다** — 값의 주인은 서버
+  /// `RuleConstants.BASE_SCORE` 다(목표 점수와 같은 이유).
   @override
-  int get baseScore;
+  int? get baseScore;
   @override
   String get summary;
   @override
@@ -1991,7 +1999,10 @@ mixin _$SkinPlateDto {
   /// [plateScore] 의 등급. **서버가 매겨서 보낸다** — 앱에 경계표를 두지 않는다.
   /// 이 필드가 없던 서버와 붙으면 null 이고, 화면은 배지를 비운다.
   String? get grade => throw _privateConstructorUsedError;
-  int get baseScore => throw _privateConstructorUsedError;
+
+  /// 룰 적용 전 기준 점수. **기본값을 두지 않는다** — 값의 주인은 서버
+  /// `RuleConstants.BASE_SCORE` 다(목표 점수와 같은 이유).
+  int? get baseScore => throw _privateConstructorUsedError;
   String get summary => throw _privateConstructorUsedError;
   FoodAnalysisDto get food => throw _privateConstructorUsedError;
   FeedbackGroupDto get feedbacks => throw _privateConstructorUsedError;
@@ -2026,7 +2037,7 @@ abstract class $SkinPlateDtoCopyWith<$Res> {
       DateTime? skinMeasuredAt,
       int plateScore,
       String? grade,
-      int baseScore,
+      int? baseScore,
       String summary,
       FoodAnalysisDto food,
       FeedbackGroupDto feedbacks,
@@ -2059,7 +2070,7 @@ class _$SkinPlateDtoCopyWithImpl<$Res, $Val extends SkinPlateDto>
     Object? skinMeasuredAt = freezed,
     Object? plateScore = null,
     Object? grade = freezed,
-    Object? baseScore = null,
+    Object? baseScore = freezed,
     Object? summary = null,
     Object? food = null,
     Object? feedbacks = null,
@@ -2092,10 +2103,10 @@ class _$SkinPlateDtoCopyWithImpl<$Res, $Val extends SkinPlateDto>
           ? _value.grade
           : grade // ignore: cast_nullable_to_non_nullable
               as String?,
-      baseScore: null == baseScore
+      baseScore: freezed == baseScore
           ? _value.baseScore
           : baseScore // ignore: cast_nullable_to_non_nullable
-              as int,
+              as int?,
       summary: null == summary
           ? _value.summary
           : summary // ignore: cast_nullable_to_non_nullable
@@ -2159,7 +2170,7 @@ abstract class _$$SkinPlateDtoImplCopyWith<$Res>
       DateTime? skinMeasuredAt,
       int plateScore,
       String? grade,
-      int baseScore,
+      int? baseScore,
       String summary,
       FoodAnalysisDto food,
       FeedbackGroupDto feedbacks,
@@ -2192,7 +2203,7 @@ class __$$SkinPlateDtoImplCopyWithImpl<$Res>
     Object? skinMeasuredAt = freezed,
     Object? plateScore = null,
     Object? grade = freezed,
-    Object? baseScore = null,
+    Object? baseScore = freezed,
     Object? summary = null,
     Object? food = null,
     Object? feedbacks = null,
@@ -2225,10 +2236,10 @@ class __$$SkinPlateDtoImplCopyWithImpl<$Res>
           ? _value.grade
           : grade // ignore: cast_nullable_to_non_nullable
               as String?,
-      baseScore: null == baseScore
+      baseScore: freezed == baseScore
           ? _value.baseScore
           : baseScore // ignore: cast_nullable_to_non_nullable
-              as int,
+              as int?,
       summary: null == summary
           ? _value.summary
           : summary // ignore: cast_nullable_to_non_nullable
@@ -2267,7 +2278,7 @@ class _$SkinPlateDtoImpl implements _SkinPlateDto {
       this.skinMeasuredAt,
       required this.plateScore,
       this.grade,
-      this.baseScore = 70,
+      this.baseScore,
       this.summary = '',
       required this.food,
       required this.feedbacks,
@@ -2301,9 +2312,11 @@ class _$SkinPlateDtoImpl implements _SkinPlateDto {
   /// 이 필드가 없던 서버와 붙으면 null 이고, 화면은 배지를 비운다.
   @override
   final String? grade;
+
+  /// 룰 적용 전 기준 점수. **기본값을 두지 않는다** — 값의 주인은 서버
+  /// `RuleConstants.BASE_SCORE` 다(목표 점수와 같은 이유).
   @override
-  @JsonKey()
-  final int baseScore;
+  final int? baseScore;
   @override
   @JsonKey()
   final String summary;
@@ -2403,7 +2416,7 @@ abstract class _SkinPlateDto implements SkinPlateDto {
       final DateTime? skinMeasuredAt,
       required final int plateScore,
       final String? grade,
-      final int baseScore,
+      final int? baseScore,
       final String summary,
       required final FoodAnalysisDto food,
       required final FeedbackGroupDto feedbacks,
@@ -2436,8 +2449,11 @@ abstract class _SkinPlateDto implements SkinPlateDto {
   /// 이 필드가 없던 서버와 붙으면 null 이고, 화면은 배지를 비운다.
   @override
   String? get grade;
+
+  /// 룰 적용 전 기준 점수. **기본값을 두지 않는다** — 값의 주인은 서버
+  /// `RuleConstants.BASE_SCORE` 다(목표 점수와 같은 이유).
   @override
-  int get baseScore;
+  int? get baseScore;
   @override
   String get summary;
   @override

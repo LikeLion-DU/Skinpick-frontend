@@ -36,7 +36,10 @@ class NutritionItemDto with _$NutritionItemDto {
 
     /// `LOW` · `NORMAL` · `HIGH`. 모르는 값은 화면에서 회색이 된다.
     String? status,
-    @Default(false) bool higherIsWorse,
+    /// 초과가 문제인 항목인가. **기본값을 두지 않는다** — false 로 떨어뜨리면
+    /// 나트륨이 방향을 잃고 "충분"이 되어 463% 가 초록으로 뜬다. 서버는 primitive
+    /// 라 늘 보내지만, 그 전제가 깨지는 날 화면이 거짓말하게 두지 않는다.
+    bool? higherIsWorse,
   }) = _NutritionItemDto;
 
   factory NutritionItemDto.fromJson(Map<String, dynamic> json) =>

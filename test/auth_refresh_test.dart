@@ -66,14 +66,21 @@ void main() {
       container: container,
       child: MaterialApp.router(routerConfig: router),
     ));
-    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
 
     router.go(Routes.home);
-    await tester.pumpAndSettle();
+    // **pumpAndSettle 을 쓰지 않는다.** 이 테스트는 저장소를 스텁하지 않아서 홈의
+    // 히스토리 조회가 끝나지 않고, 그동안 기록 카드가 스피너를 돌린다 — 애니메이션이
+    // 멈추지 않으니 settle 이 영원히 안 온다. 라우팅만 보는 테스트라 프레임 몇 장이면
+    // 충분하다.
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
     expect(router.routerDelegate.currentConfiguration.uri.path, Routes.home);
 
     notifier.state = const Unauthenticated();
-    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
 
     expect(router.routerDelegate.currentConfiguration.uri.path, Routes.login);
   });

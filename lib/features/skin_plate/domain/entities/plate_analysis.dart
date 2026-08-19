@@ -18,7 +18,7 @@ class PlateAnalysis implements PlateView {
     this.skinMeasuredAt,
     required this.plateScore,
     this.grade,
-    this.baseScore = 70,
+    this.baseScore,
     required this.summary,
     required this.food,
     required this.good,
@@ -48,7 +48,7 @@ class PlateAnalysis implements PlateView {
   @override
   final SkinLevel? grade;
   @override
-  final int baseScore;
+  final int? baseScore;
   @override
   final String summary;
   @override

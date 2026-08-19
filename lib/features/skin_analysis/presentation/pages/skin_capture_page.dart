@@ -641,7 +641,14 @@ class _SkinCapturePageState extends ConsumerState<SkinCapturePage>
   Widget _introView() {
     return Scaffold(
       body: SafeArea(
-        child: Padding(
+        // **스크롤 가능해야 한다.** 고정 300 짜리 고리와 버튼 두 개가 들어 있어서,
+        // 작은 기기나 글자 크기를 키운 기기에서는 [촬영하기] 가 화면 밖으로
+        // 밀린다 — 그러면 온보딩이 여기서 끝난다.
+        child: LayoutBuilder(
+          builder: (context, constraints) => SingleChildScrollView(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(minHeight: constraints.maxHeight),
+              child: Padding(
           padding: const EdgeInsets.all(AppTheme.pagePadding),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -652,7 +659,7 @@ class _SkinCapturePageState extends ConsumerState<SkinCapturePage>
               const SizedBox(height: 12),
               Text('정확한 분석을 위해 정면, 좌측, 우측 사진을\n촬영해주세요.',
                   style: Theme.of(context).textTheme.bodyMedium),
-              const Spacer(),
+              const SizedBox(height: 32),
               // 시안은 이 자리에 마스코트를 방사 눈금 고리 안에 세운다. 촬영 중
               // 얼굴 가이드와 같은 고리라, 안내에서 본 자리에 얼굴을 넣게 된다.
               const Center(
@@ -661,7 +668,7 @@ class _SkinCapturePageState extends ConsumerState<SkinCapturePage>
                   child: SkinMascot(size: 176),
                 ),
               ),
-              const Spacer(),
+              const SizedBox(height: 32),
               ElevatedButton(
                 onPressed: () {
                   // 로딩 화면이 이 플래그를 보고 분석을 기다리는 동안 프로필
@@ -687,8 +694,11 @@ class _SkinCapturePageState extends ConsumerState<SkinCapturePage>
                     : context.pop(),
                 child: const Text('넘어가기'),
               ),
-              const Spacer(),
+              const SizedBox(height: 24),
             ],
+          ),
+              ),
+            ),
           ),
         ),
       ),

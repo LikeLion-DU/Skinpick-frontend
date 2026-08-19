@@ -99,20 +99,27 @@ void main() {
     });
   }
 
-  testWidgets('네 개를 다 고르기 전에는 완료할 수 없다', (tester) async {
+  testWidgets('덜 고르고 완료를 누르면 저장하지 않고 빠진 줄을 알려 준다',
+      (tester) async {
+    // 예전에는 버튼을 그냥 꺼 두었다. 탭으로 갈라진 화면에서는 막고 있는 항목이
+    // 다른 탭에 있을 수 있어서, 사용자가 죽은 버튼을 다시 누르는 것밖에 할 수
+    // 없었다. 이제 눌리기는 하되 저장하지 않고 무엇이 빠졌는지 말한다.
     await tester.binding.setSurfaceSize(designSize);
     await tester.pumpWidget(host(fresh, mode: ProfileFormMode.lifestyle));
     await tester.pumpAndSettle();
 
-    expect(submitButton(tester).onPressed, isNull);
+    await tester.tap(find.text('완료하고 인사이트 보기'));
+    await tester.pump();
 
-    // 수면만 고른다. 나머지 셋이 비었으므로 여전히 잠겨 있어야 한다.
-    await tester.tap(find.text('수면 패턴'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('부족해요'));
-    await tester.pumpAndSettle();
-
-    expect(submitButton(tester).onPressed, isNull);
+    final snack = tester.widget<Text>(find.descendant(
+      of: find.byType(SnackBar),
+      matching: find.byType(Text),
+    ));
+    for (final row in ['수면 패턴', '스트레스 정도', '운동 습관', '물 섭취']) {
+      expect(snack.data, contains(row), reason: '$row 가 안내에 없다');
+    }
+    // 화면은 그대로다 — 저장으로 넘어가지 않았다.
+    expect(find.text('완료하고 인사이트 보기'), findsOneWidget);
   });
 
   testWidgets('네 개를 다 고르면 완료가 열린다', (tester) async {

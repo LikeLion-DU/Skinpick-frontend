@@ -38,9 +38,6 @@ class AppColors {
   /// 등급 배지(보통)의 살구색 배경. 히어로의 흰 글씨 옆에 놓인다.
   static const badgeNeutralBg = Color(0xFFFDDEC0);
 
-  /// 떠 있는 하단 네비 알약. 흰색이 아니라 살구색이다 — 아래로 흐린 흰
-  /// 배경에서 흰 알약은 윤곽이 사라진다.
-  static const navPill = Color(0xFFFFAF89);
 
   /// 마스코트 뒤에 깔리는 후광. 원본 SVG 의 흐림 필터를 코드에서 그린다.
   static const mascotGlow = Color(0xFFFFCCB4);
@@ -51,10 +48,6 @@ class AppColors {
   /// 카드 안쪽 본문(오렌지 히어로 위 카드). [textOnCard] 보다 진하다.
   static const bodyInk = Color(0xFF353535);
 
-  /// 촬영 버튼(FAB)만 단색이 아니라 위아래 그라디언트다. 화면에서 이 하나뿐이라
-  /// 시선이 여기로 간다 — 시안이 주 동작을 그렇게 지목하고 있다.
-  static const fabGradientTop = Color(0xFFFF5404);
-  static const fabGradientBottom = Color(0xFFFFD240);
 
   static const background = Color(0xFFFFFFFF);
 

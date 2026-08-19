@@ -108,8 +108,10 @@ class FoodTraitChips extends StatelessWidget {
             children: [
               for (final (name, value) in traits)
                 Container(
-                  height: 25,
-                  padding: const EdgeInsets.symmetric(horizontal: 10),
+                  // 높이를 박지 않는다 — 시안 값을 고정하면 글자 크기를 키운 기기에서
+                  // 알약이 글자를 자른다(예외가 안 나서 테스트도 통과한다).
+                  constraints: const BoxConstraints(minHeight: 25),
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
                   alignment: Alignment.center,
                   decoration: BoxDecoration(
                     color: const Color(0xFFFEF6EE),
@@ -149,10 +151,15 @@ class PlateSummaryCard extends StatelessWidget {
     super.key,
     required this.good,
     required this.caution,
+    required this.summary,
   });
 
   final List<PlateFeedback> good;
   final List<PlateFeedback> caution;
+
+  /// 룰이 하나도 안 걸린 한 끼에 **서버가 붙여 주는 한 줄**.
+  /// 앱이 같은 뜻의 문장을 따로 쓰지 않는다 — 룰 엔진이 그 문장의 주인이다.
+  final String summary;
 
   @override
   Widget build(BuildContext context) {
@@ -167,9 +174,9 @@ class PlateSummaryCard extends StatelessWidget {
           border: Border.all(color: AppColors.disabled),
           borderRadius: BorderRadius.circular(AppTheme.cardRadius),
         ),
-        child: const Text(
-          '특별히 걸리는 항목 없이 무난한 식사예요.',
-          style: TextStyle(
+        child: Text(
+          summary,
+          style: const TextStyle(
             fontSize: 11,
             fontWeight: FontWeight.w500,
             color: AppColors.textOnCard,
@@ -378,7 +385,10 @@ class NutrientTiles extends StatelessWidget {
           if (index > 0) const SizedBox(width: 16),
           Expanded(
             child: Container(
-              height: 92,
+              // 네 칸을 나눠 쓰는 70px 짜리 칸이다. 높이를 92 로 박아 두면 글자
+              // 크기를 키운 기기에서 "1,280 mg" 이 두 줄로 접히며 62px 넘친다.
+              constraints: const BoxConstraints(minHeight: 92),
+              padding: const EdgeInsets.symmetric(vertical: 10),
               decoration: BoxDecoration(
                 color: AppColors.background,
                 border: Border.all(color: AppColors.disabled),

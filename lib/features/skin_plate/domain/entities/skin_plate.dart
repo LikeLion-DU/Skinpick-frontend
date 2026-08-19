@@ -26,7 +26,7 @@ abstract interface class PlateView {
   /// [plateScore] 의 등급. **서버가 매긴다** — 앱에 경계표를 두지 않는다.
   /// 이 필드가 없던 서버와 붙으면 null 이고, 화면은 배지를 비운다.
   SkinLevel? get grade;
-  int get baseScore;
+  int? get baseScore;
   String get summary;
   FoodAnalysis get food;
   List<PlateFeedback> get good;
@@ -44,7 +44,7 @@ class SkinPlate implements PlateView {
     this.skinMeasuredAt,
     required this.plateScore,
     this.grade,
-    this.baseScore = 70,
+    this.baseScore,
     required this.summary,
     required this.food,
     required this.good,
@@ -77,7 +77,7 @@ class SkinPlate implements PlateView {
 
   /// 계산 내역 카드의 첫 줄("기본 70"). 앱이 하드코딩하면 클램프된 점수에서 역산이 틀린다.
   @override
-  final int baseScore;
+  final int? baseScore;
 
   @override
   final String summary;

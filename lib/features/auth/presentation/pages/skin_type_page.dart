@@ -106,6 +106,27 @@ class _SkinTypePageState extends ConsumerState<SkinTypePage> {
   /// 답한 개수로 재면 막대가 뒤로 가는 경우가 생긴다.
   double get _progress => (_step.index + 1) / _ProfileStep.values.length;
 
+  /// 완료를 막고 있는 항목으로 데려간다. 버튼을 꺼 두기만 하면 사용자는 무엇을
+  /// 더 해야 하는지 모른 채 같은 버튼을 다시 누른다.
+  void _showBlocking() {
+    if (!_lifestyleOnly && _type == null) {
+      setState(() => _step = _ProfileStep.type);
+      _tell('피부 타입을 먼저 골라 주세요.');
+      return;
+    }
+    // lifestyle 모드는 네 줄을 다 골라야 한다. 어느 줄이 비었는지 알려 준다.
+    final missing = <String>[
+      if (_sleep == null) '수면 패턴',
+      if (_stress == null) '스트레스 정도',
+      if (_exercise == null) '운동 습관',
+      if (_water == null) '물 섭취',
+    ];
+    if (missing.isNotEmpty) _tell('${missing.join(' · ')} 을 골라 주세요.');
+  }
+
+  void _tell(String message) => ScaffoldMessenger.of(context)
+      .showSnackBar(SnackBar(content: Text(message)));
+
   Future<void> _submit() async {
     if (!_complete) return;
 
@@ -396,7 +417,12 @@ class _SkinTypePageState extends ConsumerState<SkinTypePage> {
               textStyle:
                   const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
             ),
-            onPressed: (_busy || !_complete) ? null : _submit,
+            // **완료를 못 누르는 이유를 화면이 말해야 한다.** 탭으로 갈라 놓은
+            // 뒤에는 막고 있는 항목(피부 타입)이 다른 탭에 있어서, 버튼이 죽은
+            // 이유가 보이지 않았다. 누르면 그 탭으로 데려가고 한 줄로 알린다.
+            onPressed: _busy
+                ? null
+                : (_complete ? _submit : _showBlocking),
             child: _busy
                 ? const SizedBox(
                     width: 20,
@@ -574,9 +600,9 @@ class _StepSwitcher extends StatelessWidget {
 /// UNKNOWN 을 빼지 않는다 — 빼면 정말 모르는 사용자의 출구가 건너뛰기뿐이고,
 /// 그건 "아직 안 정함(NULL)"이라 두 상태가 섞인다.
 ///
-/// **시안의 "수부지" 칸은 그리지 않는다.** 서버 `SkinType` 에 대응하는 값이 없어
-/// 고르면 저장할 곳이 없다. 아이콘 시트에는 그림이 들어 있으니, 서버가 값을
-/// 늘리면 `SkinType` 에 한 줄과 그림 한 장을 더하면 된다.
+/// **시안의 "수부지" 칸은 서버가 값을 가진 뒤에 켰다**(2026-08-19 · 선언 전용
+/// 타입). 그전에는 고르면 저장할 곳이 없어 그리지 않았다 — 그 시절 주석을 보고
+/// 칸을 다시 빼면 시안과 어긋난다.
 class _TypeTiles extends StatelessWidget {
   const _TypeTiles({required this.selected, required this.onSelect});
 
@@ -684,7 +710,10 @@ class _HabitSection extends StatelessWidget {
                     )),
                 const Spacer(),
                 Text(
-                  value ?? '보통',
+                  // **미선택을 '보통' 으로 적지 않는다.** 스트레스의 실제 보기에
+                  // '보통' 이 있어서 안 고른 줄과 고른 줄이 같은 글자가 됐다
+                  // (색만 달랐다). 마이페이지도 같은 목록을 '미설정' 으로 적는다.
+                  value ?? '미설정',
                   style: TextStyle(
                     fontSize: 11,
                     // 고른 값이 있으면 오렌지 — 시안의 "부족해요" 상태다.
@@ -744,7 +773,9 @@ class _CardOptions<T> extends StatelessWidget {
               child: _Selectable(
                 selected: selected == option,
                 height: 120,
-                child: Column(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 10),
+                  child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Icon(iconOf(option),
@@ -770,6 +801,7 @@ class _CardOptions<T> extends StatelessWidget {
                       ),
                     ),
                   ],
+                  ),
                 ),
               ),
             ),
@@ -800,24 +832,32 @@ class _RowOptions extends StatelessWidget {
                 selected: selected == option,
                 height: 40,
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 14),
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 14, vertical: 6),
+                  // 라벨과 설명 둘 다 Flexible 이다. 고정으로 두었더니 글자 크기
+                  // 2.0 에서 줄이 206px 넘쳐 설명이 화면 밖으로 나갔다.
                   child: Row(
                     children: [
                       const Icon(Icons.fitness_center,
                           size: 14, color: AppColors.primary),
                       const SizedBox(width: 10),
-                      Text(option.label,
-                          style: const TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.textPrimary,
-                          )),
-                      const Spacer(),
-                      Text(option.description,
-                          style: const TextStyle(
-                            fontSize: 10,
-                            color: AppColors.textSecondary,
-                          )),
+                      Flexible(
+                        child: Text(option.label,
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.textPrimary,
+                            )),
+                      ),
+                      const SizedBox(width: 10),
+                      Flexible(
+                        child: Text(option.description,
+                            textAlign: TextAlign.right,
+                            style: const TextStyle(
+                              fontSize: 10,
+                              color: AppColors.textSecondary,
+                            )),
+                      ),
                     ],
                   ),
                 ),
@@ -838,13 +878,17 @@ class _Selectable extends StatelessWidget {
   });
 
   final bool selected;
+
+  /// 시안 높이. **최소 높이로만 쓴다** — 고정하면 글자 크기를 키운 기기에서
+  /// 설명 두 줄이 네 줄로 접히며 카드 밖으로 넘친다(실제로 44~101px 넘쳤다).
   final double height;
+
   final Widget child;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: height,
+      constraints: BoxConstraints(minHeight: height),
       decoration: BoxDecoration(
         color: selected ? AppColors.surfaceCard : AppColors.background,
         border: Border.all(

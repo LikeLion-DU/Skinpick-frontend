@@ -33,7 +33,11 @@ mixin _$NutritionItemDto {
 
   /// `LOW` · `NORMAL` · `HIGH`. 모르는 값은 화면에서 회색이 된다.
   String? get status => throw _privateConstructorUsedError;
-  bool get higherIsWorse => throw _privateConstructorUsedError;
+
+  /// 초과가 문제인 항목인가. **기본값을 두지 않는다** — false 로 떨어뜨리면
+  /// 나트륨이 방향을 잃고 "충분"이 되어 463% 가 초록으로 뜬다. 서버는 primitive
+  /// 라 늘 보내지만, 그 전제가 깨지는 날 화면이 거짓말하게 두지 않는다.
+  bool? get higherIsWorse => throw _privateConstructorUsedError;
 
   /// Serializes this NutritionItemDto to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
@@ -59,7 +63,7 @@ abstract class $NutritionItemDtoCopyWith<$Res> {
       int target,
       int percent,
       String? status,
-      bool higherIsWorse});
+      bool? higherIsWorse});
 }
 
 /// @nodoc
@@ -84,7 +88,7 @@ class _$NutritionItemDtoCopyWithImpl<$Res, $Val extends NutritionItemDto>
     Object? target = null,
     Object? percent = null,
     Object? status = freezed,
-    Object? higherIsWorse = null,
+    Object? higherIsWorse = freezed,
   }) {
     return _then(_value.copyWith(
       nutrient: null == nutrient
@@ -115,10 +119,10 @@ class _$NutritionItemDtoCopyWithImpl<$Res, $Val extends NutritionItemDto>
           ? _value.status
           : status // ignore: cast_nullable_to_non_nullable
               as String?,
-      higherIsWorse: null == higherIsWorse
+      higherIsWorse: freezed == higherIsWorse
           ? _value.higherIsWorse
           : higherIsWorse // ignore: cast_nullable_to_non_nullable
-              as bool,
+              as bool?,
     ) as $Val);
   }
 }
@@ -139,7 +143,7 @@ abstract class _$$NutritionItemDtoImplCopyWith<$Res>
       int target,
       int percent,
       String? status,
-      bool higherIsWorse});
+      bool? higherIsWorse});
 }
 
 /// @nodoc
@@ -162,7 +166,7 @@ class __$$NutritionItemDtoImplCopyWithImpl<$Res>
     Object? target = null,
     Object? percent = null,
     Object? status = freezed,
-    Object? higherIsWorse = null,
+    Object? higherIsWorse = freezed,
   }) {
     return _then(_$NutritionItemDtoImpl(
       nutrient: null == nutrient
@@ -193,10 +197,10 @@ class __$$NutritionItemDtoImplCopyWithImpl<$Res>
           ? _value.status
           : status // ignore: cast_nullable_to_non_nullable
               as String?,
-      higherIsWorse: null == higherIsWorse
+      higherIsWorse: freezed == higherIsWorse
           ? _value.higherIsWorse
           : higherIsWorse // ignore: cast_nullable_to_non_nullable
-              as bool,
+              as bool?,
     ));
   }
 }
@@ -212,7 +216,7 @@ class _$NutritionItemDtoImpl implements _NutritionItemDto {
       this.target = 0,
       this.percent = 0,
       this.status,
-      this.higherIsWorse = false});
+      this.higherIsWorse});
 
   factory _$NutritionItemDtoImpl.fromJson(Map<String, dynamic> json) =>
       _$$NutritionItemDtoImplFromJson(json);
@@ -243,9 +247,12 @@ class _$NutritionItemDtoImpl implements _NutritionItemDto {
   /// `LOW` · `NORMAL` · `HIGH`. 모르는 값은 화면에서 회색이 된다.
   @override
   final String? status;
+
+  /// 초과가 문제인 항목인가. **기본값을 두지 않는다** — false 로 떨어뜨리면
+  /// 나트륨이 방향을 잃고 "충분"이 되어 463% 가 초록으로 뜬다. 서버는 primitive
+  /// 라 늘 보내지만, 그 전제가 깨지는 날 화면이 거짓말하게 두지 않는다.
   @override
-  @JsonKey()
-  final bool higherIsWorse;
+  final bool? higherIsWorse;
 
   @override
   String toString() {
@@ -300,7 +307,7 @@ abstract class _NutritionItemDto implements NutritionItemDto {
       final int target,
       final int percent,
       final String? status,
-      final bool higherIsWorse}) = _$NutritionItemDtoImpl;
+      final bool? higherIsWorse}) = _$NutritionItemDtoImpl;
 
   factory _NutritionItemDto.fromJson(Map<String, dynamic> json) =
       _$NutritionItemDtoImpl.fromJson;
@@ -325,8 +332,12 @@ abstract class _NutritionItemDto implements NutritionItemDto {
   /// `LOW` · `NORMAL` · `HIGH`. 모르는 값은 화면에서 회색이 된다.
   @override
   String? get status;
+
+  /// 초과가 문제인 항목인가. **기본값을 두지 않는다** — false 로 떨어뜨리면
+  /// 나트륨이 방향을 잃고 "충분"이 되어 463% 가 초록으로 뜬다. 서버는 primitive
+  /// 라 늘 보내지만, 그 전제가 깨지는 날 화면이 거짓말하게 두지 않는다.
   @override
-  bool get higherIsWorse;
+  bool? get higherIsWorse;
 
   /// Create a copy of NutritionItemDto
   /// with the given fields replaced by the non-null parameter values.

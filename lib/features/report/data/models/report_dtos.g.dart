@@ -16,7 +16,7 @@ _$NutritionItemDtoImpl _$$NutritionItemDtoImplFromJson(
       target: (json['target'] as num?)?.toInt() ?? 0,
       percent: (json['percent'] as num?)?.toInt() ?? 0,
       status: json['status'] as String?,
-      higherIsWorse: json['higherIsWorse'] as bool? ?? false,
+      higherIsWorse: json['higherIsWorse'] as bool?,
     );
 
 Map<String, dynamic> _$$NutritionItemDtoImplToJson(

@@ -159,7 +159,10 @@ class _Body extends StatelessWidget {
         ReportCard(
           title: '내 피부 고민 기준 분석',
           note: '고민과 관련된 항목만 다시 센 식단 점수예요',
-          child: ConcernList(items: report.concerns),
+          child: ConcernList(
+            items: report.concerns,
+            hasRecords: !report.isEmpty,
+          ),
         ),
 
         // 잘한 점·개선할 점은 기록이 있어야 생긴다. 없는 날 제목만 남기면

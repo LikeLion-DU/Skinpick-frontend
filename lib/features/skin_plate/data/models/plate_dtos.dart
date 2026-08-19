@@ -138,7 +138,9 @@ class PlateAnalysisDto with _$PlateAnalysisDto {
     /// [plateScore] 의 등급. **서버가 매겨서 보낸다** — 앱에 경계표를 두지 않는다.
     /// 이 필드가 없던 서버와 붙으면 null 이고, 화면은 배지를 비운다.
     String? grade,
-    @Default(70) int baseScore,
+    /// 룰 적용 전 기준 점수. **기본값을 두지 않는다** — 값의 주인은 서버
+    /// `RuleConstants.BASE_SCORE` 다(목표 점수와 같은 이유).
+    int? baseScore,
     @Default('') String summary,
     required FoodAnalysisDto food,
     required FeedbackGroupDto feedbacks,
@@ -170,7 +172,9 @@ class SkinPlateDto with _$SkinPlateDto {
     /// [plateScore] 의 등급. **서버가 매겨서 보낸다** — 앱에 경계표를 두지 않는다.
     /// 이 필드가 없던 서버와 붙으면 null 이고, 화면은 배지를 비운다.
     String? grade,
-    @Default(70) int baseScore,
+    /// 룰 적용 전 기준 점수. **기본값을 두지 않는다** — 값의 주인은 서버
+    /// `RuleConstants.BASE_SCORE` 다(목표 점수와 같은 이유).
+    int? baseScore,
     @Default('') String summary,
     required FoodAnalysisDto food,
     required FeedbackGroupDto feedbacks,

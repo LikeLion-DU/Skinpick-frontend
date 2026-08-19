@@ -95,7 +95,11 @@ class _Body extends StatelessWidget {
         SkinBasisCard(skinAnalysisId: plate.skinAnalysisId),
         Text('분석 요약', style: Theme.of(context).textTheme.titleMedium),
         const SizedBox(height: 10),
-        PlateSummaryCard(good: plate.good, caution: plate.caution),
+        PlateSummaryCard(
+          good: plate.good,
+          caution: plate.caution,
+          summary: plate.summary,
+        ),
         // 생성이 실패한 기록은 서버가 이 키를 뺀다. 룰 요약으로 메우지 않는다 —
         // 결과 화면과 같은 규칙이다. "AI 맞춤 TIP" 은 AI 문장일 때만 뜬다.
         if (plate.aiTip case final aiTip? when aiTip.isNotEmpty) ...[

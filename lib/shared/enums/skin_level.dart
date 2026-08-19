@@ -49,11 +49,6 @@ enum SkinLevel {
         SkinLevel.caution || SkinLevel.severe => AppColors.bad,
       };
 
-  /// 진한 채움 배지의 배경. 기록 카드처럼 점수 옆에 붙는 자리다.
-  ///
-  /// 주의가 빨강이 아니라 오렌지인 것은 시안 그대로다 — 빨강은 BAD 라벨 전용이다.
-  Color get solidColor => isGood ? AppColors.good : AppColors.primary;
-
   /// 옅은 틴트 배지의 배경. 홈·결과 화면의 큰 점수 옆에 붙는 자리다.
   Color get tintColor => switch (this) {
         SkinLevel.excellent || SkinLevel.good => const Color(0xFFDCF0D2),

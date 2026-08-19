@@ -64,7 +64,10 @@ class _WeeklyReportViewState extends ConsumerState<WeeklyReportView>
         ReportDateNav(
           // 시안 표기 그대로다 — `26.8.3(월) ~ 8.9(일)`. 연도를 앞에 두 자리만
           // 쓰는 것은 폭 때문이다. 같은 해의 끝 날짜에 연도를 다시 적지 않는다.
-          label: '${to.year % 100}.${from.month}.${from.day}'
+          //
+          // 연도는 **시작일**의 것이다. `to.year` 를 쓰면 해를 넘는 주가
+          // `27.12.28(월) ~ 1.3(일)` 로 12월 28일을 다음 해로 적는다.
+          label: '${from.year % 100}.${from.month}.${from.day}'
               '(${weekdayLabel(from)}) ~ '
               '${to.month}.${to.day}(${weekdayLabel(to)})',
           // 불러오는 중에는 양쪽 다 잠근다. 27초짜리 조회 위에서 화살표를
@@ -164,7 +167,10 @@ class _Body extends StatelessWidget {
         ReportCard(
           title: '피부 고민 분석',
           note: '변화량은 이번 기간 첫 기록일과 비교한 값이에요',
-          child: ConcernList(items: report.concerns),
+          child: ConcernList(
+            items: report.concerns,
+            hasRecords: !report.isEmpty,
+          ),
         ),
         const SizedBox(height: 19),
 
@@ -309,7 +315,12 @@ class _DayCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final accent = best ? AppColors.good : AppColors.accentStrong;
+    // 제목("BEST" · "개선이 필요한 날")은 그 주 안에서의 **상대 위치**다. 색은
+    // 서버가 그 점수에 매긴 **절대 등급**을 따른다 — 둘을 한 벌로 묶으면 전부
+    // 90점대인 주의 최저일(92점·좋음)이 경고색으로 뜨고, 같은 92 가 옆 카드에서는
+    // 초록으로 뜬다. 등급을 모르면 상대 위치 색으로 떨어진다.
+    final accent = day.grade?.accentColor ??
+        (best ? AppColors.good : AppColors.accentStrong);
 
     return Container(
       padding: const EdgeInsets.fromLTRB(14, 14, 14, 16),

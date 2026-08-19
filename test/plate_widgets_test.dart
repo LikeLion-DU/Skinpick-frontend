@@ -93,6 +93,7 @@ void main() {
     await tester.binding.setSurfaceSize(designSize);
     await tester.pumpWidget(host(
       const PlateSummaryCard(
+        summary: '서버가 만든 요약 문장이에요.',
         good: [PlateFeedback(message: '단백질 충분', scoreDelta: 5, ruleCode: 'R01')],
         caution: [
           PlateFeedback(message: '나트륨 과다', scoreDelta: -8, ruleCode: 'R04'),
@@ -111,16 +112,22 @@ void main() {
   testWidgets('분석 요약 — 둘 다 비어도 침묵하지 않는다', (tester) async {
     await tester.binding.setSurfaceSize(designSize);
     await tester.pumpWidget(host(
-      const PlateSummaryCard(good: [], caution: []),
+      // 룰이 하나도 안 걸린 한 끼. **문장은 서버가 준 요약**이고 앱이 짓지 않는다.
+      const PlateSummaryCard(
+        summary: '특별한 주의사항이 없는 무난한 한 끼입니다.',
+        good: [],
+        caution: [],
+      ),
     ));
 
-    expect(find.textContaining('무난한 식사'), findsOneWidget);
+    expect(find.text('특별한 주의사항이 없는 무난한 한 끼입니다.'), findsOneWidget);
   });
 
   testWidgets('판정 이유 — 제목 아래 설명이 한 줄 더 붙는다', (tester) async {
     await tester.binding.setSurfaceSize(designSize);
     await tester.pumpWidget(host(
       const PlateSummaryCard(
+        summary: '서버가 만든 요약 문장이에요.',
         good: [],
         caution: [
           PlateFeedback(
@@ -141,6 +148,7 @@ void main() {
     await tester.binding.setSurfaceSize(designSize);
     await tester.pumpWidget(host(
       const PlateSummaryCard(
+        summary: '서버가 만든 요약 문장이에요.',
         good: [PlateFeedback(message: '단백질 충분', scoreDelta: 6, ruleCode: 'R05')],
         caution: [],
       ),
@@ -244,6 +252,7 @@ void main() {
           ),
         ),
         const PlateSummaryCard(
+          summary: '서버가 만든 요약 문장이에요.',
           good: [],
           caution: [
             PlateFeedback(message: '매운맛 자극', scoreDelta: -12, ruleCode: 'R02'),

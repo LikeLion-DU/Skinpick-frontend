@@ -529,8 +529,10 @@ class _CareSection extends StatelessWidget {
             children: [
               for (final focus in analysis.careFocus)
                 Container(
-                  height: 22,
-                  padding: const EdgeInsets.symmetric(horizontal: 14),
+                  // 높이를 박지 않는다 — 시안 값을 고정하면 글자 크기를 키운 기기에서
+                  // 알약이 글자를 자른다(예외가 안 나서 테스트도 통과한다).
+                  constraints: const BoxConstraints(minHeight: 22),
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
                   alignment: Alignment.center,
                   decoration: BoxDecoration(
                     color: AppColors.background,
@@ -593,11 +595,6 @@ class _CareSection extends StatelessWidget {
   }
 }
 
-/// 카드 문단에 쓸 문장. **서버가 준 것만 쓴다.**
-///
-/// 1순위는 `careMessage`(관리 권고), 없으면 `summary`(AI 관찰 요약), 둘 다 없으면
-/// 고정 문구다. 마지막 폴백은 지표가 다 정상인 예전 분석에서만 나온다 —
-/// 지금 서버는 그 경우에도 "지금 균형 유지" 권고를 준다.
 /// 관리 문단으로 쓸 **서버 문장**. 없으면 null 이다.
 ///
 /// `careMessage`(서버가 지표에서 만든 권고) → `summary`(AI 관찰 요약) 순이다.
@@ -1006,8 +1003,10 @@ class _SkinTypePromptState extends ConsumerState<_SkinTypePrompt> {
                   onTap: _busy ? null : () => _select(type),
                   behavior: HitTestBehavior.opaque,
                   child: Container(
-                    height: 22,
-                    padding: const EdgeInsets.symmetric(horizontal: 14),
+                    // 높이를 박지 않는다 — 시안 값을 고정하면 글자 크기를 키운 기기에서
+                    // 알약이 글자를 자른다(예외가 안 나서 테스트도 통과한다).
+                    constraints: const BoxConstraints(minHeight: 22),
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
                     alignment: Alignment.center,
                     decoration: BoxDecoration(
                       color: AppColors.background,

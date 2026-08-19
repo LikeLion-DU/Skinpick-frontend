@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../core/result/result.dart';
+
 import '../../../../app/router/app_router.dart';
 import '../../../../app/theme/app_theme.dart';
 import '../../../../shared/widgets/ai_comment_card.dart';
@@ -66,14 +68,42 @@ class HomePage extends ConsumerWidget {
       Authenticated(:final user) => user.nickname,
       _ => '',
     };
-    final hasSkinRecord =
-        ref.watch(latestSkinAnalysisProvider).value?.dataOrNull != null;
+    // 피부 분석 상태는 셋이다 — 있다 · 없다 · 아직 모른다(로딩·실패).
+    // 셋을 둘로 접으면 네트워크가 한 번 흔들린 것만으로 이미 분석을 해 둔
+    // 사용자에게 "먼저 피부를 분석해야 해요" 라고 말하게 된다.
+    final skinState = ref.watch(latestSkinAnalysisProvider);
+    final hasSkinRecord = skinState.value?.dataOrNull != null;
+    final skinUnknown = !hasSkinRecord &&
+        (skinState.isLoading ||
+            skinState.hasError ||
+            skinState.value is FailureResult);
+
+    final history = ref.watch(plateHistoryProvider);
     final today = ref.watch(todayRecordProvider);
+    final historyFailure = switch (history.value) {
+      FailureResult(:final error) => error.message,
+      _ => history.hasError ? '오늘 기록을 불러오지 못했어요.' : null,
+    };
     final imageDirectory = ref.watch(plateImageDirectoryProvider).value;
 
-    void capture() => hasSkinRecord
-        ? context.push(Routes.foodCapture)
-        : _explainSkinFirst(context);
+    void capture() {
+      if (hasSkinRecord) {
+        context.push(Routes.foodCapture);
+      } else if (skinUnknown) {
+        // 없다고 단정하지 않는다. 모르는 것은 모른다고 말하고 다시 시도를 준다.
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('피부 기준을 확인하지 못했어요.'),
+            action: SnackBarAction(
+              label: '다시 시도',
+              onPressed: () => ref.invalidate(latestSkinAnalysisProvider),
+            ),
+          ),
+        );
+      } else {
+        _explainSkinFirst(context);
+      }
+    }
 
     return Scaffold(
       body: Stack(
@@ -105,13 +135,27 @@ class HomePage extends ConsumerWidget {
                 children: [
                   Align(
                     alignment: Alignment.centerRight,
-                    child: GestureDetector(
-                      onTap: () => context.push(Routes.skinProfile),
-                      behavior: HitTestBehavior.opaque,
-                      child: Tooltip(
-                        message: '마이페이지',
-                        child: SvgPicture.asset('assets/icons/profile.svg',
-                            width: 28, height: 28),
+                    child: Semantics(
+                      button: true,
+                      label: '마이페이지',
+                      // 아이콘은 시안대로 28 이지만 **누를 곳은 48 이다.** 이 아이콘이
+                      // 피부 프로필로 가는 유일한 문이라 오탭이 곧 막힌 길이 된다.
+                      child: GestureDetector(
+                        onTap: () => context.push(Routes.skinProfile),
+                        behavior: HitTestBehavior.opaque,
+                        child: Tooltip(
+                          message: '마이페이지',
+                          child: SizedBox(
+                            width: 48,
+                            height: 48,
+                            child: Center(
+                              child: SvgPicture.asset(
+                                  'assets/icons/profile.svg',
+                                  width: 28,
+                                  height: 28),
+                            ),
+                          ),
+                        ),
                       ),
                     ),
                   ),
@@ -135,6 +179,10 @@ class HomePage extends ConsumerWidget {
                   TodayRecordsCard(
                     items: today?.plates ?? const [],
                     imageDirectory: imageDirectory,
+                    // 히스토리를 아직 못 받았으면 "안 먹은 날" 로 그리지 않는다.
+                    loading: history.isLoading && !history.hasValue,
+                    failureMessage: historyFailure,
+                    onRetry: () => ref.invalidate(plateHistoryProvider),
                     onCapture: capture,
                     onSeeAll: () => context.push(Routes.plateHistory),
                     onItemTap: (item) =>

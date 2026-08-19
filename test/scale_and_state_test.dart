@@ -1,0 +1,203 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:skinplate/app/theme/app_theme.dart';
+import 'package:skinplate/core/error/failure.dart';
+import 'package:skinplate/features/auth/domain/entities/auth_user.dart';
+import 'package:skinplate/features/auth/presentation/pages/login_page.dart';
+import 'package:skinplate/features/auth/presentation/pages/skin_type_page.dart';
+import 'package:skinplate/features/auth/presentation/providers/auth_notifier.dart';
+import 'package:skinplate/features/home/presentation/widgets/today_records_card.dart';
+import 'package:skinplate/features/skin_plate/presentation/widgets/plate_summary_cards.dart';
+import 'package:skinplate/shared/widgets/verdict_badge.dart';
+import 'package:skinplate/shared/enums/skin_level.dart';
+
+/// 리뷰에서 재현된 것들을 고정한다.
+///
+/// **글자 크기를 키우면 고정 크기 상자는 예외를 던지지 않고 조용히 글자를 자른다.**
+/// 그래서 오버플로 예외만 보는 기존 테스트가 전부 통과했다. 여기서는 그려진 크기와
+/// 필요한 크기를 직접 비교한다.
+void main() {
+  const designSize = Size(402, 874);
+
+  Widget scaled(Widget child, {double scale = 2.0}) => MediaQuery(
+        data: MediaQueryData(textScaler: TextScaler.linear(scale)),
+        child: MaterialApp(theme: AppTheme.light, home: child),
+      );
+
+  /// 그려진 상자가 글자를 자르고 있는가.
+  void expectNotClipped(WidgetTester tester, Finder text, {required String label}) {
+    final box = tester.renderObject<RenderBox>(text);
+    final painted = box.size;
+    final needed = tester.renderObject<RenderBox>(text).getDryLayout(
+          const BoxConstraints(),
+        );
+    expect(painted.height + 0.5, greaterThanOrEqualTo(needed.height),
+        reason: '$label 세로가 잘렸다 (그려진 $painted / 필요한 $needed)');
+    expect(painted.width + 0.5, greaterThanOrEqualTo(needed.width),
+        reason: '$label 가로가 잘렸다 (그려진 $painted / 필요한 $needed)');
+  }
+
+  group('글자 크기 2.0 — 배율 테스트가 없던 화면', () {
+    testWidgets('로그인 — 링크 줄이 넘치지 않고 회원가입이 남는다', (tester) async {
+      await tester.binding.setSurfaceSize(designSize);
+      await tester.pumpWidget(scaled(const ProviderScope(child: LoginPage())));
+      await tester.pumpAndSettle();
+
+      expect(tester.takeException(), isNull);
+      // 세 링크가 다 살아 있어야 한다 — 잘려 나가면 가입 입구가 사라진다.
+      expect(find.text('회원가입'), findsOneWidget);
+      expect(find.text('아이디 찾기'), findsOneWidget);
+    });
+
+    testWidgets('로그인 — 링크 탭 영역이 44dp 이상이다', (tester) async {
+      await tester.binding.setSurfaceSize(designSize);
+      await tester.pumpWidget(scaled(const ProviderScope(child: LoginPage()),
+          scale: 1.0));
+      await tester.pumpAndSettle();
+
+      for (final label in ['아이디 찾기', '비밀번호 찾기', '회원가입']) {
+        final size = tester.getSize(find.ancestor(
+          of: find.text(label),
+          matching: find.byType(Container),
+        ).first);
+        expect(size.height, greaterThanOrEqualTo(44), reason: '$label 탭 영역');
+      }
+    });
+
+    testWidgets('습관 설문 — 카드와 줄이 넘치지 않는다', (tester) async {
+      const user = AuthUser(
+        userId: 1,
+        email: 'test@skinplate.app',
+        nickname: '테스트유저',
+      );
+
+      await tester.binding.setSurfaceSize(const Size(402, 1600));
+      await tester.pumpWidget(scaled(ProviderScope(
+        overrides: [authNotifierProvider.overrideWith(() => _StubAuth(user))],
+        child: const SkinTypePage(mode: ProfileFormMode.lifestyle),
+      )));
+      await tester.pumpAndSettle();
+
+      // 네 줄을 모두 펼친다 — 접힌 상태로는 오버플로가 드러나지 않는다.
+      for (final title in ['수면 패턴', '스트레스 정도', '운동 습관', '물 섭취']) {
+        await tester.tap(find.text(title));
+        await tester.pumpAndSettle();
+        expect(tester.takeException(), isNull, reason: '$title 를 펼쳤을 때');
+      }
+    });
+
+    testWidgets('습관 설문 — 미선택은 보기와 같은 말을 쓰지 않는다', (tester) async {
+      const user = AuthUser(
+        userId: 1,
+        email: 'test@skinplate.app',
+        nickname: '테스트유저',
+      );
+
+      await tester.binding.setSurfaceSize(designSize);
+      await tester.pumpWidget(scaled(
+        ProviderScope(
+          overrides: [authNotifierProvider.overrideWith(() => _StubAuth(user))],
+          child: const SkinTypePage(mode: ProfileFormMode.lifestyle),
+        ),
+        scale: 1.0,
+      ));
+      await tester.pumpAndSettle();
+
+      // 스트레스의 실제 보기에 '보통' 이 있다. 미선택을 '보통' 으로 적으면
+      // 안 고른 줄과 고른 줄이 같은 글자가 된다.
+      expect(find.text('미설정'), findsNWidgets(4));
+      expect(find.text('보통'), findsNothing);
+    });
+
+    testWidgets('음식 결과 영양 타일 — 네 칸이 넘치지 않는다', (tester) async {
+      await tester.binding.setSurfaceSize(designSize);
+      await tester.pumpWidget(scaled(const Scaffold(
+        body: Padding(
+          padding: EdgeInsets.symmetric(horizontal: AppTheme.pagePadding),
+          child: NutrientTiles(
+            caloriesKcal: 500,
+            sodiumMg: 1280,
+            sugarG: 28,
+            fatG: 14,
+          ),
+        ),
+      )));
+      await tester.pumpAndSettle();
+
+      expect(tester.takeException(), isNull);
+    });
+  });
+
+  group('고정 크기 상자가 글자를 자르지 않는다', () {
+    testWidgets('GOOD/BAD 배지', (tester) async {
+      await tester.binding.setSurfaceSize(designSize);
+      await tester.pumpWidget(scaled(const Scaffold(
+        body: Center(child: VerdictBadge(grade: SkinLevel.excellent)),
+      )));
+      await tester.pumpAndSettle();
+
+      expectNotClipped(tester, find.text('GOOD'), label: 'GOOD 배지');
+    });
+  });
+
+  group('홈 기록 카드 — 세 상태가 구분된다', () {
+    Widget card({
+      bool loading = false,
+      String? failureMessage,
+    }) =>
+        scaled(
+          Scaffold(
+            body: TodayRecordsCard(
+              items: const [],
+              imageDirectory: null,
+              loading: loading,
+              failureMessage: failureMessage,
+              onRetry: () {},
+              onCapture: () {},
+              onItemTap: (_) {},
+              onSeeAll: () {},
+            ),
+          ),
+          scale: 1.0,
+        );
+
+    testWidgets('불러오는 중에는 예시를 그리지 않는다', (tester) async {
+      await tester.binding.setSurfaceSize(designSize);
+      await tester.pumpWidget(card(loading: true));
+      await tester.pump();
+
+      expect(find.byType(CircularProgressIndicator), findsOneWidget);
+      expect(find.text('ex)'), findsNothing);
+    });
+
+    testWidgets('실패는 이유와 다시 시도를 보여준다', (tester) async {
+      await tester.binding.setSurfaceSize(designSize);
+      await tester.pumpWidget(
+          card(failureMessage: const NetworkFailure().message));
+      await tester.pumpAndSettle();
+
+      expect(find.text(const NetworkFailure().message), findsOneWidget);
+      expect(find.text('다시 시도'), findsOneWidget);
+      expect(find.text('ex)'), findsNothing);
+    });
+
+    testWidgets('정말 빈 날에는 예시와 촬영 안내가 뜬다', (tester) async {
+      await tester.binding.setSurfaceSize(designSize);
+      await tester.pumpWidget(card());
+      await tester.pumpAndSettle();
+
+      expect(find.text('ex)'), findsOneWidget);
+      expect(find.byType(CircularProgressIndicator), findsNothing);
+    });
+  });
+}
+
+class _StubAuth extends AuthNotifier {
+  _StubAuth(this.user);
+
+  final AuthUser user;
+
+  @override
+  AuthState build() => Authenticated(user);
+}
