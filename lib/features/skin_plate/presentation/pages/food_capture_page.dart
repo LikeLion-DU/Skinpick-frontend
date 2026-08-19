@@ -4,7 +4,6 @@ import 'package:camera/camera.dart';
 import 'package:flutter/foundation.dart'
     show TargetPlatform, debugPrint, defaultTargetPlatform, kDebugMode, kIsWeb;
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart' show DeviceOrientation, SystemChrome;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -64,11 +63,6 @@ class _FoodCapturePageState extends ConsumerState<FoodCapturePage>
     super.initState();
     WidgetsBinding.instance.addObserver(this);
 
-    // ML Kit 에 넘기는 회전 보정이 세로 기준이다. 가로로 돌리면 90도 어긋난
-    // 프레임이 들어가 라벨이 엉킨다. 이 화면에서만 세로로 고정한다.
-    unawaited(SystemChrome.setPreferredOrientations(
-        const [DeviceOrientation.portraitUp]));
-
     _runCamera(_openCamera);
   }
 
@@ -76,8 +70,6 @@ class _FoodCapturePageState extends ConsumerState<FoodCapturePage>
   void dispose() {
     _disposed = true;
     WidgetsBinding.instance.removeObserver(this);
-    unawaited(SystemChrome.setPreferredOrientations(DeviceOrientation.values));
-
     // 라벨러를 먼저 닫으면 아직 날아오던 프레임이 닫힌 라벨러를 부른다.
     // 카메라를 먼저 다 닫고, 그 뒤에 닫는다.
     _runCamera(_closeCamera);
