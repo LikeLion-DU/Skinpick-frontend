@@ -188,8 +188,10 @@ void main() {
       final made = coldStart(hold: Duration.zero);
       await settled(made);
 
-      // 복원 중 가드가 넓어지면(예: `state is! Authenticated`) 로그인한 사용자의
-      // 프로필 저장이 만료돼도 화면이 그대로 남는다. 그 경계를 여기서 잡는다.
+      // **살아 있는 세션을 실제로 만든다.** 콜드 스타트가 만료 토큰을 지운 뒤라
+      // 그냥 상태만 Authenticated 로 세우면 토큰이 없어 헤더 없이 나가고,
+      // 자격 증명을 안 보낸 401 은 정리 대상이 아니라 아무 일도 안 일어난다.
+      await storage.save('live-jwt');
       made.read(authNotifierProvider.notifier).state =
           const Authenticated(_user);
       await expectLater(
