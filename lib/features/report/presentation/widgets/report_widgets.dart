@@ -897,6 +897,11 @@ class _StatusPill extends StatelessWidget {
   Widget build(BuildContext context) {
     return Semantics(
       // 태그들 뒤에 등급 낱말만 읽히면 또 하나의 태그로 들린다.
+      //
+      // `excludeSemantics` 가 없으면 안쪽 Text 의 노드가 그대로 합쳐져
+      // "상태 보통\n보통" 이 된다 — 스크린리더가 같은 말을 두 번 읽는다.
+      container: true,
+      excludeSemantics: true,
       label: '상태 ${grade.label}',
       child: Pill(
         minHeight: 24,

@@ -10,6 +10,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:skinplate/core/di/providers.dart';
 import 'package:skinplate/core/network/dio_client.dart';
 import 'package:skinplate/core/storage/token_storage.dart';
+import 'package:skinplate/features/auth/domain/entities/auth_user.dart';
+import 'package:skinplate/features/auth/domain/repositories/auth_repository.dart';
 import 'package:skinplate/features/auth/presentation/providers/auth_notifier.dart';
 
 /// 저장소를 못 읽는 기기에서도 앱이 갇히지 않는다.
@@ -144,6 +146,51 @@ void main() {
     });
   });
 
+  group('저장소 삭제가 실패해도', () {
+    /// 읽기는 되는데 **삭제만** 던지는 저장소. 401 정리 경로가 여기서 막혔다.
+    const undeletable = TokenStorage(_UndeletableSecureStorage());
+
+    test('401 이 만료로 그대로 전달된다 — 저장소 오류가 덮어쓰지 않는다', () async {
+      var signalled = false;
+      final dio =
+          DioClient(tokenStorage: undeletable, onUnauthorized: () => signalled = true)
+              .dio
+            ..httpClientAdapter = _Unauthorized();
+
+      // 인터셉터가 예외를 흘리면 Dio 가 원래 401 을 지우고
+      // DioExceptionType.unknown 을 내보낸다 — mapToFailure 가 AuthFailure 를
+      // 못 만들어 화면에 "일시적인 오류" 만 뜬다.
+      await expectLater(
+        dio.get<dynamic>('/skin/analyses'),
+        throwsA(isA<DioException>().having(
+            (error) => error.response?.statusCode, 'statusCode', 401)),
+      );
+
+      // 지우지 못했어도 세션은 끊어야 한다.
+      expect(signalled, isTrue, reason: '삭제 실패가 만료 신호까지 삼켰다');
+    });
+
+    test('로그아웃이 그래도 비인증으로 전환한다', () async {
+      final made = ProviderContainer(overrides: [
+        splashMinimumHoldProvider.overrideWithValue(Duration.zero),
+        tokenStorageProvider.overrideWithValue(undeletable),
+        authRepositoryProvider.overrideWithValue(
+            const _LogoutFailsRepository()),
+      ]);
+      addTearDown(made.dispose);
+      made.listen(authNotifierProvider, (_, __) {});
+
+      made.read(authNotifierProvider.notifier).state =
+          const Authenticated(AuthUser(userId: 1, email: 'a@b.c', nickname: 'n'));
+
+      await made.read(authNotifierProvider.notifier).logout();
+
+      // 상태가 Authenticated 로 남으면 이전 사용자의 사진과 점수가 화면에 남는다.
+      expect(made.read(authNotifierProvider), isA<Unauthenticated>(),
+          reason: '토큰 삭제 실패가 로그아웃을 통째로 막았다');
+    });
+  });
+
   test('9. resetOnError 가 다시 켜지지 않았다', () {
     // 켜면 어떤 예외에서든 저장소 전체를 지우고 "Data has been reset" 을
     // **성공** 으로 답한다(FlutterSecureStoragePlugin.java). read 는 그 문자열을,
@@ -176,6 +223,35 @@ class _UnreadableSecureStorage extends FlutterSecureStorage {
         code: 'BadPaddingException',
         message: 'Could not decrypt value',
       );
+}
+
+/// 삭제만 던지는 저장소. 읽기는 정상이라 헤더는 붙는다.
+class _UndeletableSecureStorage extends FlutterSecureStorage {
+  const _UndeletableSecureStorage();
+
+  @override
+  Future<void> delete({
+    required String key,
+    IOSOptions? iOptions,
+    AndroidOptions? aOptions,
+    LinuxOptions? lOptions,
+    WebOptions? webOptions,
+    MacOsOptions? mOptions,
+    WindowsOptions? wOptions,
+  }) =>
+      throw PlatformException(code: 'KeyStoreException', message: 'delete failed');
+}
+
+/// 로그아웃이 저장소 삭제에서 던지는 레포지토리.
+class _LogoutFailsRepository implements AuthRepository {
+  const _LogoutFailsRepository();
+
+  @override
+  Future<void> logout() =>
+      throw PlatformException(code: 'KeyStoreException', message: 'delete failed');
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
 class _Ok implements HttpClientAdapter {

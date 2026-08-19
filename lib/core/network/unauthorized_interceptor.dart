@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart' show debugPrint, kDebugMode;
 
 import '../storage/token_storage.dart';
 
@@ -55,7 +56,21 @@ class UnauthorizedInterceptor extends Interceptor {
     if (err.response?.statusCode == 401 &&
         sentCredentials &&
         !_isCredentialRequest(err)) {
-      await _tokenStorage.clear();
+      // **여기서 던지면 401 자체가 사라진다.** 인터셉터가 흘린 예외를 Dio 가
+      // 원래 응답 대신 내보내서(DioExceptionType.unknown, response: null)
+      // mapToFailure 가 AuthFailure 대신 UnknownFailure 를 내고, 화면은
+      // "일시적인 오류" 만 띄운 채 만료를 알리지 못한다. 신호도 안 뜬다.
+      //
+      // 지우지 못한 것을 성공으로 위장하지도 않는다 — 토큰이 남을 수 있다.
+      // 다만 남더라도 아래 신호가 세션을 끊고, 다음 로그인이 값을 덮어쓴다.
+      // 저장소 오류와 인증 만료는 서로 다른 사실이라 한 예외로 뭉개지 않는다.
+      try {
+        await _tokenStorage.clear();
+      } catch (error) {
+        if (kDebugMode) {
+          debugPrint('토큰 삭제 실패 — 만료 처리는 그대로 진행한다: $error');
+        }
+      }
       _onUnauthorized();
     }
     handler.next(err);

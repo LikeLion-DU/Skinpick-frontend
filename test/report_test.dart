@@ -220,6 +220,35 @@ void main() {
       }
     });
 
+    testWidgets('상태를 스크린리더가 한 번만 읽는다', (tester) async {
+      final handle = tester.ensureSemantics();
+      final report = daily('report_daily');
+      final graded =
+          report.concerns.where((concern) => concern.status != null).toList();
+      expect(graded, isNotEmpty);
+
+      await pump(
+        tester,
+        host(
+          _FakeReportRepository(daily: Success(report)),
+          DailyReportView(date: DateTime(2026, 8, 17)),
+        ),
+      );
+
+      // excludeSemantics 가 없으면 안쪽 Text 노드가 합쳐져 "상태 보통\n보통" 이
+      // 된다 — 같은 말을 두 번 읽는다.
+      for (final label in graded.map((c) => c.status!.label).toSet()) {
+        expect(find.bySemanticsLabel('상태 $label'), findsWidgets);
+        expect(
+          find.bySemanticsLabel('상태 $label\n$label'),
+          findsNothing,
+          reason: '등급이 두 번 읽힌다',
+        );
+      }
+
+      handle.dispose();
+    });
+
     testWidgets('주간 탭에서도 상태 칩이 산다 — 변화량까지 든 좁은 줄이다', (tester) async {
       // 같은 ConcernList 를 주간이 다시 쓴다. 그쪽 줄에는 변화량 라벨이 더 붙어
       // 가장 빡빡한 배치라, 여기서만 접히는 회귀가 나올 수 있다.

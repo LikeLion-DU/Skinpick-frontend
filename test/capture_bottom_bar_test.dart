@@ -17,9 +17,12 @@ import 'package:skinplate/shared/widgets/capture_shutter.dart';
 /// **한계 하나는 남는다.** 촬영 화면은 카메라 프리뷰가 열린 뒤에만 이 배치를
 /// 그려서 페이지를 통째로 띄울 수 없고, 여기서는 마운트 방식을 흉내 낸다.
 /// 그래서 "하단 블록을 어디에 매다는가" 자체가 바뀌는 회귀는 못 잡는다 —
-/// 예전처럼 절대 좌표 Align 으로 되돌려도 이 파일은 초록이다. 그 축은 타원과
-/// 하단 블록이 `faceGuideOval` 하나만 보게 만들어(좌표계가 두 벌이 될 수 없다)
-/// 구조로 막았다.
+/// 예전처럼 절대 좌표 Align 으로 되돌려도 이 파일은 초록이다.
+///
+/// **구조가 침범을 막아 주지는 않는다.** [CaptureBottomBar] 는 `faceGuideOval` 을
+/// 읽지 않는다 — 화면 아래에 붙고 고정 간격만 쓴다. 타원과의 여유는 그 결과로
+/// 생기는 값이라, 아래 좌표 단언들이 유일한 안전망이다. `faceGuideOval` 이
+/// 하는 일은 **그리는 쪽과 재는 쪽이 같은 수를 보게 하는 것**뿐이다.
 void main() {
   const sizes = [Size(320, 568), Size(360, 640), Size(390, 844)];
   const insets = [0.0, 24.0, 48.0];
@@ -126,6 +129,27 @@ void main() {
         reason: '촬영 중을 꺼짐과 같이 흐리게 하면 스피너까지 사라진다');
     expect(CaptureShutter.dimmedFor(enabled: false, busy: false), isTrue);
     expect(CaptureShutter.dimmedFor(enabled: true, busy: false), isFalse);
+  });
+
+  testWidgets('안내와 조작이 한 Column 에 남아 있다', (tester) async {
+    // 좌표를 재는 위 테스트들과 역할이 다르다. 저건 "지금 배치가 겹치지 않는가",
+    // 이건 "안내를 다시 떼어내지 않았는가" 다. Column 은 자식을 겹칠 수 없어서,
+    // 한 줄에 있는 한 순서 역전과 상호 겹침은 생기지 않는다.
+    //
+    // 이 단언이 타원 침범까지 막아 주지는 않는다 — 그건 위 좌표 단언 몫이다.
+    await pump(tester, sizes.first, 0, stage: FacePhotoType.front);
+
+    expect(
+      find.ancestor(
+        of: find.text('정면을 바라봐주세요'),
+        matching: find.descendant(
+          of: find.byType(CaptureBottomBar),
+          matching: find.byType(Column),
+        ),
+      ),
+      findsWidgets,
+      reason: '안내를 하단 블록 밖으로 다시 떼어냈다',
+    );
   });
 
   testWidgets('셔터를 스크린리더가 읽는다', (tester) async {
