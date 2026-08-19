@@ -34,6 +34,12 @@ android {
             // TODO: Add your own signing config for the release build.
             // Signing with the debug keys for now, so `flutter run --release` works.
             signingConfig = signingConfigs.getByName("debug")
+            // R8 이 ML Kit 을 깎아 릴리스에서만 얼굴 검출이 죽는다.
+            // 규칙과 실기기 로그 근거는 proguard-rules.pro 에 있다.
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro",
+            )
         }
     }
 }
