@@ -9,6 +9,8 @@
 # InputImage 변환이 깨진다. 얼굴 게이트와 음식 라벨링이 같이 죽는다.
 -keep class com.google.mlkit.** { *; }
 -keep class com.google.android.odml.image.** { *; }
+# usage.txt(릴리스 mapping 산출물)에서 실제로 깎인 것으로 확인된 패키지.
+-keep class com.google.android.gms.internal.mlkit_common.** { *; }
 -keep class com.google.android.gms.internal.mlkit_vision_face.** { *; }
 -keep class com.google.android.gms.internal.mlkit_vision_common.** { *; }
 -keep class com.google.android.gms.internal.mlkit_vision_image_labeling.** { *; }
