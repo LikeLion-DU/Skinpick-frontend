@@ -7,6 +7,8 @@ import 'package:skinplate/features/auth/domain/entities/auth_user.dart';
 import 'package:skinplate/features/auth/presentation/pages/login_page.dart';
 import 'package:skinplate/features/auth/presentation/pages/skin_type_page.dart';
 import 'package:skinplate/features/auth/presentation/providers/auth_notifier.dart';
+import 'package:skinplate/features/report/domain/entities/report.dart';
+import 'package:skinplate/features/report/presentation/widgets/report_widgets.dart';
 import 'package:skinplate/features/home/presentation/widgets/today_records_card.dart';
 import 'package:skinplate/features/skin_plate/presentation/widgets/plate_summary_cards.dart';
 import 'package:skinplate/shared/widgets/verdict_badge.dart';
@@ -48,6 +50,19 @@ void main() {
       // 세 링크가 다 살아 있어야 한다 — 잘려 나가면 가입 입구가 사라진다.
       expect(find.text('회원가입'), findsOneWidget);
       expect(find.text('아이디 찾기'), findsOneWidget);
+    });
+
+    testWidgets('로그인 — 기본 글자 크기에서는 세 링크가 한 줄이다', (tester) async {
+      // Wrap 으로 바꾼 뒤 링크가 세 줄로 쪼개졌다(각 Container 가 폭을 다 먹었다).
+      // 에뮬레이터 화면에서 눈으로 잡혔다.
+      await tester.binding.setSurfaceSize(designSize);
+      await tester.pumpWidget(scaled(const ProviderScope(child: LoginPage()),
+          scale: 1.0));
+      await tester.pumpAndSettle();
+
+      final y = tester.getTopLeft(find.text('아이디 찾기')).dy;
+      expect(tester.getTopLeft(find.text('비밀번호 찾기')).dy, y);
+      expect(tester.getTopLeft(find.text('회원가입')).dy, y);
     });
 
     testWidgets('로그인 — 링크 탭 영역이 44dp 이상이다', (tester) async {
@@ -138,6 +153,52 @@ void main() {
       await tester.pumpAndSettle();
 
       expectNotClipped(tester, find.text('GOOD'), label: 'GOOD 배지');
+    });
+  });
+
+  group('칩은 남은 폭을 다 먹지 않는다', () {
+    // `Container(alignment: …)` 를 Wrap 안에 두면 Align 이 남은 폭을 전부 차지해서
+    // 칩이 한 줄에 하나씩 쌓인다. 시안은 나란히 두 개다. 로그인 링크 줄에서 눈으로
+    // 잡혔고(세 링크가 세 줄로 쪼개졌다), 같은 구조가 앱 전체 칩에 있었다.
+    testWidgets('고민 태그 두 개가 한 줄에 나란히 앉는다', (tester) async {
+      const tags = ['발효식품 포함', '매운맛 자극'];
+
+      await tester.binding.setSurfaceSize(designSize);
+      await tester.pumpWidget(scaled(
+        const Scaffold(
+          body: Padding(
+            padding: EdgeInsets.symmetric(horizontal: 20),
+            child: ConcernList(
+              hasRecords: true,
+              items: [
+                ConcernScore(
+                  concern: 'ACNE',
+                  label: '여드름',
+                  score: 74,
+                  status: SkinLevel.good,
+                  change: null,
+                  message: '발효식품이 포함돼 있어요.',
+                  tags: tags,
+                ),
+              ],
+            ),
+          ),
+        ),
+        scale: 1.0,
+      ));
+      await tester.pumpAndSettle();
+
+      // 칸 폭(362)의 절반보다 좁아야 두 개가 한 줄에 들어간다.
+      for (final tag in tags) {
+        final chip = find
+            .ancestor(of: find.text(tag), matching: find.byType(Container))
+            .first;
+        expect(tester.getSize(chip).width, lessThan(181),
+            reason: '$tag 칩이 폭을 다 먹었다');
+      }
+      // 같은 y 에 있어야 한다 — 줄이 갈리면 하나가 아래로 내려간다.
+      expect(tester.getTopLeft(find.text(tags[0])).dy,
+          tester.getTopLeft(find.text(tags[1])).dy);
     });
   });
 

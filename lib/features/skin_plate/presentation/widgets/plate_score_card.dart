@@ -70,17 +70,19 @@ class PlateScoreCard extends StatelessWidget {
           Container(
             height: 24,
             padding: const EdgeInsets.symmetric(horizontal: 12),
-            alignment: Alignment.center,
             decoration: BoxDecoration(
               color: grade.tintColor,
               borderRadius: BorderRadius.circular(12),
             ),
-            child: Text(
-              grade.label,
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w500,
-                color: grade.accentColor,
+            child: Center(
+              widthFactor: 1,
+              child: Text(
+                grade.label,
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                  color: grade.accentColor,
+                ),
               ),
             ),
           ),

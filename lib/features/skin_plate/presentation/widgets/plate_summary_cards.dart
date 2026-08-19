@@ -112,18 +112,20 @@ class FoodTraitChips extends StatelessWidget {
                   // 알약이 글자를 자른다(예외가 안 나서 테스트도 통과한다).
                   constraints: const BoxConstraints(minHeight: 25),
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
-                  alignment: Alignment.center,
                   decoration: BoxDecoration(
                     color: const Color(0xFFFEF6EE),
                     border: Border.all(color: const Color(0xFFFFD6C2)),
                     borderRadius: BorderRadius.circular(4),
                   ),
-                  child: Text(
-                    '$name : $value',
-                    style: const TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w400,
-                      color: AppColors.primary,
+                  child: Center(
+                    widthFactor: 1,
+                    child: Text(
+                      '$name : $value',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w400,
+                        color: AppColors.primary,
+                      ),
                     ),
                   ),
                 ),

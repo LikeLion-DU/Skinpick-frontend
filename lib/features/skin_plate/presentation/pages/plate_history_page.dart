@@ -474,19 +474,21 @@ class _MealCard extends ConsumerWidget {
                               constraints: const BoxConstraints(minHeight: 20),
                               padding: const EdgeInsets.symmetric(
                                   horizontal: 10, vertical: 2),
-                              alignment: Alignment.center,
                               decoration: BoxDecoration(
                                 color: const Color(0xFFF4F4F4),
                                 border: Border.all(
                                     color: const Color(0xFFCBCBCB), width: 0.4),
                                 borderRadius: BorderRadius.circular(10),
                               ),
-                              child: Text(tag,
-                                  style: const TextStyle(
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.w400,
-                                    color: Color(0xFF656565),
-                                  )),
+                              child: Center(
+                                widthFactor: 1,
+                                child: Text(tag,
+                                    style: const TextStyle(
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w400,
+                                      color: Color(0xFF656565),
+                                    )),
+                              ),
                             ),
                         ],
                       ),

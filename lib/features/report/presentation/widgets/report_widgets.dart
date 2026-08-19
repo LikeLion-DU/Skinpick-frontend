@@ -818,17 +818,19 @@ class _ConcernTag extends StatelessWidget {
       // 알약이 글자를 자른다(예외가 안 나서 테스트도 통과한다).
       constraints: const BoxConstraints(minHeight: 21),
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
-      alignment: Alignment.center,
       decoration: BoxDecoration(
         color: Color.lerp(accent, Colors.white, 0.82),
         borderRadius: BorderRadius.circular(16),
       ),
-      child: Text(
-        label,
-        style: TextStyle(
-          fontSize: 11,
-          fontWeight: FontWeight.w600,
-          color: Color.lerp(accent, Colors.black, 0.15),
+      child: Center(
+        widthFactor: 1,
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.w600,
+            color: Color.lerp(accent, Colors.black, 0.15),
+          ),
         ),
       ),
     );
@@ -849,17 +851,19 @@ class _StatusPill extends StatelessWidget {
     return Container(
       constraints: const BoxConstraints(minHeight: 24),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
-      alignment: Alignment.center,
       decoration: BoxDecoration(
         color: Color.lerp(accent, Colors.white, 0.78),
         borderRadius: BorderRadius.circular(16),
       ),
-      child: Text(
-        label,
-        style: TextStyle(
-          fontSize: 12,
-          fontWeight: FontWeight.w600,
-          color: accent,
+      child: Center(
+        widthFactor: 1,
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            color: accent,
+          ),
         ),
       ),
     );
@@ -925,17 +929,19 @@ class PointList extends StatelessWidget {
             // 알약이 글자를 자른다(예외가 안 나서 테스트도 통과한다).
             constraints: const BoxConstraints(minHeight: 21),
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
-            alignment: Alignment.center,
             decoration: BoxDecoration(
               color: Color.lerp(accent, Colors.white, 0.82),
               borderRadius: BorderRadius.circular(16),
             ),
-            child: Text(
-              point,
-              style: TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w600,
-                color: Color.lerp(accent, Colors.black, 0.15),
+            child: Center(
+              widthFactor: 1,
+              child: Text(
+                point,
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  color: Color.lerp(accent, Colors.black, 0.15),
+                ),
               ),
             ),
           ),

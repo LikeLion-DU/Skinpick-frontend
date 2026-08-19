@@ -26,19 +26,21 @@ class VerdictBadge extends StatelessWidget {
       // 자른다 — 그래서 배율 테스트도 통과했다.
       constraints: const BoxConstraints(minWidth: 53, minHeight: 19),
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-      alignment: Alignment.center,
       decoration: BoxDecoration(
         // 주의 점수를 빨강으로 칠하지 않는다 — 빨강(bad)은 결과 화면의
         // BAD 카드 전용이고, 여기 라벨은 오렌지다.
         color: isGood ? AppColors.good : AppColors.primary,
         borderRadius: BorderRadius.circular(12.5),
       ),
-      child: Text(
-        isGood ? 'GOOD' : 'BAD',
-        style: const TextStyle(
-          fontSize: 10,
-          fontWeight: FontWeight.w600,
-          color: Colors.white,
+      child: Center(
+        widthFactor: 1,
+        child: Text(
+          isGood ? 'GOOD' : 'BAD',
+          style: const TextStyle(
+            fontSize: 10,
+            fontWeight: FontWeight.w600,
+            color: Colors.white,
+          ),
         ),
       ),
     );
