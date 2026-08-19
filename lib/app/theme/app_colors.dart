@@ -92,6 +92,20 @@ class AppColors {
   static const bad = Color(0xFFDF0011);
   static const caution = Color(0xFFFF7D40);
 
+  // ── 영양 타일 4종 ──────────────────────────────────────────
+  // 칼로리·지방·당류·나트륨 아이콘. **판정이 아니라 구분이다.** 네 칸이 같은
+  // 회색이면 훑을 때 칸이 안 나뉘어서 색을 주되, 초록·빨강·주황은 쓰지 않는다 —
+  // [good]·[bad]·[caution] 과 같은 계열이면 "당류가 초록이니 괜찮다" 로 읽힌다.
+  // 음식의 과다·부족 판정은 서버 `feedbacks` 가 하고 화면에서는 위 GOOD/BAD
+  // 카드가 말한다. 여기에 판정 의미를 얹지 마라.
+  //
+  // 그래서 한랭 계열(파랑·청록·보라·슬레이트)로만 고른다. 판정 팔레트에 없는
+  // 색이라 나중에 디자이너가 평가색을 조정해도 이 넷과 겹치지 않는다.
+  static const nutrientCalorie = Color(0xFF5B7FD1);
+  static const nutrientFat = Color(0xFF4BA3A0);
+  static const nutrientSugar = Color(0xFF8E7CE8);
+  static const nutrientSodium = Color(0xFF7C8794);
+
   // ── 피부 지표 4종 ──────────────────────────────────────────
   // 시안의 "분석이 완료됐어요" 카드에 쓰인 아이콘 색과 원형 배경.
   // 서버 지표는 5개(hydration·oil·redness·trouble·barrier)인데 시안은

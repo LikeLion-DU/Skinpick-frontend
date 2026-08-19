@@ -31,7 +31,6 @@ class Pill extends StatelessWidget {
     this.verticalPadding = 2,
     this.maxLines,
     this.overflow,
-    this.fitDown = false,
   });
 
   final String label;
@@ -60,21 +59,8 @@ class Pill extends StatelessWidget {
   final int? maxLines;
   final TextOverflow? overflow;
 
-  /// 폭이 고정된 칸에서 라벨을 **줄여서 다 보여준다.** 말줄임(…)은 라벨이 곧
-  /// 정보인 탭에서 "주요 피부 …" 처럼 정체를 지운다 — 실기기(갤럭시, 글자 크기
-  /// 확대)에서 그렇게 떴다. 리포트 탭 선택기가 쓰는 것과 같은 백스톱이다.
-  /// 켜면 [maxLines]·[overflow] 는 무시된다 — 줄이는 쪽과 자르는 쪽을 같이 걸 수 없다.
-  final bool fitDown;
-
   @override
   Widget build(BuildContext context) {
-    final text = Text(
-      label,
-      style: style,
-      maxLines: fitDown ? 1 : maxLines,
-      overflow: fitDown ? null : overflow,
-    );
-
     return Container(
       constraints: BoxConstraints(
         minWidth: minWidth ?? 0,
@@ -92,9 +78,13 @@ class Pill extends StatelessWidget {
       // alignment 로 바꾸지 마라 — Wrap 에서 한 줄을 통째로 먹는다(위 1번).
       child: Center(
         widthFactor: 1,
-        child: fitDown
-            ? FittedBox(fit: BoxFit.scaleDown, child: text)
-            : text,
+        child: Text(
+          label,
+          textAlign: TextAlign.center,
+          style: style,
+          maxLines: maxLines,
+          overflow: overflow,
+        ),
       ),
     );
   }

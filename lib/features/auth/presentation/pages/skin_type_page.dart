@@ -552,9 +552,17 @@ class _StepSwitcher extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        for (final (index, step) in _ProfileStep.values.indexed) ...[
+    // 라벨이 곧 이 탭의 정체라 말줄임("주요 피부 …")도, 축소도 답이 아니다.
+    // 축소(FittedBox)는 사용자가 키운 배율을 그대로 나눠 없앤다 — 글자 크기를
+    // 2.0 으로 올려도 12.8px 로 고정돼, 접근성 설정이 이 줄에만 안 먹었다.
+    //
+    // 리포트 탭과 같은 정책이다: 배율은 1.2 까지 따라가고, 그래도 넘치면 두 줄로
+    // 접는다. 높이는 minHeight 라 두 줄이 되면 알약이 같이 자란다.
+    return MediaQuery.withClampedTextScaling(
+      maxScaleFactor: 1.2,
+      child: Row(
+        children: [
+          for (final (index, step) in _ProfileStep.values.indexed) ...[
           if (index > 0) const SizedBox(width: 8),
           Expanded(
             child: GestureDetector(
@@ -563,13 +571,12 @@ class _StepSwitcher extends StatelessWidget {
               // 이 줄도 알약이다. 예전에는 높이를 36 으로 박아 두어서 글자 크기
               // 2.0 에서 라벨이 8px 잘렸다(그려진 32 / 필요한 40) — 예외가 나지
               // 않으니 오버플로만 보는 테스트로는 안 잡혔다.
-              // 말줄임이 아니라 축소다 — "주요 피부 …" 는 무엇의 탭인지 지운다.
               child: Pill(
                 label: step.label,
                 minHeight: 36,
                 horizontalPadding: 8,
                 borderRadius: 16,
-                fitDown: true,
+                maxLines: 2,
                 color: step == current
                     ? const Color(0xFFFFEEE6)
                     : AppColors.background,
@@ -590,7 +597,8 @@ class _StepSwitcher extends StatelessWidget {
             ),
           ),
         ],
-      ],
+        ],
+      ),
     );
   }
 }

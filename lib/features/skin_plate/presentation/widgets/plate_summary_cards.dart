@@ -384,16 +384,19 @@ class NutrientTiles extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // 순서는 시안 그대로다 — 칼로리 · 지방 · 당류 · 나트륨.
-    // 아이콘 색도 시안(367-2211)을 따른다 — 네 칸이 같은 회색이면 훑을 때
-    // 칸이 구분되지 않는다. 색은 장식이고 판정이 아니다(초록 당류가 "좋다"는
-    // 뜻이 아니다) — 판정은 위 GOOD/BAD 카드가 말한다.
+    // 아이콘 색은 **칸을 구분하려고** 준다. 네 칸이 같은 회색이면 훑을 때
+    // 나뉘지 않는다. 색이 판정을 뜻하지 않도록 초록·빨강·주황은 쓰지 않는다 —
+    // 예전에는 당류가 AppColors.good 과 사실상 같은 초록이고 지방이 caution 과
+    // 같은 주황이라, 서버가 BAD 를 내린 기록에서 당류만 초록으로 떴다.
+    // 판정은 위 GOOD/BAD 카드가 말한다. 색 값은 AppColors 가 소유한다.
     final tiles = [
-      (Icons.monitor_heart_outlined, const Color(0xFFFF6B57), '칼로리',
+      (Icons.monitor_heart_outlined, AppColors.nutrientCalorie, '칼로리',
           '${_comma(caloriesKcal)} kcal'),
-      (Icons.cloud_outlined, AppColors.primary, '지방', '${_comma(fatG)} g'),
-      (Icons.icecream_outlined, const Color(0xFF6DBE6A), '당류',
+      (Icons.cloud_outlined, AppColors.nutrientFat, '지방', '${_comma(fatG)} g'),
+      (Icons.icecream_outlined, AppColors.nutrientSugar, '당류',
           '${_comma(sugarG)} g'),
-      (Icons.grain, const Color(0xFF8E7CE8), '나트륨', '${_comma(sodiumMg)} mg'),
+      (Icons.grain, AppColors.nutrientSodium, '나트륨',
+          '${_comma(sodiumMg)} mg'),
     ];
 
     // 네 칸의 높이를 서로 맞춘다. 최소 높이만 두면 한 칸의 값이 두 줄로 접히는

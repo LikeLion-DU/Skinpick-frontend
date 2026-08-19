@@ -44,6 +44,49 @@ void main() {
         reason: '$label 가로가 잘렸다 (그려진 $painted / 필요한 $needed)');
   }
 
+  group('단계 탭 — 배율이 실제로 먹는다', () {
+    /// 그려진 라벨의 화면상 높이. 변환까지 반영돼야 축소를 볼 수 있다.
+    Future<double> tabTextHeight(WidgetTester tester, double scale) async {
+      await tester.binding.setSurfaceSize(designSize);
+      await tester.pumpWidget(ProviderScope(
+        overrides: [
+          // 스플래시 최소 노출(3초) 타이머가 테스트 종료 후까지 살아 !timersPending 에 걸린다.
+          splashMinimumHoldProvider.overrideWithValue(Duration.zero),
+        ],
+        child: MaterialApp(
+          builder: (context, child) => MediaQuery(
+            data: MediaQuery.of(context)
+                .copyWith(textScaler: TextScaler.linear(scale)),
+            child: child!,
+          ),
+          home: const SkinTypePage(),
+        ),
+      ));
+      await tester.pump(const Duration(milliseconds: 50));
+      return tester.getRect(find.text('주요 피부 고민')).height;
+    }
+
+    testWidgets('배율을 올리면 탭 글자가 커진다 — 축소로 되돌리지 않는다', (tester) async {
+      // FittedBox 로 줄여 맞추던 시절에는 2.0 을 걸어도 12.8px 로 고정됐다.
+      // 접근성 설정이 이 줄에만 안 먹는 상태였다.
+      final base = await tabTextHeight(tester, 1.0);
+      final bigger = await tabTextHeight(tester, 2.0);
+
+      expect(bigger, greaterThan(base),
+          reason: '배율을 올렸는데 탭 글자가 그대로다');
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('라벨을 줄임표로 지우지 않는다 — 탭의 정체가 라벨이다', (tester) async {
+      await tabTextHeight(tester, 2.0);
+
+      // "주요 피부 …" 로 접히면 무엇의 탭인지가 사라진다. 세 라벨 모두 온전해야 한다.
+      for (final label in ['피부 타입', '주요 피부 고민', '나의 생활 습관']) {
+        expect(find.text(label), findsOneWidget);
+      }
+    });
+  });
+
   group('글자 크기 2.0 — 배율 테스트가 없던 화면', () {
     testWidgets('로그인 — 링크 줄이 넘치지 않고 회원가입이 남는다', (tester) async {
       await tester.binding.setSurfaceSize(designSize);
