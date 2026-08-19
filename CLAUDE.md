@@ -63,7 +63,11 @@ Flutter 3.24+ / Riverpod / go_router / Dio / freezed. 백엔드는 별도 저장
 
 **Dio** — `validateStatus` 를 건드리지 마라.
 - 기본값(2xx만 성공)이어야 4xx가 `DioException` 으로 흘러 인터셉터와 `mapToFailure` 가 동작한다
-- 401 인터셉터는 **`/auth/` 요청을 제외**한다. 로그인 실패도 401이라 폼과 에러 메시지가 함께 사라진다
+- 401 인터셉터는 **자격 증명을 보내는 요청만 제외**한다 — `/auth/login` · `/auth/signup` ·
+  `/auth/test-login`. 로그인 실패도 401이라 제외하지 않으면 폼과 에러 메시지가 함께 사라진다
+- **`/auth/` 를 통째로 제외하지 마라.** `/auth/me` 는 세션을 들고 보내는 요청이라 401 이 곧
+  세션 사망이다. 통째로 빼 두었을 때는 만료 토큰이 안 지워져, 앱을 켤 때마다 같은 토큰으로
+  `/auth/me` 를 두드렸다. 기준은 경로가 아니라 **401 의 의미**다
 
 **호스트** — `API_BASE_URL` 은 에뮬레이터에서 `10.0.2.2`, 배포는 `https`.
 - **결과 화면은 서버 `imageUrl` 이 아니라 앱이 방금 찍은 로컬 파일을 쓴다** (PRD §9.6)
@@ -100,7 +104,8 @@ flutter run --dart-define=API_BASE_URL=http://10.0.2.2:8080/api/v1
 ## 절대 금지
 
 - `build/` · `.dart_tool/` · `.idea/` 커밋
-- `validateStatus` 변경, 401 인터셉터에서 `/auth/` 예외 제거
+- `validateStatus` 변경, 401 인터셉터에서 `/auth/login` · `/auth/signup` · `/auth/test-login`
+  예외 제거 (`/auth/me` 는 예외가 아니다 — §Dio 참조)
 - 서버가 준 점수를 앱에서 다시 계산하기 — 점수는 백엔드가 소유한다
 - **앱에서 판정 규칙을 새로 만들기.** 피부 지표의 높음/낮음은 서버 `highlights`,
   음식의 과다/부족은 서버 `feedbacks` 가 이미 판정해서 준다. 앱이 임계값을 세우면
