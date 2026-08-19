@@ -36,8 +36,18 @@ class _WeeklyReportViewState extends ConsumerState<WeeklyReportView>
   @override
   bool get wantKeepAlive => true;
 
-  /// 오늘 포함 7일이 기본이다 — 서버의 기본 동작(`lastDays(7)`)과 같은 정의다.
-  /// 달력 주가 아니라서 월요일에 리셋되지 않는다.
+  /// **달력 주(월~일)다.** 시안의 기간 표기(`26.8.3(월) ~ 8.9(일)`)가 이미 달력
+  /// 주를 전제한다 — 오늘 포함 7일(롤링)로 두면 수요일에 열었을 때 "지난 목 ~
+  /// 오늘 수"가 떠서 표기 속 (월)(일)과 어긋난다.
+  ///
+  /// **아직 안 온 날은 요청하지 않는다.** 이번 주는 월요일부터 오늘까지다.
+  /// 일요일까지 통째로 보내면 서버가 막지는 않지만, 그 기간이 그대로 AI
+  /// 프롬프트의 `[기간] … (7일 중 3일 기록)` 줄로 들어간다 — 모델이 아직
+  /// 오지도 않은 목·금·토·일을 "빠진 날"로 읽고 그렇게 써 준다. 문장은 서버가
+  /// 소유하므로 앱에서 고칠 수도 없다(CLAUDE.md).
+  ///
+  /// 같은 이유로 분모도 지난 날 기준이다. "7일 중 1일"은 월요일 저녁에
+  /// 엿새를 빼먹었다는 말이 되는데, 그 엿새는 시작도 안 했다.
   static const _weekDays = 7;
 
   /// 몇 주 전을 보고 있는지. 0 이 이번 주다. **양수가 되지 않는다** —
@@ -46,8 +56,10 @@ class _WeeklyReportViewState extends ConsumerState<WeeklyReportView>
 
   ({DateTime from, DateTime to}) get _range {
     final today = todayKst();
-    final to = addDays(today, -_weeksAgo * _weekDays);
-    return (from: addDays(to, -(_weekDays - 1)), to: to);
+    final monday = addDays(mondayOf(today), -_weeksAgo * _weekDays);
+    final sunday = addDays(monday, _weekDays - 1);
+    // 지난 주는 일요일까지 다 왔고, 이번 주는 오늘에서 끊는다.
+    return (from: monday, to: sunday.isAfter(today) ? today : sunday);
   }
 
   @override

@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:skinplate/app/theme/app_theme.dart';
+import 'package:skinplate/core/utils/kst_date.dart';
 import 'package:skinplate/core/di/providers.dart';
 import 'package:skinplate/core/error/failure.dart';
 import 'package:skinplate/core/result/result.dart';
@@ -351,16 +352,29 @@ void main() {
       final firstRange = repository.lastRange;
       expect(firstRange, isNotNull);
 
+      // 이번 주는 월요일에서 시작하고 **오늘에서 끊긴다.** 일요일까지 보내면
+      // 아직 오지도 않은 날이 AI 프롬프트의 "N일 중 M일 기록"에 들어간다.
+      expect(firstRange!.from.weekday, DateTime.monday);
+      expect(firstRange.to.isAfter(todayKst()), isFalse);
+
       await tester.tap(find.byIcon(Icons.chevron_left));
       await tester.pumpAndSettle();
 
-      // 정확히 7일 앞선 구간을 조회해야 한다. 달력 뺄셈이라
-      // Duration(days: 7) 이 아니다 — 서머타임에서 한 시간 어긋난다.
-      final previous = firstRange!.to;
+      // 주의 기준점은 **시작일**이다. 끝은 이번 주만 오늘에서 잘리므로
+      // 7일 간격이 아니다 — 요일에 따라 3일 차이도 나고 0일 차이도 난다.
+      //
+      // 정확히 7일 앞선 월요일이어야 한다. 달력 뺄셈이라 Duration(days: 7) 이
+      // 아니다 — 서머타임에서 한 시간 어긋난다.
+      final previousFrom = firstRange.from;
       expect(
-        repository.lastRange!.to,
-        DateTime(previous.year, previous.month, previous.day - 7),
+        repository.lastRange!.from,
+        DateTime(previousFrom.year, previousFrom.month, previousFrom.day - 7),
       );
+
+      // 지나간 주는 일요일까지 다 왔으므로 월~일 이레가 통째로 온다.
+      final past = repository.lastRange!;
+      expect(past.from.weekday, DateTime.monday);
+      expect(past.to, DateTime(past.from.year, past.from.month, past.from.day + 6));
 
       // 이제 다음 주로 돌아갈 수 있다.
       final forwardAgain = tester.widget<IconButton>(
