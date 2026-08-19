@@ -36,9 +36,11 @@ class OnboardingWelcomePage extends StatelessWidget {
               // Spacer 가 살아나려면 Column 이 유한한 높이를 받아야 한다 —
               // 스크롤 안에서는 무한이라 IntrinsicHeight 를 한 겹 끼운다.
               child: IntrinsicHeight(
+                // 여백은 형제 화면인 촬영 안내의 규약을 그대로 따른다 —
+                // 두 화면이 연달아 뜨는데 좌우·상하 여백이 다르면 넘어가는
+                // 순간 판이 흔들린다.
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: AppTheme.pagePadding),
+                  padding: const EdgeInsets.all(AppTheme.pagePadding),
                   child: Column(
                     children: [
                       // 최소 간격은 SizedBox 가 보장하고 남는 높이만 Spacer 가

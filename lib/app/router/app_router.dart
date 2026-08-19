@@ -28,16 +28,18 @@ class Routes {
   static const splash = '/splash';            // S00
   static const login = '/auth/login';         // S01
   static const signup = '/auth/signup';       // S01b
-  // 가입 직후 인사. 로그인으로 들어온 기존 사용자는 여기 오지 않는다 —
-  // 아래 redirect 가 Authenticated 를 홈으로 보내므로, 이 화면에 닿는 길은
-  // 가입 성공 뒤의 go 하나뿐이다.
-  static const onboardingWelcome = '/onboarding/welcome';
   static const skinType = '/onboarding/skin-type'; // S01c
   static const lifestyle = '/onboarding/lifestyle'; // 인사이트(S10) 진입 전 습관 입력
   // 촬영을 마치고 분석을 기다리는 동안(S04 위) 뜨는 프로필 설문. 같은 화면을
   // 건너뛰기 없는 모드로 쓴다 — 설문을 한 벌 더 만들면 둘 중 하나는 반드시 낡는다.
   static const onboardingProfile = '/onboarding/profile';
   static const home = '/home';                // S02
+  // 가입 직후 인사(온보딩2). 아래 촬영과 **같은 이유로** 홈의 하위에 둔다 —
+  // 최상위에 두면 스택이 한 장뿐이라, 방금 가입한 사용자가 첫 화면에서 뒤로가기를
+  // 누르는 순간 앱이 그대로 닫힌다. 로그인으로 들어온 기존 사용자는 여기 오지
+  // 않는다: redirect 가 Authenticated 를 홈으로 보내므로 닿는 길은 가입 성공
+  // 뒤의 `go` 하나뿐이다.
+  static const onboardingWelcome = '/home/onboarding-welcome';
   // 가입 직후의 촬영 진입점. 화면은 `/skin/capture` 와 **같은** SkinCapturePage 다 —
   // 경로만 홈의 하위라 `go` 한 번으로 홈이 스택 바닥에 깔린다.
   static const onboardingCapture = '/home/skin-capture';
@@ -85,10 +87,6 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: Routes.splash, builder: (_, __) => const SplashPage()),
       GoRoute(path: Routes.login, builder: (_, __) => const LoginPage()),
       GoRoute(path: Routes.signup, builder: (_, __) => const SignupPage()),
-      GoRoute(
-        path: Routes.onboardingWelcome,
-        builder: (_, __) => const OnboardingWelcomePage(),
-      ),
       GoRoute(path: Routes.skinType, builder: (_, __) => const SkinTypePage()),
       // 인사이트가 습관을 받으러 보내는 화면. 같은 화면을 습관 전용 모드로 쓴다 —
       // 습관 UI 를 한 벌 더 만들면 둘 중 하나는 반드시 낡는다.
@@ -116,6 +114,10 @@ final routerProvider = Provider<GoRouter>((ref) {
           // 하위 경로를 리터럴로 적지 않는다. 상수와 따로 놀면 상수만 바꿨을 때
           // analyze 도 테스트도 통과한 채로 가입자가 "페이지 없음" 화면에 떨어진다
           // — signup 은 `go` 라 돌아올 길도 없다. 여기서 잘라 쓰면 어긋날 수 없다.
+          GoRoute(
+            path: Routes.onboardingWelcome.substring(Routes.home.length + 1),
+            builder: (_, __) => const OnboardingWelcomePage(),
+          ),
           GoRoute(
             path: Routes.onboardingCapture.substring(Routes.home.length + 1),
             builder: (_, __) => const SkinCapturePage(onboarding: true),
