@@ -8,6 +8,7 @@ import '../../../../app/theme/app_colors.dart';
 import '../../../../app/theme/app_theme.dart';
 import '../../../../core/di/providers.dart';
 import '../../../../core/widgets/app_widgets.dart';
+import '../../../../shared/widgets/pill.dart';
 import '../../../../shared/widgets/verdict_badge.dart';
 import '../../../report/presentation/providers/report_providers.dart';
 import '../../data/datasources/plate_image_store.dart';
@@ -469,26 +470,20 @@ class _MealCard extends ConsumerWidget {
                         runSpacing: 5,
                         children: [
                           for (final tag in item.highlightTags)
-                            Container(
+                            Pill(
                               // 높이를 박지 않는다. 시안 값(20)을 고정하면 글자
                               // 크기 2.0 에서 태그가 칩 밖으로 넘친다.
-                              constraints: const BoxConstraints(minHeight: 20),
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 10, vertical: 2),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFFF4F4F4),
-                                border: Border.all(
-                                    color: const Color(0xFFCBCBCB), width: 0.4),
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              child: Center(
-                                widthFactor: 1,
-                                child: Text(tag,
-                                    style: const TextStyle(
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.w400,
-                                      color: Color(0xFF656565),
-                                    )),
+                              minHeight: 20,
+                              horizontalPadding: 10,
+                              borderRadius: 10,
+                              color: const Color(0xFFF4F4F4),
+                              border: Border.all(
+                                  color: const Color(0xFFCBCBCB), width: 0.4),
+                              label: tag,
+                              style: const TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w400,
+                                color: Color(0xFF656565),
                               ),
                             ),
                         ],

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../app/theme/app_colors.dart';
 import '../enums/skin_level.dart';
+import 'pill.dart';
 
 /// GOOD / BAD 라벨. 끼니 한 줄이 "먹어도 됐나"에 답하는 자리다.
 ///
@@ -20,33 +21,27 @@ class VerdictBadge extends StatelessWidget {
   Widget build(BuildContext context) {
     final isGood = grade.isGood;
 
-    return Container(
+    return Pill(
       // 시안 값은 53×19 지만 **고정하지 않는다.** 글자 크기 2.0 에서 'GOOD' 이
       // 81×29 를 요구하는데, 고정 상자는 예외를 던지지 않고 조용히 'GOO' 로
       // 자른다 — 그래서 배율 테스트도 통과했다.
-      constraints: const BoxConstraints(minWidth: 53, minHeight: 19),
+      minWidth: 53,
+      minHeight: 19,
       // 좌우 6 이면 기본 크기에서 minWidth 53 이 그대로 폭을 정한다(글자 26 + 12).
       // 8 로 두어도 실기기에서는 53 이 이기지만, 여유를 좁혀 두면 폰트를 바꿀 때
       // 알약이 먼저 넓어지는 것을 눈으로 알아챈다.
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-      decoration: BoxDecoration(
-        // **라벨은 오렌지다.** 숫자는 등급색(주의=빨강)을 따르고 라벨은 두 단으로
-        // 접힌 판정이라 오렌지 하나다 — 기록·음식 결과 두 화면이 같은 조합을 쓴다.
-        // 라벨까지 빨강으로 칠하면 한 줄에 같은 색이 둘이 되어 어느 쪽이 판정인지
-        // 흐려진다.
-        color: isGood ? AppColors.good : AppColors.primary,
-        borderRadius: BorderRadius.circular(12.5),
-      ),
-      child: Center(
-        widthFactor: 1,
-        child: Text(
-          isGood ? 'GOOD' : 'BAD',
-          style: const TextStyle(
-            fontSize: 10,
-            fontWeight: FontWeight.w600,
-            color: Colors.white,
-          ),
-        ),
+      horizontalPadding: 6,
+      borderRadius: 12.5,
+      // **라벨은 오렌지다.** 숫자는 등급색(주의=빨강)을 따르고 라벨은 두 단으로
+      // 접힌 판정이라 오렌지 하나다 — 기록·음식 결과 두 화면이 같은 조합을 쓴다.
+      // 라벨까지 빨강으로 칠하면 한 줄에 같은 색이 둘이 되어 어느 쪽이 판정인지
+      // 흐려진다.
+      color: isGood ? AppColors.good : AppColors.primary,
+      label: isGood ? 'GOOD' : 'BAD',
+      style: const TextStyle(
+        fontSize: 10,
+        fontWeight: FontWeight.w600,
+        color: Colors.white,
       ),
     );
   }

@@ -10,6 +10,7 @@ import '../../../../app/theme/metric_palette.dart';
 import '../../../../core/widgets/app_widgets.dart';
 import '../../../../shared/enums/metric_band.dart';
 import '../../../../shared/enums/skin_type.dart';
+import '../../../../shared/widgets/pill.dart';
 import '../../../../shared/widgets/highlight_row.dart';
 import '../../../../shared/widgets/section_mark.dart';
 import '../../../../shared/widgets/skin_mascot.dart';
@@ -528,26 +529,19 @@ class _CareSection extends StatelessWidget {
             runSpacing: 9,
             children: [
               for (final focus in analysis.careFocus)
-                Container(
+                Pill(
                   // 높이를 박지 않는다 — 시안 값을 고정하면 글자 크기를 키운 기기에서
                   // 알약이 글자를 자른다(예외가 안 나서 테스트도 통과한다).
-                  constraints: const BoxConstraints(minHeight: 22),
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: AppColors.background,
-                    border: Border.all(color: AppColors.primary),
-                    borderRadius: BorderRadius.circular(11),
-                  ),
-                  child: Center(
-                    widthFactor: 1,
-                    child: Text(
-                      focus.label,
-                      style: const TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.primary,
-                      ),
-                    ),
+                  minHeight: 22,
+                  horizontalPadding: 14,
+                  borderRadius: 11,
+                  color: AppColors.background,
+                  border: Border.all(color: AppColors.primary),
+                  label: focus.label,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.primary,
                   ),
                 ),
             ],
@@ -1004,27 +998,20 @@ class _SkinTypePromptState extends ConsumerState<_SkinTypePrompt> {
                 GestureDetector(
                   onTap: _busy ? null : () => _select(type),
                   behavior: HitTestBehavior.opaque,
-                  child: Container(
+                  child: Pill(
                     // 높이를 박지 않는다 — 시안 값을 고정하면 글자 크기를 키운 기기에서
                     // 알약이 글자를 자른다(예외가 안 나서 테스트도 통과한다).
-                    constraints: const BoxConstraints(minHeight: 22),
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: AppColors.background,
-                      border: Border.all(
-                          color: _busy ? AppColors.disabled : AppColors.primary),
-                      borderRadius: BorderRadius.circular(11),
-                    ),
-                    child: Center(
-                      widthFactor: 1,
-                      child: Text(
-                        type.label,
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          color: _busy ? AppColors.disabled : AppColors.primary,
-                        ),
-                      ),
+                    minHeight: 22,
+                    horizontalPadding: 14,
+                    borderRadius: 11,
+                    color: AppColors.background,
+                    border: Border.all(
+                        color: _busy ? AppColors.disabled : AppColors.primary),
+                    label: type.label,
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: _busy ? AppColors.disabled : AppColors.primary,
                     ),
                   ),
                 ),

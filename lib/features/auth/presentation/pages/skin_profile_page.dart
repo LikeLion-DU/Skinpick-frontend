@@ -6,6 +6,7 @@ import '../../../../app/router/app_router.dart';
 import '../../../../app/theme/app_colors.dart';
 import '../../../../app/theme/metric_palette.dart';
 import '../../../../shared/enums/metric_band.dart';
+import '../../../../shared/widgets/pill.dart';
 import '../../../../shared/widgets/section_mark.dart';
 import '../../../../shared/widgets/skin_mascot.dart';
 import '../../../../shared/widgets/top_wash.dart';
@@ -492,26 +493,19 @@ class _CareFocusChips extends StatelessWidget {
       runSpacing: 9,
       children: [
         for (final item in focus)
-          Container(
+          Pill(
             // 높이를 박지 않는다 — 시안 값을 고정하면 글자 크기를 키운 기기에서
             // 알약이 글자를 자른다(예외가 안 나서 테스트도 통과한다).
-            constraints: const BoxConstraints(minHeight: 22),
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
-            decoration: BoxDecoration(
-              color: AppColors.background,
-              border: Border.all(color: AppColors.primary),
-              borderRadius: BorderRadius.circular(11),
-            ),
-            child: Center(
-              widthFactor: 1,
-              child: Text(
-                item.label,
-                style: const TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.primary,
-                ),
-              ),
+            minHeight: 22,
+            horizontalPadding: 14,
+            borderRadius: 11,
+            color: AppColors.background,
+            border: Border.all(color: AppColors.primary),
+            label: item.label,
+            style: const TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: AppColors.primary,
             ),
           ),
       ],
@@ -539,26 +533,19 @@ class _ConcernChips extends StatelessWidget {
       runSpacing: 9,
       children: [
         for (final concern in concerns)
-          Container(
+          Pill(
             // 높이를 박지 않는다 — 시안 값을 고정하면 글자 크기를 키운 기기에서
             // 알약이 글자를 자른다(예외가 안 나서 테스트도 통과한다).
-            constraints: const BoxConstraints(minHeight: 22),
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
-            decoration: BoxDecoration(
-              color: AppColors.background,
-              border: Border.all(color: AppColors.primary),
-              borderRadius: BorderRadius.circular(11),
-            ),
-            child: Center(
-              widthFactor: 1,
-              child: Text(
-                concern.label,
-                style: const TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.primary,
-                ),
-              ),
+            minHeight: 22,
+            horizontalPadding: 14,
+            borderRadius: 11,
+            color: AppColors.background,
+            border: Border.all(color: AppColors.primary),
+            label: concern.label,
+            style: const TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: AppColors.primary,
             ),
           ),
       ],
