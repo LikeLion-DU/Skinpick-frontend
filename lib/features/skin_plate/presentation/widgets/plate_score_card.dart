@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../../../../app/theme/app_colors.dart';
-
 import '../../../../shared/enums/skin_level.dart';
+import '../../../../shared/widgets/pill.dart';
 
 /// 음식 결과 화면의 큰 점수 한 줄 — 숫자 + "점" + 등급 배지.
 ///
@@ -67,24 +67,17 @@ class PlateScoreCard extends StatelessWidget {
         ),
         if (grade != null) ...[
           const SizedBox(width: 12),
-          Container(
+          Pill(
             // 다른 알약들과 같은 규칙 — 글자가 커지면 알약도 함께 커진다.
-            constraints: const BoxConstraints(minHeight: 24),
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
-            decoration: BoxDecoration(
-              color: grade.tintColor,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Center(
-              widthFactor: 1,
-              child: Text(
-                grade.label,
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w500,
-                  color: grade.accentColor,
-                ),
-              ),
+            minHeight: 24,
+            horizontalPadding: 12,
+            borderRadius: 12,
+            color: grade.tintColor,
+            label: grade.label,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+              color: grade.accentColor,
             ),
           ),
         ],

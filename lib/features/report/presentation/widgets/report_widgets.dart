@@ -14,6 +14,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../app/theme/app_colors.dart';
 import '../../../../app/theme/app_theme.dart';
 import '../../../../shared/enums/skin_level.dart';
+import '../../../../shared/widgets/pill.dart';
 import '../../../../shared/widgets/score_gauge.dart';
 import '../../../../shared/widgets/section_mark.dart';
 import '../../../../shared/widgets/verdict_badge.dart';
@@ -848,25 +849,18 @@ class _ConcernTag extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return Pill(
       // 높이를 박지 않는다 — 시안 값을 고정하면 글자 크기를 키운 기기에서
       // 알약이 글자를 자른다(예외가 안 나서 테스트도 통과한다).
-      constraints: const BoxConstraints(minHeight: 21),
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
-      decoration: BoxDecoration(
-        color: AppColors.borderOnWhite,
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Center(
-        widthFactor: 1,
-        child: Text(
-          label,
-          style: const TextStyle(
-            fontSize: 11,
-            fontWeight: FontWeight.w600,
-            color: AppColors.textOnCard,
-          ),
-        ),
+      minHeight: 21,
+      horizontalPadding: 10,
+      borderRadius: 16,
+      color: AppColors.borderOnWhite,
+      label: label,
+      style: const TextStyle(
+        fontSize: 11,
+        fontWeight: FontWeight.w600,
+        color: AppColors.textOnCard,
       ),
     );
   }
@@ -883,23 +877,16 @@ class _StatusPill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      constraints: const BoxConstraints(minHeight: 24),
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
-      decoration: BoxDecoration(
-        color: Color.lerp(accent, Colors.white, 0.78),
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Center(
-        widthFactor: 1,
-        child: Text(
-          label,
-          style: TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.w600,
-            color: accent,
-          ),
-        ),
+    return Pill(
+      minHeight: 24,
+      horizontalPadding: 12,
+      borderRadius: 16,
+      color: Color.lerp(accent, Colors.white, 0.78),
+      label: label,
+      style: TextStyle(
+        fontSize: 12,
+        fontWeight: FontWeight.w600,
+        color: accent,
       ),
     );
   }
@@ -959,27 +946,20 @@ class PointList extends StatelessWidget {
       runSpacing: 8,
       children: [
         for (final point in points)
-          Container(
+          Pill(
             // 높이를 박지 않는다 — 시안 값을 고정하면 글자 크기를 키운 기기에서
             // 알약이 글자를 자른다(예외가 안 나서 테스트도 통과한다).
-            constraints: const BoxConstraints(minHeight: 21),
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
-            decoration: BoxDecoration(
-              color: Color.lerp(accent, Colors.white, 0.82),
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Center(
-              widthFactor: 1,
-              child: Text(
-                point,
-                // 여기 색은 호출부가 알려 준다(`positive`) — 서버가 극성을 주지
-                // 않는 고민 태그와 달리 잘한 점/개선할 점이 이미 갈려 있다.
-                style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
-                  color: Color.lerp(accent, Colors.black, 0.15),
-                ),
-              ),
+            minHeight: 21,
+            horizontalPadding: 10,
+            borderRadius: 16,
+            color: Color.lerp(accent, Colors.white, 0.82),
+            label: point,
+            // 여기 색은 호출부가 알려 준다(`positive`) — 서버가 극성을 주지
+            // 않는 고민 태그와 달리 잘한 점/개선할 점이 이미 갈려 있다.
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              color: Color.lerp(accent, Colors.black, 0.15),
             ),
           ),
       ],

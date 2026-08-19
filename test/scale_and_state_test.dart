@@ -14,6 +14,7 @@ import 'package:skinplate/features/report/domain/entities/report.dart';
 import 'package:skinplate/features/report/presentation/widgets/report_widgets.dart';
 import 'package:skinplate/features/home/presentation/widgets/today_records_card.dart';
 import 'package:skinplate/features/skin_plate/presentation/widgets/plate_summary_cards.dart';
+import 'package:skinplate/shared/widgets/pill.dart';
 import 'package:skinplate/shared/widgets/verdict_badge.dart';
 import 'package:skinplate/shared/enums/skin_level.dart';
 
@@ -193,9 +194,10 @@ void main() {
 
       // 칸 폭(362)의 절반보다 좁아야 두 개가 한 줄에 들어간다.
       for (final tag in tags) {
-        final chip = find
-            .ancestor(of: find.text(tag), matching: find.byType(Container))
-            .first;
+        // `Pill` 로 찾는다 — 내부 Container 를 찾으면 위젯이 한 겹 늘어난 날
+        // 다른 상자를 재면서 조용히 통과한다.
+        final chip =
+            find.ancestor(of: find.text(tag), matching: find.byType(Pill)).first;
         expect(tester.getSize(chip).width, lessThan(181),
             reason: '$tag 칩이 폭을 다 먹었다');
       }

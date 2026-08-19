@@ -6,6 +6,7 @@ import '../../../../app/router/app_router.dart';
 import '../../../../app/theme/app_colors.dart';
 import '../../../../app/theme/app_theme.dart';
 import '../../../../shared/enums/skin_type.dart';
+import '../../../../shared/widgets/pill.dart';
 import '../../domain/entities/skin_profile.dart';
 import '../providers/auth_notifier.dart';
 
@@ -559,32 +560,31 @@ class _StepSwitcher extends StatelessWidget {
             child: GestureDetector(
               onTap: onSelect == null ? null : () => onSelect!(step),
               behavior: HitTestBehavior.opaque,
-              child: Container(
-                height: 36,
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
+              // 이 줄도 알약이다. 예전에는 높이를 36 으로 박아 두어서 글자 크기
+              // 2.0 에서 라벨이 8px 잘렸다(그려진 32 / 필요한 40) — 예외가 나지
+              // 않으니 오버플로만 보는 테스트로는 안 잡혔다.
+              child: Pill(
+                label: step.label,
+                minHeight: 36,
+                horizontalPadding: 8,
+                borderRadius: 16,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                color: step == current
+                    ? const Color(0xFFFFEEE6)
+                    : AppColors.background,
+                border: Border.all(
                   color: step == current
-                      ? const Color(0xFFFFEEE6)
-                      : AppColors.background,
-                  border: Border.all(
-                    color: step == current
-                        ? AppColors.primary
-                        : const Color(0xFFE8E8E8),
-                    width: 2,
-                  ),
-                  borderRadius: BorderRadius.circular(16),
+                      ? AppColors.primary
+                      : const Color(0xFFE8E8E8),
+                  width: 2,
                 ),
-                child: Text(
-                  step.label,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                    color: step == current
-                        ? AppColors.primary
-                        : const Color(0xFFB6B6B6),
-                  ),
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                  color: step == current
+                      ? AppColors.primary
+                      : const Color(0xFFB6B6B6),
                 ),
               ),
             ),

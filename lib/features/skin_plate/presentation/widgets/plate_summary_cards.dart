@@ -4,6 +4,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import '../../../../app/theme/app_colors.dart';
 import '../../../../app/theme/app_theme.dart';
 import '../../../../shared/enums/skin_basis.dart';
+import '../../../../shared/widgets/pill.dart';
 import '../../domain/entities/skin_plate.dart';
 
 /// "오늘 피부 상태 기준" · "최근 피부 상태 기준 · 8/15" 한 줄.
@@ -107,26 +108,19 @@ class FoodTraitChips extends StatelessWidget {
             runSpacing: 8,
             children: [
               for (final (name, value) in traits)
-                Container(
+                Pill(
                   // 높이를 박지 않는다 — 시안 값을 고정하면 글자 크기를 키운 기기에서
                   // 알약이 글자를 자른다(예외가 안 나서 테스트도 통과한다).
-                  constraints: const BoxConstraints(minHeight: 25),
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFFEF6EE),
-                    border: Border.all(color: const Color(0xFFFFD6C2)),
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: Center(
-                    widthFactor: 1,
-                    child: Text(
-                      '$name : $value',
-                      style: const TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w400,
-                        color: AppColors.primary,
-                      ),
-                    ),
+                  minHeight: 25,
+                  horizontalPadding: 10,
+                  borderRadius: 4,
+                  color: const Color(0xFFFEF6EE),
+                  border: Border.all(color: const Color(0xFFFFD6C2)),
+                  label: '$name : $value',
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w400,
+                    color: AppColors.primary,
                   ),
                 ),
             ],

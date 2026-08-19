@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../app/theme/app_colors.dart';
 import '../../../../app/theme/app_theme.dart';
 import '../../../../core/widgets/app_widgets.dart';
+import '../../../../shared/widgets/pill.dart';
 import '../../../../shared/widgets/section_mark.dart';
 import '../../domain/entities/recommendation.dart';
 import '../providers/recommendation_provider.dart';
@@ -158,28 +159,20 @@ class _FoodSection extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(width: 8),
-                        Container(
+                        Pill(
                           // `VerdictBadge` 와 같은 규칙이다 — 시안 값(53×19)은
                           // 최소 크기로만 쓴다. 고정하면 글자 크기를 키운 기기에서
                           // 알약이 'GOO' 로 잘리는데 예외가 안 나서 안 잡힌다.
-                          constraints:
-                              const BoxConstraints(minWidth: 53, minHeight: 19),
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 6, vertical: 2),
-                          decoration: BoxDecoration(
-                            color: accent,
-                            borderRadius: BorderRadius.circular(12.5),
-                          ),
-                          child: Center(
-                            widthFactor: 1,
-                            child: Text(
-                              verdict,
-                              style: const TextStyle(
-                                fontSize: 10,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.white,
-                              ),
-                            ),
+                          minWidth: 53,
+                          minHeight: 19,
+                          horizontalPadding: 6,
+                          borderRadius: 12.5,
+                          color: accent,
+                          label: verdict,
+                          style: const TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.white,
                           ),
                         ),
                       ],
