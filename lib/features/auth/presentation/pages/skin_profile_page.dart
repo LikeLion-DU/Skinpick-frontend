@@ -497,18 +497,20 @@ class _CareFocusChips extends StatelessWidget {
             // 알약이 글자를 자른다(예외가 안 나서 테스트도 통과한다).
             constraints: const BoxConstraints(minHeight: 22),
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
-            alignment: Alignment.center,
             decoration: BoxDecoration(
               color: AppColors.background,
               border: Border.all(color: AppColors.primary),
               borderRadius: BorderRadius.circular(11),
             ),
-            child: Text(
-              item.label,
-              style: const TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: AppColors.primary,
+            child: Center(
+              widthFactor: 1,
+              child: Text(
+                item.label,
+                style: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.primary,
+                ),
               ),
             ),
           ),
@@ -542,18 +544,20 @@ class _ConcernChips extends StatelessWidget {
             // 알약이 글자를 자른다(예외가 안 나서 테스트도 통과한다).
             constraints: const BoxConstraints(minHeight: 22),
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
-            alignment: Alignment.center,
             decoration: BoxDecoration(
               color: AppColors.background,
               border: Border.all(color: AppColors.primary),
               borderRadius: BorderRadius.circular(11),
             ),
-            child: Text(
-              concern.label,
-              style: const TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: AppColors.primary,
+            child: Center(
+              widthFactor: 1,
+              child: Text(
+                concern.label,
+                style: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.primary,
+                ),
               ),
             ),
           ),

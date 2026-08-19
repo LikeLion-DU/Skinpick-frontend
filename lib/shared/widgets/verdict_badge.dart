@@ -25,20 +25,27 @@ class VerdictBadge extends StatelessWidget {
       // 81×29 를 요구하는데, 고정 상자는 예외를 던지지 않고 조용히 'GOO' 로
       // 자른다 — 그래서 배율 테스트도 통과했다.
       constraints: const BoxConstraints(minWidth: 53, minHeight: 19),
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-      alignment: Alignment.center,
+      // 좌우 6 이면 기본 크기에서 minWidth 53 이 그대로 폭을 정한다(글자 26 + 12).
+      // 8 로 두어도 실기기에서는 53 이 이기지만, 여유를 좁혀 두면 폰트를 바꿀 때
+      // 알약이 먼저 넓어지는 것을 눈으로 알아챈다.
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
       decoration: BoxDecoration(
-        // 주의 점수를 빨강으로 칠하지 않는다 — 빨강(bad)은 결과 화면의
-        // BAD 카드 전용이고, 여기 라벨은 오렌지다.
+        // **라벨은 오렌지다.** 숫자는 등급색(주의=빨강)을 따르고 라벨은 두 단으로
+        // 접힌 판정이라 오렌지 하나다 — 기록·음식 결과 두 화면이 같은 조합을 쓴다.
+        // 라벨까지 빨강으로 칠하면 한 줄에 같은 색이 둘이 되어 어느 쪽이 판정인지
+        // 흐려진다.
         color: isGood ? AppColors.good : AppColors.primary,
         borderRadius: BorderRadius.circular(12.5),
       ),
-      child: Text(
-        isGood ? 'GOOD' : 'BAD',
-        style: const TextStyle(
-          fontSize: 10,
-          fontWeight: FontWeight.w600,
-          color: Colors.white,
+      child: Center(
+        widthFactor: 1,
+        child: Text(
+          isGood ? 'GOOD' : 'BAD',
+          style: const TextStyle(
+            fontSize: 10,
+            fontWeight: FontWeight.w600,
+            color: Colors.white,
+          ),
         ),
       ),
     );

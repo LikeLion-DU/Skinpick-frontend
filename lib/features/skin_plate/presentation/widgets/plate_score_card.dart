@@ -68,19 +68,22 @@ class PlateScoreCard extends StatelessWidget {
         if (grade != null) ...[
           const SizedBox(width: 12),
           Container(
-            height: 24,
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-            alignment: Alignment.center,
+            // 다른 알약들과 같은 규칙 — 글자가 커지면 알약도 함께 커진다.
+            constraints: const BoxConstraints(minHeight: 24),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
             decoration: BoxDecoration(
               color: grade.tintColor,
               borderRadius: BorderRadius.circular(12),
             ),
-            child: Text(
-              grade.label,
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w500,
-                color: grade.accentColor,
+            child: Center(
+              widthFactor: 1,
+              child: Text(
+                grade.label,
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                  color: grade.accentColor,
+                ),
               ),
             ),
           ),

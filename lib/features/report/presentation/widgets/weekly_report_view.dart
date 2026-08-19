@@ -212,6 +212,9 @@ class _AverageBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final score = report.averageDailyScore;
+    // 일일 탭은 같은 종류의 숫자를 서버 등급색으로 그린다. 여기만 늘 주황이면
+    // 탭 하나 건너 85점이 초록(일일)과 주황(주간)으로 갈린다.
+    final grade = report.grade;
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
@@ -238,7 +241,16 @@ class _AverageBanner extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 10),
-          Row(
+          // 등급어까지 붙으면 큰 숫자와 함께 한 줄을 넘긴다(2.0 에서 42px). 배율을
+          // 1.3 까지만 따라간다 — 점수 링과 같은 방식이다.
+          //
+          // **flex 로 나누지 않는다.** Flexible 로 감쌌더니 왼쪽 문장과 flex 1 을
+          // 나눠 가져서, 오른쪽이 안 쓴 폭이 왼쪽으로 돌아오지 않아 문장이 절반
+          // 폭에서 접혔다. 반대로 왼쪽에 flex 2 를 주면 오른쪽이 좁아져 기본
+          // 크기에서도 40px 숫자가 29.7px 로 줄어든다 — 둘 다 시안을 깬다.
+          MediaQuery.withClampedTextScaling(
+            maxScaleFactor: 1.3,
+            child: Row(
             crossAxisAlignment: CrossAxisAlignment.baseline,
             textBaseline: TextBaseline.alphabetic,
             children: [
@@ -248,7 +260,12 @@ class _AverageBanner extends StatelessWidget {
                   fontSize: 40,
                   fontWeight: FontWeight.w600,
                   height: 1,
-                  color: score == null ? AppColors.outline : AppColors.primary,
+                  // 등급을 모르면 중립색이다. primary 로 떨어뜨리면 그게 곧
+                  // NORMAL 의 색이라 앱이 모르는 등급을 "보통" 이라고 단정한다 —
+                  // BEST/개선일 카드와 같은 규칙으로 맞춘다.
+                  color: score == null
+                      ? AppColors.outline
+                      : (grade?.accentColor ?? AppColors.textPrimary),
                 ),
               ),
               const Text(
@@ -260,7 +277,20 @@ class _AverageBanner extends StatelessWidget {
                   color: Color(0xFF1A1A1A),
                 ),
               ),
+              // 등급어도 서버 값이다. 일일 탭이 링 아래에 같은 말을 적는다.
+              if (grade != null) ...[
+                const SizedBox(width: 8),
+                Text(
+                  grade.label,
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: grade.accentColor,
+                  ),
+                ),
+              ],
             ],
+            ),
           ),
         ],
       ),
@@ -315,12 +345,15 @@ class _DayCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // 제목("BEST" · "개선이 필요한 날")은 그 주 안에서의 **상대 위치**다. 색은
-    // 서버가 그 점수에 매긴 **절대 등급**을 따른다 — 둘을 한 벌로 묶으면 전부
-    // 90점대인 주의 최저일(92점·좋음)이 경고색으로 뜨고, 같은 92 가 옆 카드에서는
-    // 초록으로 뜬다. 등급을 모르면 상대 위치 색으로 떨어진다.
-    final accent = day.grade?.accentColor ??
-        (best ? AppColors.good : AppColors.accentStrong);
+    // 제목("BEST" · "개선이 필요한 날")은 그 주 안에서의 **상대 위치**이므로 색도
+    // 상대 위치를 따른다. 등급색을 제목에 물렸더니 두 카드 제목이 같은 초록이 되고
+    // "개선이 필요한 날" 이 성공색으로 찍혔다 — 제목의 말과 색이 서로를 부정했다.
+    final accent = best ? AppColors.good : AppColors.accentStrong;
+
+    // 숫자는 **서버가 그 점수에 매긴 절대 등급**을 따른다. 전부 90점대인 주의
+    // 최저일은 "개선이 필요한 날" 제목 아래 초록 92 로 뜬다 — 상대 위치와 절대
+    // 등급이 둘 다 사실이고, 각자 다른 자리에서 말한다. 등급을 모르면 중립색이다.
+    final scoreColor = day.grade?.accentColor ?? AppColors.textPrimary;
 
     return Container(
       padding: const EdgeInsets.fromLTRB(14, 14, 14, 16),
@@ -371,11 +404,11 @@ class _DayCard extends StatelessWidget {
               children: [
                 Text(
                   '${day.dailyScore}',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 26,
                     fontWeight: FontWeight.w700,
                     height: 1,
-                    color: Color(0xFF1A1A1A),
+                    color: scoreColor,
                   ),
                 ),
                 const Text(

@@ -19,6 +19,7 @@ class HomeHero extends StatelessWidget {
     required this.score,
     required this.grade,
     required this.targetScore,
+    this.scoreKnown = true,
   });
 
   final String nickname;
@@ -32,6 +33,12 @@ class HomeHero extends StatelessWidget {
   /// 서버가 매 응답에 실어 보내는 목표. **앱에 80 을 박지 않는다** —
   /// 기록이 없는 날은 목표를 그릴 자리도 없으므로 null 이다.
   final int? targetScore;
+
+  /// 오늘 기록을 **아는가**. 불러오는 중이거나 실패했으면 false 다.
+  ///
+  /// 모를 때 말풍선("오늘은 뭘 드셨나요?")을 띄우면 히어로가 "안 먹었다"고 단정한다 —
+  /// 바로 아래 카드가 스피너나 오류를 보여주는 동안 화면이 자기와 모순된다.
+  final bool scoreKnown;
 
   @override
   Widget build(BuildContext context) {
@@ -62,10 +69,23 @@ class HomeHero extends StatelessWidget {
         // 점수가 없으면 숫자 자리를 만들지 않는다. **목표만 없는 경우는 다르다** —
         // 그때는 목표 막대만 접고 점수는 그린다. 둘을 함께 묶어 두었더니 목표
         // 키가 빠진 응답에서 오늘 먹은 기록이 있는데도 "뭘 드셨나요" 가 떴다.
-        if (score == null)
-          _EmptyBubble(nickname: nickname)
+        //
+        // 아직 모를 때(로딩·실패)는 말풍선도 띄우지 않는다 — 그건 "안 먹었다"는
+        // 단정이고, 그 순간 아래 카드는 스피너나 오류를 보여주고 있다.
+        if (score != null)
+          _ScoreBlock(score: score, grade: grade, targetScore: targetScore)
         else
-          _ScoreBlock(score: score, grade: grade, targetScore: targetScore),
+          // **자리는 남기고 말만 감춘다.** 아예 빼면 히스토리가 도착하는 순간
+          // 홈이 120px 튀고, 그동안 기록 카드가 고정 위치 마스코트를 덮는다
+          // (마스코트는 Stack 에 Positioned 로 붙어 스크롤에 참여하지 않는다).
+          // 못 잰 영양 타일과 같은 처리다.
+          Visibility(
+            visible: scoreKnown,
+            maintainSize: true,
+            maintainAnimation: true,
+            maintainState: true,
+            child: _EmptyBubble(nickname: nickname),
+          ),
       ],
     );
   }

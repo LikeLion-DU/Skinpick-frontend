@@ -225,17 +225,21 @@ class ReportScoreCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  // 등급에 붙는 고정 문구다. AI 가 쓴 문장은 아래 AI 카드에
-                  // 따로 있다 — 두 자리를 섞으면 "AI 가 점수를 매겼다"로 읽힌다.
-                  grade?.summary ?? '아직 채점할 기록이 없어요',
-                  style: const TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600,
-                    height: 1.35,
-                    color: Color(0xFF1A1A1A),
+                // 등급에 붙는 고정 문구다. AI 가 쓴 문장은 아래 AI 카드에 따로
+                // 있다 — 두 자리를 섞으면 "AI 가 점수를 매겼다"로 읽힌다.
+                //
+                // **점수가 있는데 등급만 없으면 아무 말도 하지 않는다.** "기록이
+                // 없다"는 거짓이고, 빈 문자열을 넘기면 20px 짜리 빈 줄이 남는다.
+                if (grade != null || score == null)
+                  Text(
+                    grade?.summary ?? '아직 채점할 기록이 없어요',
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                      height: 1.35,
+                      color: Color(0xFF1A1A1A),
+                    ),
                   ),
-                ),
                 if (footnote != null) ...[
                   const SizedBox(height: 10),
                   Text(
@@ -466,9 +470,17 @@ class _NutritionTile extends StatelessWidget {
               // 비워 보낸 항목은 amount·percent 가 0 인데, 그 0 은 "안 먹었다"가
               // 아니라 자리를 채운 값이다. "알 수 없음" 옆에 0% 를 적으면 방금
               // 한 말을 되돌린다.
-              if (item.isKnown) ...[
-                const SizedBox(height: 2),
-                Text(
+              //
+              // **자리는 남긴다.** 지우기만 했더니 세 칸 중 한 칸만 값이 있는 날
+              // (실서버의 흔한 경우다) 라벨이 47px 씩 어긋났다 — spaceBetween 이
+              // 자식 수에 따라 위치를 다시 잡기 때문이다.
+              const SizedBox(height: 2),
+              Visibility(
+                visible: item.isKnown,
+                maintainSize: true,
+                maintainAnimation: true,
+                maintainState: true,
+                child: Text(
                   '${item.percent}%',
                   style: const TextStyle(
                     fontSize: 10,
@@ -476,19 +488,24 @@ class _NutritionTile extends StatelessWidget {
                     color: AppColors.textSecondary,
                   ),
                 ),
-              ],
+              ),
             ],
           ),
-          if (item.isKnown)
-            ClipRRect(
-            borderRadius: BorderRadius.circular(3.6),
-            child: LinearProgressIndicator(
-              // 기준을 넘긴 항목은 막대가 꽉 찬다. clamp 를 빼면 1.0 을 넘겨
-              // 렌더가 죽는다 — 나트륨은 한 끼로도 200% 가 나온다.
-              value: (item.percent / 100).clamp(0.0, 1.0),
-              minHeight: 4.7,
-              backgroundColor: Color.lerp(color, Colors.white, 0.85),
-              valueColor: AlwaysStoppedAnimation<Color>(color),
+          Visibility(
+            visible: item.isKnown,
+            maintainSize: true,
+            maintainAnimation: true,
+            maintainState: true,
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(3.6),
+              child: LinearProgressIndicator(
+                // 기준을 넘긴 항목은 막대가 꽉 찬다. clamp 를 빼면 1.0 을 넘겨
+                // 렌더가 죽는다 — 나트륨은 한 끼로도 200% 가 나온다.
+                value: (item.percent / 100).clamp(0.0, 1.0),
+                minHeight: 4.7,
+                backgroundColor: Color.lerp(color, Colors.white, 0.85),
+                valueColor: AlwaysStoppedAnimation<Color>(color),
+              ),
             ),
           ),
         ],
@@ -599,43 +616,58 @@ class _NutritionRow extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          '${formatAmount(item.amount)} / '
-                          '${formatAmount(item.target.toDouble())}${item.unit}',
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          textAlign: TextAlign.right,
-                          style: const TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w400,
-                            color: Color(0xFF9C9C9C),
+                  // 못 잰 항목은 숫자도 막대도 그리지 않는다 — 일일 타일과 같은
+                  // 이유다(0 은 "안 먹었다"가 아니라 자리를 채운 값이다).
+                  // 지금 주간에는 매크로 6종만 와서 도달하지 않지만, 한 항목의
+                  // status 가 빠지는 날 두 탭이 같은 값을 반대로 설명하게 된다.
+                  if (item.isKnown) ...[
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            '${formatAmount(item.amount)} / '
+                            '${formatAmount(item.target.toDouble())}${item.unit}',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            textAlign: TextAlign.right,
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w400,
+                              color: Color(0xFF9C9C9C),
+                            ),
                           ),
                         ),
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        '${item.percent}%',
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          color: color,
+                        const SizedBox(width: 8),
+                        Text(
+                          '${item.percent}%',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: color,
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(2.5),
-                    child: LinearProgressIndicator(
-                      value: (item.percent / 100).clamp(0.0, 1.0),
-                      minHeight: 5,
-                      backgroundColor: AppColors.disabled,
-                      valueColor: AlwaysStoppedAnimation<Color>(color),
+                      ],
                     ),
-                  ),
+                    const SizedBox(height: 8),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(2.5),
+                      child: LinearProgressIndicator(
+                        value: (item.percent / 100).clamp(0.0, 1.0),
+                        minHeight: 5,
+                        backgroundColor: AppColors.disabled,
+                        valueColor: AlwaysStoppedAnimation<Color>(color),
+                      ),
+                    ),
+                  ] else
+                    const Text(
+                      '알 수 없음',
+                      textAlign: TextAlign.right,
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.outline,
+                      ),
+                    ),
                 ],
               ),
             ),
@@ -787,8 +819,7 @@ class _ConcernCard extends StatelessWidget {
                     spacing: 6,
                     runSpacing: 6,
                     children: [
-                      for (final tag in item.tags)
-                        _ConcernTag(label: tag, accent: accent),
+                      for (final tag in item.tags) _ConcernTag(label: tag),
                     ],
                   ),
                 ],
@@ -805,11 +836,15 @@ class _ConcernCard extends StatelessWidget {
 
 /// 고민 카드의 근거 칩. **`#` 을 붙이지 않는다** — 서버가 보낸 문구는 "당류 과다"
 /// 이고, 앞에 글자를 더하면 그건 앱이 문장을 고친 것이다(식단 포인트 칩과 같은 규칙).
+///
+/// **색을 입히지 않는다.** 예전에는 고민의 등급색을 썼는데, 부기 점수가 GOOD 이면
+/// 그 근거인 "나트륨 과다" 가 초록으로 칠해졌다 — 바로 옆 문장은 "부담이 될 수
+/// 있어요" 다. 서버는 태그가 좋은 근거인지 나쁜 근거인지 알려 주지 않으므로,
+/// 앱이 색으로 그것을 단정하면 그게 곧 앱의 판정이다.
 class _ConcernTag extends StatelessWidget {
-  const _ConcernTag({required this.label, required this.accent});
+  const _ConcernTag({required this.label});
 
   final String label;
-  final Color accent;
 
   @override
   Widget build(BuildContext context) {
@@ -818,17 +853,19 @@ class _ConcernTag extends StatelessWidget {
       // 알약이 글자를 자른다(예외가 안 나서 테스트도 통과한다).
       constraints: const BoxConstraints(minHeight: 21),
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
-      alignment: Alignment.center,
       decoration: BoxDecoration(
-        color: Color.lerp(accent, Colors.white, 0.82),
+        color: AppColors.borderOnWhite,
         borderRadius: BorderRadius.circular(16),
       ),
-      child: Text(
-        label,
-        style: TextStyle(
-          fontSize: 11,
-          fontWeight: FontWeight.w600,
-          color: Color.lerp(accent, Colors.black, 0.15),
+      child: Center(
+        widthFactor: 1,
+        child: Text(
+          label,
+          style: const TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.w600,
+            color: AppColors.textOnCard,
+          ),
         ),
       ),
     );
@@ -849,17 +886,19 @@ class _StatusPill extends StatelessWidget {
     return Container(
       constraints: const BoxConstraints(minHeight: 24),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
-      alignment: Alignment.center,
       decoration: BoxDecoration(
         color: Color.lerp(accent, Colors.white, 0.78),
         borderRadius: BorderRadius.circular(16),
       ),
-      child: Text(
-        label,
-        style: TextStyle(
-          fontSize: 12,
-          fontWeight: FontWeight.w600,
-          color: accent,
+      child: Center(
+        widthFactor: 1,
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            color: accent,
+          ),
         ),
       ),
     );
@@ -925,17 +964,21 @@ class PointList extends StatelessWidget {
             // 알약이 글자를 자른다(예외가 안 나서 테스트도 통과한다).
             constraints: const BoxConstraints(minHeight: 21),
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
-            alignment: Alignment.center,
             decoration: BoxDecoration(
               color: Color.lerp(accent, Colors.white, 0.82),
               borderRadius: BorderRadius.circular(16),
             ),
-            child: Text(
-              point,
-              style: TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w600,
-                color: Color.lerp(accent, Colors.black, 0.15),
+            child: Center(
+              widthFactor: 1,
+              child: Text(
+                point,
+                // 여기 색은 호출부가 알려 준다(`positive`) — 서버가 극성을 주지
+                // 않는 고민 태그와 달리 잘한 점/개선할 점이 이미 갈려 있다.
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  color: Color.lerp(accent, Colors.black, 0.15),
+                ),
               ),
             ),
           ),

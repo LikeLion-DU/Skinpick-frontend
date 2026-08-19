@@ -1,3 +1,6 @@
+import 'dart:convert';
+import 'dart:io';
+import 'package:skinplate/features/report/data/models/report_dtos.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -7,6 +10,8 @@ import 'package:skinplate/features/auth/domain/entities/auth_user.dart';
 import 'package:skinplate/features/auth/presentation/pages/login_page.dart';
 import 'package:skinplate/features/auth/presentation/pages/skin_type_page.dart';
 import 'package:skinplate/features/auth/presentation/providers/auth_notifier.dart';
+import 'package:skinplate/features/report/domain/entities/report.dart';
+import 'package:skinplate/features/report/presentation/widgets/report_widgets.dart';
 import 'package:skinplate/features/home/presentation/widgets/today_records_card.dart';
 import 'package:skinplate/features/skin_plate/presentation/widgets/plate_summary_cards.dart';
 import 'package:skinplate/shared/widgets/verdict_badge.dart';
@@ -48,6 +53,19 @@ void main() {
       // 세 링크가 다 살아 있어야 한다 — 잘려 나가면 가입 입구가 사라진다.
       expect(find.text('회원가입'), findsOneWidget);
       expect(find.text('아이디 찾기'), findsOneWidget);
+    });
+
+    testWidgets('로그인 — 기본 글자 크기에서는 세 링크가 한 줄이다', (tester) async {
+      // Wrap 으로 바꾼 뒤 링크가 세 줄로 쪼개졌다(각 Container 가 폭을 다 먹었다).
+      // 에뮬레이터 화면에서 눈으로 잡혔다.
+      await tester.binding.setSurfaceSize(designSize);
+      await tester.pumpWidget(scaled(const ProviderScope(child: LoginPage()),
+          scale: 1.0));
+      await tester.pumpAndSettle();
+
+      final y = tester.getTopLeft(find.text('아이디 찾기')).dy;
+      expect(tester.getTopLeft(find.text('비밀번호 찾기')).dy, y);
+      expect(tester.getTopLeft(find.text('회원가입')).dy, y);
     });
 
     testWidgets('로그인 — 링크 탭 영역이 44dp 이상이다', (tester) async {
@@ -139,6 +157,107 @@ void main() {
 
       expectNotClipped(tester, find.text('GOOD'), label: 'GOOD 배지');
     });
+  });
+
+  group('칩은 남은 폭을 다 먹지 않는다', () {
+    // `Container(alignment: …)` 를 Wrap 안에 두면 Align 이 남은 폭을 전부 차지해서
+    // 칩이 한 줄에 하나씩 쌓인다. 시안은 나란히 두 개다. 로그인 링크 줄에서 눈으로
+    // 잡혔고(세 링크가 세 줄로 쪼개졌다), 같은 구조가 앱 전체 칩에 있었다.
+    testWidgets('고민 태그 두 개가 한 줄에 나란히 앉는다', (tester) async {
+      const tags = ['발효식품 포함', '매운맛 자극'];
+
+      await tester.binding.setSurfaceSize(designSize);
+      await tester.pumpWidget(scaled(
+        const Scaffold(
+          body: Padding(
+            padding: EdgeInsets.symmetric(horizontal: 20),
+            child: ConcernList(
+              hasRecords: true,
+              items: [
+                ConcernScore(
+                  concern: 'ACNE',
+                  label: '여드름',
+                  score: 74,
+                  status: SkinLevel.good,
+                  change: null,
+                  message: '발효식품이 포함돼 있어요.',
+                  tags: tags,
+                ),
+              ],
+            ),
+          ),
+        ),
+        scale: 1.0,
+      ));
+      await tester.pumpAndSettle();
+
+      // 칸 폭(362)의 절반보다 좁아야 두 개가 한 줄에 들어간다.
+      for (final tag in tags) {
+        final chip = find
+            .ancestor(of: find.text(tag), matching: find.byType(Container))
+            .first;
+        expect(tester.getSize(chip).width, lessThan(181),
+            reason: '$tag 칩이 폭을 다 먹었다');
+      }
+      // 같은 y 에 있어야 한다 — 줄이 갈리면 하나가 아래로 내려간다.
+      expect(tester.getTopLeft(find.text(tags[0])).dy,
+          tester.getTopLeft(find.text(tags[1])).dy);
+    });
+  });
+
+  group('리뷰에서 나온 것들', () {
+    testWidgets('요약이 비면 카드를 그리지 않는다 — 빈 테두리만 남지 않게', (tester) async {
+      await tester.binding.setSurfaceSize(designSize);
+      await tester.pumpWidget(scaled(
+        const Scaffold(
+          body: PlateSummaryCard(summary: '', good: [], caution: []),
+        ),
+        scale: 1.0,
+      ));
+      await tester.pumpAndSettle();
+
+      // 룰도 문장도 없으면 그릴 것이 없다. `skin_plate.summary` 는 nullable 이라
+      // 옛 기록에서 실제로 빌 수 있다.
+      expect(find.byType(Container), findsNothing);
+    });
+
+    testWidgets('못 잰 영양 타일도 옆 타일과 같은 높이에 글자가 온다', (tester) async {
+      // 자리를 지우기만 했더니 spaceBetween 이 자식 수에 따라 위치를 다시 잡아
+      // 라벨이 47px 어긋났다. 실서버 응답이 바로 이 조합이다(오메가3만 측정됨).
+      final body = jsonDecode(
+          File('test/fixtures/report_daily_live.json').readAsStringSync());
+      final report = DailyReportDto.fromJson(
+              (body as Map<String, dynamic>)['data'] as Map<String, dynamic>)
+          .toEntity();
+
+      await tester.binding.setSurfaceSize(designSize);
+      await tester.pumpWidget(scaled(
+        Scaffold(
+          body: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: NutritionTiles(items: report.skinNutrients),
+          ),
+        ),
+        scale: 1.0,
+      ));
+      await tester.pumpAndSettle();
+
+      final tops = [
+        for (final label in ['비타민C', '오메가3', '아연'])
+          tester.getTopLeft(find.text(label)).dy,
+      ];
+      expect(tops[0], tops[1], reason: '비타민C 와 오메가3 라벨 높이');
+      expect(tops[1], tops[2], reason: '오메가3 와 아연 라벨 높이');
+      // 자리는 남기고 글자만 감춘다 — 위젯은 셋 다 트리에 있고 보이는 것은 하나다.
+      expect(find.text('0%'), findsNWidgets(3));
+      final visible = tester
+          .widgetList<Visibility>(find.byType(Visibility))
+          .where((v) => v.visible)
+          .length;
+      expect(visible, 2, reason: '측정된 항목의 비율·막대 둘만 보인다');
+      expect(find.text('알 수 없음'), findsNWidgets(2));
+    });
+
   });
 
   group('홈 기록 카드 — 세 상태가 구분된다', () {

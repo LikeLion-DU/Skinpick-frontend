@@ -47,6 +47,7 @@ class PlateAnalysis implements PlateView {
 
   @override
   final SkinLevel? grade;
+
   @override
   final int? baseScore;
   @override

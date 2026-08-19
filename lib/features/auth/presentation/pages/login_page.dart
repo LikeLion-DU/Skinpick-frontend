@@ -231,15 +231,17 @@ class _LoginPageState extends ConsumerState<LoginPage> {
         behavior: HitTestBehavior.opaque,
         child: Container(
           constraints: const BoxConstraints(minHeight: 44),
-          alignment: Alignment.center,
           padding: const EdgeInsets.symmetric(horizontal: 8),
-          child: Text(label,
-              style: const TextStyle(
-                fontSize: 11.5,
-                fontWeight: FontWeight.w600,
-                letterSpacing: -0.16,
-                color: AppColors.grayBaseExtraDark,
-              )),
+          child: Center(
+            widthFactor: 1,
+            child: Text(label,
+                style: const TextStyle(
+                  fontSize: 11.5,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: -0.16,
+                  color: AppColors.grayBaseExtraDark,
+                )),
+          ),
         ),
       );
 

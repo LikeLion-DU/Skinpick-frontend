@@ -26,6 +26,11 @@ abstract interface class PlateView {
   /// [plateScore] 의 등급. **서버가 매긴다** — 앱에 경계표를 두지 않는다.
   /// 이 필드가 없던 서버와 붙으면 null 이고, 화면은 배지를 비운다.
   SkinLevel? get grade;
+  /// 룰 적용 전 기준 점수. **값의 주인은 서버 `RuleConstants.BASE_SCORE`** 다.
+  ///
+  /// 확정 시안이 계산 내역 카드를 지워서 지금 이 값을 그리는 화면은 없다.
+  /// 계약에는 남아 있으므로 필드도 남긴다 — 지웠다 되살리면 그때 계약을
+  /// 처음부터 다시 맞춰야 한다(시뮬레이션 코드와 같은 이유).
   int? get baseScore;
   String get summary;
   FoodAnalysis get food;
@@ -75,7 +80,6 @@ class SkinPlate implements PlateView {
   @override
   final SkinLevel? grade;
 
-  /// 계산 내역 카드의 첫 줄("기본 70"). 앱이 하드코딩하면 클램프된 점수에서 역산이 틀린다.
   @override
   final int? baseScore;
 

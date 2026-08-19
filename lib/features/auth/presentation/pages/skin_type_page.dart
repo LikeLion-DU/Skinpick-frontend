@@ -763,8 +763,12 @@ class _CardOptions<T> extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
+    // 세 칸의 높이를 맞춘다. 최소 높이만 두면 설명이 긴 보기 하나만 커지고
+    // 나머지 둘이 가운데 떠서, 시안의 똑같은 타일 셋이 서로 다른 높이가 된다.
+    return IntrinsicHeight(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
         for (final (index, option) in options.indexed) ...[
           if (index > 0) const SizedBox(width: 8),
           Expanded(
@@ -807,7 +811,8 @@ class _CardOptions<T> extends StatelessWidget {
             ),
           ),
         ],
-      ],
+        ],
+      ),
     );
   }
 }
@@ -850,7 +855,11 @@ class _RowOptions extends StatelessWidget {
                             )),
                       ),
                       const SizedBox(width: 10),
-                      Flexible(
+                      // Flexible 이 아니라 Expanded 다 — loose fit 이면 설명이
+                      // 라벨 옆에 붙고 오른쪽에 빈 공간이 남는다(Spacer 가 하던
+                      // 일이 사라진다). Expanded 면 남은 폭을 다 받아 우측 정렬이
+                      // 살아 있고, 글자가 커져도 그 안에서 접힌다.
+                      Expanded(
                         child: Text(option.description,
                             textAlign: TextAlign.right,
                             style: const TextStyle(
