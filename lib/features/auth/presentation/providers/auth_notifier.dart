@@ -33,6 +33,15 @@ class Unauthenticated extends AuthState {
   final bool expired;
 }
 
+/// 스플래시(S00) 최소 노출 시간. 토큰 확인은 수백 ms 라 브랜드 화면이
+/// 깜빡이고 사라졌다 — 확인이 먼저 끝나도 이 시간은 채운다. 확인이 이보다
+/// 길면 그만큼만 떠 있는다(합산이 아니다).
+///
+/// 프로바이더로 둔 이유는 테스트다. restore 를 기다리는 테스트가 실제 3초를
+/// 기다리게 둘 수 없어 Duration.zero 로 덮는다.
+final splashMinimumHoldProvider =
+    Provider<Duration>((_) => const Duration(seconds: 3));
+
 final authNotifierProvider =
     NotifierProvider<AuthNotifier, AuthState>(AuthNotifier.new);
 
@@ -61,15 +70,33 @@ class AuthNotifier extends Notifier<AuthState> {
   }
 
   /// 앱 시작 시 1회. 토큰이 살아 있으면 그대로 홈으로 들어간다.
+  ///
+  /// 상태 전환은 [splashMinimumHoldProvider] 만큼 미룬다 — 라우터가 이 상태만
+  /// 보고 스플래시를 떠나므로, 여기서 기다리는 것이 곧 스플래시 노출 시간이다.
+  /// 화면(SplashPage)에 타이머를 두지 않는 이유다: 전환 규칙이 두 곳에 생기면
+  /// 어느 날 한쪽만 고쳐진다.
   Future<void> restore() async {
+    final hold = ref.read(splashMinimumHoldProvider);
+    // zero(테스트)면 타이머를 아예 만들지 않는다 — Duration.zero 도 Future.delayed
+    // 는 Timer 라서, 마지막 pump 뒤에 만들어지면 !timersPending 에 걸린다.
+    final minimumHold = hold == Duration.zero
+        ? Future<void>.value()
+        : Future<void>.delayed(hold);
+
+    final AuthState resolved = await _resolveSession();
+
+    await minimumHold;
+    state = resolved;
+  }
+
+  Future<AuthState> _resolveSession() async {
     final token = await ref.read(tokenStorageProvider).read();
     if (token == null || token.isEmpty) {
-      state = const Unauthenticated();
-      return;
+      return const Unauthenticated();
     }
 
     final result = await ref.read(authRepositoryProvider).getMe();
-    state = result.when(
+    return result.when(
       success: Authenticated.new,
       // 만료·위조 토큰이면 조용히 로그인으로. 인터셉터가 토큰을 이미 지웠다.
       failure: (_) => const Unauthenticated(),

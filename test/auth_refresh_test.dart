@@ -32,7 +32,10 @@ void main() {
   );
 
   testWidgets('프로필만 바뀌면 라우터를 흔들지 않는다', (tester) async {
-    final container = ProviderContainer();
+    final container = ProviderContainer(overrides: [
+      // 스플래시 최소 노출(3초) 타이머가 테스트 종료 후까지 살아 !timersPending 에 걸린다.
+      splashMinimumHoldProvider.overrideWithValue(Duration.zero),
+    ]);
     addTearDown(container.dispose);
 
     final router = container.read(routerProvider);
@@ -55,7 +58,10 @@ void main() {
   testWidgets('로그아웃은 여전히 로그인 화면으로 밀어낸다', (tester) async {
     // 알림 횟수가 아니라 실제 결과를 본다 — 흔들지 않게 만든 김에 흔들려야 할 때까지
     // 조용해지면, 로그아웃한 사용자가 홈에 남는다.
-    final container = ProviderContainer();
+    final container = ProviderContainer(overrides: [
+      // 스플래시 최소 노출(3초) 타이머가 테스트 종료 후까지 살아 !timersPending 에 걸린다.
+      splashMinimumHoldProvider.overrideWithValue(Duration.zero),
+    ]);
     addTearDown(container.dispose);
 
     final router = container.read(routerProvider);

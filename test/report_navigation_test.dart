@@ -60,6 +60,8 @@ void main() {
     await tester.binding.setSurfaceSize(designSize);
 
     final container = ProviderContainer(overrides: [
+      // 스플래시 최소 노출(3초) 타이머가 테스트 종료 후까지 살아 !timersPending 에 걸린다.
+      splashMinimumHoldProvider.overrideWithValue(Duration.zero),
       // 홈이 실제로 보는 것만 채운다. 나머지는 기본 구현이 서버를 부르지 않는다.
       latestSkinAnalysisProvider.overrideWith((ref) async => const Success(null)),
       plateHistoryProvider.overrideWith((ref) async => const Success([])),
