@@ -827,8 +827,7 @@ class _ConcernCard extends StatelessWidget {
               ],
             ),
           ),
-          // 상태 칩(GOOD/CHECK)은 그리지 않는다 — 시안에는 있지만 반영하지
-          // 않기로 결정했다(2026-08-20). 상태는 카드 바탕색이 이미 말한다.
+          if (status != null) _StatusPill(label: status.label, good: good),
         ],
       ),
     );
@@ -861,6 +860,39 @@ class _ConcernTag extends StatelessWidget {
         fontSize: 11,
         fontWeight: FontWeight.w600,
         color: AppColors.textOnCard,
+      ),
+    );
+  }
+}
+
+/// 고민 상태 칩. 시안 383:336~340.
+///
+/// **한때 지웠다가 되살렸다.** 없애면 등급이 카드 바탕색으로만 남는데, 그 바탕은
+/// 흰색에 가깝게 섞여 있어(GOOD `#F6FAF3` · CHECK `#FFF6F1`) 등급끼리 구분되지
+/// 않는다. 스크린리더는 색을 읽지 못해 등급을 아예 전달받지 못했다. 이 칩이
+/// 유일하게 상태를 **글자로** 들고 있다.
+///
+/// 시안은 GOOD·CHECK 두 벌을 정의한다. 서버 등급은 그보다 잘게 나뉘므로 색만
+/// 둘 중 하나로 접고 **글자는 서버가 준 등급을 그대로 쓴다** — 여기서 경계를
+/// 새로 세우지 않는다. 점수 카드와 같은 어휘라 한 화면에서 등급 말이 갈리지도 않는다.
+class _StatusPill extends StatelessWidget {
+  const _StatusPill({required this.label, required this.good});
+
+  final String label;
+  final bool good;
+
+  @override
+  Widget build(BuildContext context) {
+    return Pill(
+      minHeight: 24,
+      horizontalPadding: 12,
+      borderRadius: 16,
+      color: good ? AppColors.concernGoodBg : AppColors.concernCheckBg,
+      label: label,
+      style: TextStyle(
+        fontSize: 12,
+        fontWeight: FontWeight.w600,
+        color: good ? AppColors.concernGoodFg : AppColors.concernCheckFg,
       ),
     );
   }

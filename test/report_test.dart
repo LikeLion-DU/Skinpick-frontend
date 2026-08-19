@@ -187,6 +187,32 @@ void main() {
       expect(find.text('60'), findsOneWidget);
     });
 
+    testWidgets('고민 상태가 색이 아니라 글자로도 뜬다 — 스크린리더가 읽는다', (tester) async {
+      // 시안 383:336~340 에 GOOD/CHECK 칩이 있다. 한때 지웠더니 등급이 카드
+      // 바탕색으로만 남았는데, 그 바탕은 흰색에 가깝게 섞여 있어(#F6FAF3 ·
+      // #FFF6F1) 등급끼리 구분되지 않고 스크린리더는 색을 읽지 못한다.
+      final report = daily('report_daily');
+      expect(report.concerns, isNotEmpty, reason: '픽스처에 고민이 없으면 아무것도 못 본다');
+
+      await pump(
+        tester,
+        host(
+          _FakeReportRepository(daily: Success(report)),
+          DailyReportView(date: DateTime(2026, 8, 17)),
+        ),
+      );
+
+      for (final concern in report.concerns) {
+        final status = concern.status;
+        if (status == null) continue;
+        expect(
+          find.text(status.label),
+          findsWidgets,
+          reason: '${concern.label} 의 등급이 글자로 없다 — 색만 남으면 아무도 못 읽는다',
+        );
+      }
+    });
+
     testWidgets('AI 문장이 없어도 점수와 영양은 그대로 뜬다', (tester) async {
       final report = daily('report_daily');
       final withoutAi = DailyReport(

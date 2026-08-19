@@ -92,6 +92,16 @@ class AppColors {
   static const bad = Color(0xFFDF0011);
   static const caution = Color(0xFFFF7D40);
 
+  // ── 고민 상태 칩 2종 ───────────────────────────────────────
+  // 시안 383:336~340(`오늘의 리포트(굳)` 의 "내 피부 고민 기준 분석").
+  // 시안은 GOOD·CHECK 두 벌만 정의한다. 서버가 주는 등급이 더 잘게 나뉘어도
+  // **칩 색은 이 둘 중 하나**고, 어느 쪽인지는 서버 판정이 정한다 —
+  // 앱이 경계를 새로 세우지 않는다.
+  static const concernGoodBg = Color(0xFFE2F5CE);
+  static const concernGoodFg = Color(0xFF51B64C);
+  static const concernCheckBg = Color(0xFFFFECAF);
+  static const concernCheckFg = Color(0xFFFF7D40);
+
   // ── 영양 타일 4종 ──────────────────────────────────────────
   // 칼로리·지방·당류·나트륨 아이콘. **판정이 아니라 구분이다.** 네 칸이 같은
   // 회색이면 훑을 때 칸이 안 나뉘어서 색을 주되, 초록·빨강·주황은 쓰지 않는다 —
