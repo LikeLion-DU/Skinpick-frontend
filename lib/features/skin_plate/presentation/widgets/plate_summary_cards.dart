@@ -384,11 +384,16 @@ class NutrientTiles extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // 순서는 시안 그대로다 — 칼로리 · 지방 · 당류 · 나트륨.
+    // 아이콘 색도 시안(367-2211)을 따른다 — 네 칸이 같은 회색이면 훑을 때
+    // 칸이 구분되지 않는다. 색은 장식이고 판정이 아니다(초록 당류가 "좋다"는
+    // 뜻이 아니다) — 판정은 위 GOOD/BAD 카드가 말한다.
     final tiles = [
-      (Icons.monitor_heart_outlined, '칼로리', '${_comma(caloriesKcal)} kcal'),
-      (Icons.cloud_outlined, '지방', '${_comma(fatG)} g'),
-      (Icons.icecream_outlined, '당류', '${_comma(sugarG)} g'),
-      (Icons.grain, '나트륨', '${_comma(sodiumMg)} mg'),
+      (Icons.monitor_heart_outlined, const Color(0xFFFF6B57), '칼로리',
+          '${_comma(caloriesKcal)} kcal'),
+      (Icons.cloud_outlined, AppColors.primary, '지방', '${_comma(fatG)} g'),
+      (Icons.icecream_outlined, const Color(0xFF6DBE6A), '당류',
+          '${_comma(sugarG)} g'),
+      (Icons.grain, const Color(0xFF8E7CE8), '나트륨', '${_comma(sodiumMg)} mg'),
     ];
 
     // 네 칸의 높이를 서로 맞춘다. 최소 높이만 두면 한 칸의 값이 두 줄로 접히는
@@ -417,16 +422,16 @@ class NutrientTiles extends StatelessWidget {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(tile.$1, size: 26, color: AppColors.textOnCard),
+                  Icon(tile.$1, size: 26, color: tile.$2),
                   const SizedBox(height: 6),
-                  Text(tile.$2,
+                  Text(tile.$3,
                       style: const TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.w500,
                         color: AppColors.textOnCard,
                       )),
                   const SizedBox(height: 2),
-                  Text(tile.$3,
+                  Text(tile.$4,
                       style: const TextStyle(
                         fontSize: 10,
                         fontWeight: FontWeight.w500,

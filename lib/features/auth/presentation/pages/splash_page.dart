@@ -33,23 +33,21 @@ class SplashPage extends StatelessWidget {
   }
 }
 
-/// 오렌지 판 위에서는 로고가 흰색 한 벌이다.
+/// 오렌지 판 위의 로고는 **두 색**이다 — 글자는 흰색, P 만 검정(시안 360-911).
+/// 통째로 흰색을 입히면 P 의 개성이 사라져 그냥 흰 글자가 된다.
 ///
-/// `logo_skinpick.svg` 는 검정+흰색이고, `srcIn` 으로 통째로 흰색을 입혀 쓴다.
-/// 오렌지 위에 그대로 올리면 검정 글자가 배경과 부딪힌다.
+/// `logo_skinpick_splash.svg` 는 본 로고(검정 글자+흰 P)의 색만 맞바꾼 사본이다.
 ///
-/// **마크 파일이 둘이다.** 흰 배경용(검정+오렌지)은 `login_logo.svg` 이고 로그인이
-/// 쓴다. 시안이 두 벌을 따로 줘서 그대로 옮긴 것인데, 마크가 바뀌는 날 한쪽만
-/// 갈릴 자리다 — 고칠 때 두 파일을 같이 봐야 한다.
+/// **마크 파일이 셋이다.** 흰 배경용(검정+오렌지)은 `login_logo.svg`(로그인),
+/// 검정+흰은 `logo_skinpick.svg` 다. 마크가 바뀌는 날 셋을 같이 갈아야 한다.
 class _Wordmark extends StatelessWidget {
   const _Wordmark();
 
   @override
   Widget build(BuildContext context) {
     return SvgPicture.asset(
-      'assets/icons/logo_skinpick.svg',
+      'assets/icons/logo_skinpick_splash.svg',
       width: 247,
-      colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcIn),
     );
   }
 }

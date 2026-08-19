@@ -938,9 +938,11 @@ class _SkinCapturePageState extends ConsumerState<SkinCapturePage>
                 ),
               ),
 
-              // 타원 중앙의 방향 안내 — "정면을 바라봐주세요".
+              // 방향 안내 — "정면을 바라봐주세요". **타원 아래**에 둔다(시안 360-815).
+              // 원 안에 두면 글자가 얼굴 위에 얹혀서, 사용자가 자기 얼굴을 보며
+              // 자세를 잡는 화면에서 정작 얼굴이 가려진다.
               Align(
-                alignment: const Alignment(0, -0.12),
+                alignment: const Alignment(0, 0.47),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -1039,6 +1041,9 @@ class _CaptureShutter extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // 시안(360-815)의 셔터는 흰 링 + 흰 원판이다. 준비 여부는 색 대신 밝기로
+    // 가른다 — 준비 신호는 가이드 링(초록)과 하단 문구가 이미 말하고 있어서,
+    // 셔터까지 주황으로 칠하면 화면에 셔터가 두 개 있는 것처럼 읽힌다.
     return GestureDetector(
       onTap: enabled ? onTap : null,
       child: Container(
@@ -1047,7 +1052,7 @@ class _CaptureShutter extends StatelessWidget {
         decoration: BoxDecoration(
           shape: BoxShape.circle,
           border: Border.all(
-            color: enabled ? AppColors.primary : Colors.white38,
+            color: enabled ? Colors.white : Colors.white38,
             width: 5,
           ),
         ),

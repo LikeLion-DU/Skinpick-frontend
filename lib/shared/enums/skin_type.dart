@@ -34,14 +34,14 @@ enum SkinType {
   /// 한 색(오렌지)으로만 두고 미선택은 `ColorFiltered` 로 회색을 입힌다.
   /// 시트에는 회색 벌도 있지만, 두 벌을 넣으면 색을 바꿀 때 두 파일을 갈아야 한다.
   ///
-  /// [sensitive] 는 시트에 타입용 그림이 없어 고민 쪽 "민감(홍조)" 글리프를 쓴다 —
-  /// 같은 얼굴 계열이라 나란히 두어도 어색하지 않다. [dehydratedOily] 는 서버가
-  /// 값을 가지게 되면서(2026-08-19) 시트 그림을 그대로 쓴다.
+  /// [sensitive] 도 이제 전용 그림이 있다 — 시안 377:47 에서 추출했다(2026-08-20).
+  /// 그전에는 시트에 타입용 그림이 없어 고민 쪽 "민감(홍조)" 글리프를 빌려 썼다.
+  /// [dehydratedOily] 는 서버가 값을 가지게 되면서(2026-08-19) 시트 그림을 그대로 쓴다.
   String get glyph => switch (this) {
         dry => 'assets/icons/skin_type_dry.png',
         oily => 'assets/icons/skin_type_oily.png',
         combination => 'assets/icons/skin_type_combination.png',
-        sensitive => 'assets/icons/skin_concern_redness.png',
+        sensitive => 'assets/icons/skin_type_sensitive.png',
         dehydratedOily => 'assets/icons/skin_type_dehydrated_oily.png',
         normal => 'assets/icons/skin_type_unknown.png',
         unknown => 'assets/icons/skin_type_unknown.png',
