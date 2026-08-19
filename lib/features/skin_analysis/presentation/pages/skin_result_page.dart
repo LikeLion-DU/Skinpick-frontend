@@ -10,6 +10,7 @@ import '../../../../app/theme/metric_palette.dart';
 import '../../../../core/widgets/app_widgets.dart';
 import '../../../../shared/enums/metric_band.dart';
 import '../../../../shared/enums/skin_type.dart';
+import '../skin_headline.dart';
 import '../../../../shared/widgets/highlight_row.dart';
 import '../../../../shared/widgets/metric_bar.dart';
 import '../../../../shared/widgets/pill.dart';
@@ -63,7 +64,7 @@ class SkinResultPage extends ConsumerWidget {
       Authenticated(:final user) => user.declaredSkinType,
       _ => null,
     };
-    final headline = _headline(analysis, declaredType);
+    final headline = skinHeadline(analysis, declaredType);
 
     return Scaffold(
       body: Stack(
@@ -157,30 +158,6 @@ class SkinResultPage extends ConsumerWidget {
 
 /// 타입 카드의 제목을 정한다.
 ///
-/// 서버 문구가 1순위다. 타입만이 아니라 오늘의 상태까지 조합돼 있어서
-/// ("건성 · 붉은기") 앱이 더 얹을 것이 없다.
-///
-/// 문구가 없을 때만 타입 하나로 떨어진다. 그 타입도 세 군데를 순서대로 본다.
-///
-/// **`skinType` 이 없어서 뒤로 넘어가는 일은 지금은 없다** — 서버가 AI 원본이 아니라
-/// 저장된 지표에서 매번 다시 만들어서 확장 필드가 없던 옛 기록에도 온다. 그래도
-/// 체인을 남긴다. 계약이 바뀌었다고 옛 기록을 여는 순간 제목이 비어서는 안 된다.
-/// 뒤 두 칸도 빌 수 있다 — 갭 카드는 사용자가 타입을 건너뛰면 없고, 자가 신고도
-/// 마찬가지다. 그래서 마지막에 '오늘의 피부' 가 있다.
-///
-/// 폴백에만 '피부' 를 붙인다. 타입 하나면 "건성" 보다 "건성 피부" 가 제목처럼 읽힌다.
-/// 서버 문구에는 붙이지 않는다 — 괄호로 끝나는 것이 있어 "…(수부지) 피부" 로 깨진다.
-String _headline(SkinAnalysis analysis, SkinType? declaredType) {
-  final label = analysis.skinType?.label ?? '';
-  if (label.isNotEmpty) return label;
-
-  final type = analysis.skinType?.primary ??
-      analysis.skinTypeGap?.observed ??
-      declaredType;
-
-  return type == null ? '오늘의 피부' : '${type.label} 피부';
-}
-
 /// 화면 머리 — 제목 · 분석 날짜 · 마스코트 · 오늘의 피부 타입.
 ///
 /// 시안이 옛 "분석이 완료됐어요" 확인 화면을 걷어내고 결과를 바로 편다. 촬영 →
@@ -317,6 +294,8 @@ class _MetricBars extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final bars = analysis.metrics.toBars();
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -329,9 +308,11 @@ class _MetricBars extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 12),
-        for (final bar in analysis.metrics.toBars())
+        // 마지막 막대 뒤에는 여백을 두지 않는다. 두면 카드가 끝나는 자리만
+        // 다음 구역과의 간격이 8 만큼 넓어져 섹션 경계가 혼자 어긋난다.
+        for (final bar in bars)
           Padding(
-            padding: const EdgeInsets.only(bottom: 8),
+            padding: EdgeInsets.only(bottom: bar.key == bars.last.key ? 0 : 8),
             child: MetricBar(
               label: bar.label,
               value: bar.value,

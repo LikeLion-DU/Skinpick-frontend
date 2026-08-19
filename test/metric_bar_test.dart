@@ -82,6 +82,30 @@ void main() {
     expect(find.text('주의'), findsOneWidget);
   });
 
+  testWidgets('한 줄이 스크린리더에 한 덩이로 읽힌다', (tester) async {
+    // 안 묶으면 이름·상태어·막대·변화량이 네 번에 나뉘어 읽히고, '-7' 이 어느
+    // 지표 것인지 알 수 없는 채로 따로 떨어진다.
+    // addTearDown 은 테스트 종료 검사보다 늦게 돌아서 핸들이 남았다고 잡힌다.
+    final handle = tester.ensureSemantics();
+
+    await tester.pumpWidget(host(const MetricBar(
+      label: '수분',
+      value: 38,
+      color: AppColors.metricBarHydration,
+      band: MetricBand('부족', AppColors.metricLow),
+      delta: -7,
+    )));
+
+    final node = tester.getSemantics(find.byType(MetricBar));
+    expect(node.label, contains('수분'));
+    expect(node.label, contains('부족'));
+    // 화면에서 걷어낸 숫자는 여기로 간다.
+    expect(node.value, contains('38'));
+    expect(node.label, contains('직전 분석 대비 -7'));
+
+    handle.dispose();
+  });
+
   testWidgets('글자를 키워도 알약 밖으로 넘치지 않는다', (tester) async {
     // 시안 높이(49)를 그대로 박으면 2.0 에서 이름·판정이 알약을 뚫는다.
     // minHeight 로만 잡혀 있어야 한다.

@@ -9,6 +9,7 @@ import '../../../../app/theme/metric_palette.dart';
 import '../../../../core/di/providers.dart';
 import '../../../../core/widgets/app_widgets.dart';
 import '../../../../shared/enums/metric_band.dart';
+import '../../../../shared/enums/skin_type.dart';
 import '../../../../shared/widgets/metric_bar.dart';
 import '../../../../shared/widgets/pill.dart';
 import '../../../../shared/widgets/section_mark.dart';
@@ -18,6 +19,7 @@ import '../../../auth/domain/entities/auth_user.dart';
 import '../../../auth/presentation/providers/auth_notifier.dart';
 import '../../domain/entities/skin_analysis.dart';
 import '../../domain/entities/skin_insight.dart';
+import '../skin_headline.dart';
 import '../providers/skin_analysis_notifier.dart';
 
 /// S10 — 개인화 피부 인사이트.
@@ -226,7 +228,8 @@ class _Body extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          _InsightHeader(analysis: analysis),
+          _InsightHeader(
+              analysis: analysis, declaredType: user?.declaredSkinType),
           const SizedBox(height: 24),
           if (analysis != null) ...[
             const _SectionTitle('현재 피부 상태'),
@@ -292,9 +295,13 @@ class _Body extends ConsumerWidget {
 ///
 /// 최신 분석을 아직 못 받았으면 제목만 남는다 — 없는 점수를 0 으로 그리지 않는다.
 class _InsightHeader extends StatelessWidget {
-  const _InsightHeader({required this.analysis});
+  const _InsightHeader({required this.analysis, this.declaredType});
 
   final SkinAnalysis? analysis;
+
+  /// 서버 문구가 비었을 때 제목이 기대는 마지막 칸. 결과 화면과 같은 순서를
+  /// 쓰려면 여기까지 내려와야 한다 — 없으면 '오늘의 피부' 로 먼저 떨어진다.
+  final SkinType? declaredType;
 
   @override
   Widget build(BuildContext context) {
@@ -337,7 +344,10 @@ class _InsightHeader extends StatelessWidget {
             children: [
               const SkinMascot(size: 130),
               const SizedBox(width: 4),
-              Expanded(child: _HeaderIdentity(analysis: current)),
+              Expanded(
+              child:
+                  _HeaderIdentity(analysis: current, declaredType: declaredType),
+            ),
             ],
           ),
         ],
@@ -347,17 +357,18 @@ class _InsightHeader extends StatelessWidget {
 }
 
 class _HeaderIdentity extends StatelessWidget {
-  const _HeaderIdentity({required this.analysis});
+  const _HeaderIdentity({required this.analysis, this.declaredType});
 
   final SkinAnalysis analysis;
+  final SkinType? declaredType;
 
   @override
   Widget build(BuildContext context) {
     // 서버가 매긴 등급이다 — 앱에 경계표를 두지 않는다.
     final grade = analysis.grade;
-    // 서버가 조합해 준 문구를 그대로 쓴다("건성 · 붉은기"). 뒤에 '피부' 를 이어
-    // 붙이지 않는다 — '수부지' 처럼 괄호로 끝나는 문구가 깨진다.
-    final label = analysis.skinType?.label ?? '';
+    // 제목은 결과 화면(S05)과 **같은 함수**가 정한다. 여기서 서버 문구만 보면
+    // label 이 비어 온 분석에서 두 화면이 다른 이름을 단다.
+    final label = skinHeadline(analysis, declaredType);
 
     return Column(
       children: [
@@ -376,7 +387,7 @@ class _HeaderIdentity extends StatelessWidget {
         ),
         const SizedBox(height: 10),
         Text(
-          label.isEmpty ? '오늘의 피부' : label,
+          label,
           textAlign: TextAlign.center,
           style: const TextStyle(
             fontSize: 20,
@@ -447,6 +458,8 @@ class _MetricsCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final bars = analysis.metrics.toBars();
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -463,9 +476,11 @@ class _MetricsCard extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 12),
-        for (final bar in analysis.metrics.toBars())
+        // 마지막 막대 뒤에는 여백을 두지 않는다. 두면 카드가 끝나는 자리만
+        // 다음 구역과의 간격이 8 만큼 넓어져 섹션 경계가 혼자 어긋난다.
+        for (final bar in bars)
           Padding(
-            padding: const EdgeInsets.only(bottom: 8),
+            padding: EdgeInsets.only(bottom: bar.key == bars.last.key ? 0 : 8),
             child: MetricBar(
               label: bar.label,
               value: bar.value,

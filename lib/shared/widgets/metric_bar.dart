@@ -42,10 +42,15 @@ class MetricBar extends StatelessWidget {
     // 서버가 범위를 벗어난 값을 보내도 그린 길이와 읽어 주는 수가 같아야 한다.
     final shown = value.clamp(0, 100);
 
+    // **한 줄을 한 덩이로 읽힌다.** 안 묶으면 스크린리더가 이름·상태어·막대·
+    // 변화량을 네 번에 나눠 읽어서, '-7' 이 어느 지표 것인지 알 수 없는 채로
+    // 따로 떨어진다.
+    //
     // **높이를 고정하지 않는다.** 시안 값(49)을 그대로 박아 두면 시스템 글자
     // 크기 2.0 에서 이름·판정이 알약 밖으로 넘친다. 최소 높이로만 잡고
     // 내용이 높이를 정하게 둔다.
-    return Container(
+    return MergeSemantics(
+        child: Container(
       constraints: const BoxConstraints(minHeight: 49),
       decoration: BoxDecoration(
         color: AppColors.surfaceCardWarm,
@@ -114,7 +119,6 @@ class MetricBar extends StatelessWidget {
                         // **자른 값을 싣는다.** 원값을 실으면 접근성 트리가
                         // "0~100 을 벗어났다"며 던진다 — 화면은 멀쩡한데
                         // 스크린리더를 켠 사용자에게만 터진다.
-                        semanticsLabel: label,
                         semanticsValue: '$shown',
                         minHeight: 14,
                         backgroundColor: AppColors.surfaceCardWarm,
@@ -145,6 +149,8 @@ class MetricBar extends StatelessWidget {
                     fit: BoxFit.scaleDown,
                     child: Text(
                       delta > 0 ? '+$delta' : '$delta',
+                      // '+7' 은 그대로 읽으면 무엇의 7 인지 알 수 없다.
+                      semanticsLabel: '직전 분석 대비 $delta',
                       style: const TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
@@ -157,7 +163,7 @@ class MetricBar extends StatelessWidget {
           ],
         ),
       ),
-    );
+    ));
   }
 }
 
