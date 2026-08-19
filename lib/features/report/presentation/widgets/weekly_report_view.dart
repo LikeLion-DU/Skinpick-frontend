@@ -36,8 +36,13 @@ class _WeeklyReportViewState extends ConsumerState<WeeklyReportView>
   @override
   bool get wantKeepAlive => true;
 
-  /// 오늘 포함 7일이 기본이다 — 서버의 기본 동작(`lastDays(7)`)과 같은 정의다.
-  /// 달력 주가 아니라서 월요일에 리셋되지 않는다.
+  /// **달력 주(월~일)다.** 시안의 기간 표기(`26.8.3(월) ~ 8.9(일)`)가 이미 달력
+  /// 주를 전제한다 — 오늘 포함 7일(롤링)로 두면 수요일에 열었을 때 "지난 목 ~
+  /// 오늘 수"가 떠서 표기 속 (월)(일)과 어긋난다.
+  ///
+  /// 이번 주는 일요일이 아직 안 왔어도 월~일 전체를 요청한다. 미래 날짜에는
+  /// 기록이 없을 뿐이라 집계가 달라지지 않고, 분모 문구도 주 내내
+  /// "7일 중 N일 기록"으로 같은 기준을 유지한다.
   static const _weekDays = 7;
 
   /// 몇 주 전을 보고 있는지. 0 이 이번 주다. **양수가 되지 않는다** —
@@ -45,9 +50,8 @@ class _WeeklyReportViewState extends ConsumerState<WeeklyReportView>
   int _weeksAgo = 0;
 
   ({DateTime from, DateTime to}) get _range {
-    final today = todayKst();
-    final to = addDays(today, -_weeksAgo * _weekDays);
-    return (from: addDays(to, -(_weekDays - 1)), to: to);
+    final monday = addDays(mondayOf(todayKst()), -_weeksAgo * _weekDays);
+    return (from: monday, to: addDays(monday, _weekDays - 1));
   }
 
   @override
