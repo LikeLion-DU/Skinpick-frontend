@@ -81,7 +81,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                 alignment: Alignment.centerLeft,
                 // 로고는 검정+오렌지 2색이라 단색 필터를 씌우지 않는다.
                 child: SvgPicture.asset(
-                  'assets/icons/logo_skinpick.svg',
+                  'assets/icons/login_logo.svg',
                   width: 176,
                 ),
               ),
