@@ -224,11 +224,7 @@ class _AverageBanner extends StatelessWidget {
       ),
       child: Row(
         children: [
-          // flex 를 2:1 로 둔다. 둘 다 1 이면 오른쪽 묶음이 안 쓴 폭이 왼쪽으로
-          // 돌아오지 않아서(RenderFlex 는 loose 여분을 재분배하지 않는다) 문장이
-          // 절반 폭에서 두 줄로 접힌다.
           Expanded(
-            flex: 2,
             child: Text(
               // 분모는 7일이 아니라 기록한 날이다. 그 사실이 화면에 보여야
               // 사용자가 "왜 5일치인데 평균이 이래?"를 묻지 않는다.
@@ -245,13 +241,16 @@ class _AverageBanner extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 10),
-          // 등급어까지 붙으면 큰 숫자와 함께 한 줄을 넘긴다(2.0 에서 42px). 왼쪽
-          // 문장은 이미 Expanded 라 더 줄 자리가 없으므로 이 묶음이 양보한다.
-          Flexible(
-            child: FittedBox(
-              fit: BoxFit.scaleDown,
-              alignment: Alignment.centerRight,
-              child: Row(
+          // 등급어까지 붙으면 큰 숫자와 함께 한 줄을 넘긴다(2.0 에서 42px). 배율을
+          // 1.3 까지만 따라간다 — 점수 링과 같은 방식이다.
+          //
+          // **flex 로 나누지 않는다.** Flexible 로 감쌌더니 왼쪽 문장과 flex 1 을
+          // 나눠 가져서, 오른쪽이 안 쓴 폭이 왼쪽으로 돌아오지 않아 문장이 절반
+          // 폭에서 접혔다. 반대로 왼쪽에 flex 2 를 주면 오른쪽이 좁아져 기본
+          // 크기에서도 40px 숫자가 29.7px 로 줄어든다 — 둘 다 시안을 깬다.
+          MediaQuery.withClampedTextScaling(
+            maxScaleFactor: 1.3,
+            child: Row(
             crossAxisAlignment: CrossAxisAlignment.baseline,
             textBaseline: TextBaseline.alphabetic,
             children: [
@@ -291,7 +290,6 @@ class _AverageBanner extends StatelessWidget {
                 ),
               ],
             ],
-              ),
             ),
           ),
         ],

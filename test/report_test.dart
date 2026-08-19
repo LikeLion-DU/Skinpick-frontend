@@ -14,6 +14,7 @@ import 'package:skinplate/features/report/domain/entities/report.dart';
 import 'package:skinplate/features/report/domain/repositories/report_repository.dart';
 import 'package:skinplate/features/report/presentation/pages/report_page.dart';
 import 'package:skinplate/features/report/presentation/widgets/daily_report_view.dart';
+import 'package:skinplate/features/report/presentation/widgets/report_widgets.dart';
 import 'package:skinplate/features/report/presentation/widgets/weekly_report_view.dart';
 
 /// 리포트 두 탭의 화면 동작.
@@ -493,6 +494,27 @@ void main() {
     expect(find.text('BAD'), findsWidgets);
     expect(find.text('돼지고기 김치찌개'), findsWidgets);
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('평균 배너 — 기본 크기에서 점수 글자가 시안(40)을 지킨다', (tester) async {
+    // 오른쪽 묶음을 flex 로 감싸면 왼쪽 문장과 폭을 나눠 가져서, 어느 쪽으로
+    // 기울여도 시안이 깨진다(문장이 두 줄로 접히거나 40px 숫자가 29.7 로 줄었다).
+    // 지금은 flex 를 쓰지 않고 배율 상한만 둔다.
+    await pump(
+      tester,
+      host(
+        _FakeReportRepository(weekly: Success(weekly('report_weekly_live'))),
+        const WeeklyReportView(),
+      ),
+    );
+
+    // 실서버 캡처의 평균은 60 이다. 같은 숫자가 추이 그래프에도 있으므로 배너
+    // 안에서 찾는다.
+    final score = tester.getSize(find.descendant(
+      of: find.byType(ReportCard).first,
+      matching: find.text('60'),
+    ).first);
+    expect(score.height, closeTo(40, 6), reason: '점수 글자 높이');
   });
 
   testWidgets('네 끼 넘는 날은 남은 개수를 적는다 — 말없이 자르지 않는다', (tester) async {

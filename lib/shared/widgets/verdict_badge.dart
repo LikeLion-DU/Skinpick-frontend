@@ -25,7 +25,9 @@ class VerdictBadge extends StatelessWidget {
       // 81×29 를 요구하는데, 고정 상자는 예외를 던지지 않고 조용히 'GOO' 로
       // 자른다 — 그래서 배율 테스트도 통과했다.
       constraints: const BoxConstraints(minWidth: 53, minHeight: 19),
-      // 패딩 8 이면 'GOOD' 이 기본 크기에서도 57 이 되어 시안 53 을 넘긴다.
+      // 좌우 6 이면 기본 크기에서 minWidth 53 이 그대로 폭을 정한다(글자 26 + 12).
+      // 8 로 두어도 실기기에서는 53 이 이기지만, 여유를 좁혀 두면 폰트를 바꿀 때
+      // 알약이 먼저 넓어지는 것을 눈으로 알아챈다.
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
       decoration: BoxDecoration(
         // **라벨은 오렌지다.** 숫자는 등급색(주의=빨강)을 따르고 라벨은 두 단으로

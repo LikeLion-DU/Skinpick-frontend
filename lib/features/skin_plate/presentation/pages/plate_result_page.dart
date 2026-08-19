@@ -194,13 +194,21 @@ class _Content extends StatelessWidget {
         const SizedBox(height: 26),
         // 점수의 왼쪽 항. 아래 분석 요약(음식 쪽)과 짝이다.
         SkinBasisCard(skinAnalysisId: plate.skinAnalysisId),
-        Text('분석 요약', style: Theme.of(context).textTheme.titleMedium),
-        const SizedBox(height: 10),
-        PlateSummaryCard(
+        // 제목과 카드를 함께 접는다. 룰도 서버 문장도 없는 기록(옛 기록의
+        // summary 는 nullable 이다)에서 제목만 남으면 불러오다 만 화면으로 읽힌다.
+        if (PlateSummaryCard.hasContent(
           good: plate.good,
           caution: plate.caution,
           summary: plate.summary,
-        ),
+        )) ...[
+          Text('분석 요약', style: Theme.of(context).textTheme.titleMedium),
+          const SizedBox(height: 10),
+          PlateSummaryCard(
+            good: plate.good,
+            caution: plate.caution,
+            summary: plate.summary,
+          ),
+        ],
 
         // **AI 문장은 저장된 기록에만 있다.** 서버는 저장할 때 한 번 만들고,
         // `POST /plates/analyze` 응답에는 그 필드 자체가 없다.

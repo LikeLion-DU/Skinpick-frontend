@@ -159,6 +159,15 @@ class PlateSummaryCard extends StatelessWidget {
   final List<PlateFeedback> good;
   final List<PlateFeedback> caution;
 
+  /// 그릴 것이 있는가. 제목("분석 요약")을 함께 접기 위해 호출부가 먼저 묻는다 —
+  /// 카드만 접으면 제목이 홀로 남는다.
+  static bool hasContent({
+    required List<PlateFeedback> good,
+    required List<PlateFeedback> caution,
+    required String summary,
+  }) =>
+      good.isNotEmpty || caution.isNotEmpty || summary.isNotEmpty;
+
   /// 룰이 하나도 안 걸린 한 끼에 **서버가 붙여 주는 한 줄**.
   /// 앱이 같은 뜻의 문장을 따로 쓰지 않는다 — 룰 엔진이 그 문장의 주인이다.
   final String summary;
