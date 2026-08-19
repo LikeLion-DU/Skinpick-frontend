@@ -358,7 +358,7 @@ check-circle: 60       # "분석이 완료됐어요" 체크 — 테두리 1.5px 
 - **얼굴 타원** — 프레임 폭의 76%, 높이의 45%, 세로 중심은 위쪽 47%. 타원 **바깥**만 45% 검게 깔아 "안"이 어디인지 설명 없이 보이게 한다. 방위점 4개(반지름 5.5)를 상·하·좌·우에 찍고, 통과하면 흰색 1.5px → 연두 3px로 굵어진다 [src:23].
 - **코너 브래킷** — 308px 사각의 네 모서리에 44px L자, 획 5px에 둥근 끝. 촬영 영역을 안내만 하고 자르지는 않는다 [src:26].
 
-아이콘은 두 계열이 섞여 있다. SVG 5종(로고·홈·기록·카메라·프로필)은 시안 자산을 그대로 쓰고, 나머지는 Material 기본 아이콘이다 [src:6][src:33]. SVG는 `ColorFilter(srcIn)` 으로 상태색을 입히되 **로고만은 예외** — 검정+오렌지 2색이라 단색 필터를 씌우면 오렌지 포인트까지 죽는다 [src:18][src:19].
+아이콘은 두 계열이 섞여 있다. SVG는 시안 자산을 그대로 쓰고, 나머지는 Material 기본 아이콘이다 [src:6][src:33]. SVG는 `ColorFilter(srcIn)` 으로 상태색을 입히되 **로그인 로고만은 예외** — `login_logo.svg` 는 검정+오렌지 2색이라 단색 필터를 씌우면 오렌지 포인트까지 죽는다 [src:18][src:19]. 스플래시가 쓰는 `logo_skinpick.svg` 는 검정+흰색 한 벌이라 반대로 흰색 필터를 씌워 오렌지 판 위에 올린다.
 
 ## Components
 
@@ -510,7 +510,7 @@ check-circle: 60       # "분석이 완료됐어요" 체크 — 테두리 1.5px 
 
 **Don't** 402 기준 절대 좌표를 옮겨 적지 않는다. 좁은 기기에서 겹친다 — 여백과 중앙 정렬로 환산한다 [src:12].
 
-**Don't** (브랜드 자산) `assets/icons/logo_skinpick.svg` 와 `assets/icons/sns_row.png` 는 디자인 토큰이 아니다. 앞은 이 제품의 마크이고, **뒤는 타사(SNS) 브랜드 아이콘 렌더**라 각 서비스의 브랜드 가이드라인이 걸린다. 시안 렌더를 그대로 쓰는 이유도 손으로 다시 그리면 가이드라인 위반이 되기 쉬워서다 [src:19]. 이 문서가 옮기는 것은 토큰과 배치 규칙이지 자산 파일이 아니다.
+**Don't** (브랜드 자산) `assets/icons/logo_skinpick.svg` · `assets/icons/login_logo.svg` · `assets/icons/app_logo.png` 와 `assets/icons/sns_row.png` 는 디자인 토큰이 아니다. 앞은 이 제품의 마크이고, **뒤는 타사(SNS) 브랜드 아이콘 렌더**라 각 서비스의 브랜드 가이드라인이 걸린다. 시안 렌더를 그대로 쓰는 이유도 손으로 다시 그리면 가이드라인 위반이 되기 쉬워서다 [src:19]. 이 문서가 옮기는 것은 토큰과 배치 규칙이지 자산 파일이 아니다.
 
 **Don't** 폰트 파일을 늘리지 않는다. Pretendard 넷이 시안에서 확인한 쓰임의 전부다. **Medium을 빼면 본문 대부분이 Regular로 떨어지는데, 앱은 죽지 않고 글자만 얇아진다** [src:6].
 
@@ -614,7 +614,7 @@ PRD §6 원칙 6이 요구한 "점수가 눈앞에서 움직이는" 재계산 �
 30. `lib/features/skin_plate/presentation/widgets/plate_score_card.dart` — 적합도 카드와 원형 게이지 페인터.
 31. `lib/features/skin_plate/presentation/widgets/plate_summary_cards.dart` — GOOD/BAD 카드, AI TIP 카드, 영양 타일 4개.
 32. `lib/features/recommendation/presentation/pages/recommendation_page.dart` — 추천 화면. 시안 미적용, 플래그로 꺼져 있음.
-33. `assets/icons/` — SVG 5종(로고·홈·기록·카메라·FAB 원)과 SNS 아이콘 PNG.
+33. `assets/icons/` — SVG(로고 2종·홈·기록·카메라·FAB 원·프로필·반짝이)와 SNS 아이콘 PNG, 런처 아이콘 원본 `app_logo.png`.
 34. `assets/fonts/OFL.txt` — Pretendard 라이선스(SIL OFL 1.1). 앱 동봉 허용 근거.
 35. `../Skinpick-backend/SkinPlate_PRD.md` — §6 화면 정의와 화면 설계 원칙 6개. 시안과 어긋나는 지점의 원문.
 36. `CLAUDE.md` — 프로젝트 규약. 점수 소유권·enum 기본값·시크릿 금지 등 이 문서가 참조하는 금지 조항.
