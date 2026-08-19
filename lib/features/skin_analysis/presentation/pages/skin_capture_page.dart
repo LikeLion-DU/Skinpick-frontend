@@ -7,7 +7,6 @@ import 'package:camera/camera.dart';
 import 'package:flutter/foundation.dart'
     show TargetPlatform, defaultTargetPlatform, kDebugMode, kIsWeb;
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart' show DeviceOrientation, SystemChrome;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -129,12 +128,6 @@ class _SkinCapturePageState extends ConsumerState<SkinCapturePage>
     super.initState();
     WidgetsBinding.instance.addObserver(this);
 
-    // ML Kit 에 넘기는 회전 보정은 세로로 든 상태를 전제로 한다. 가로로 돌리면
-    // 90도 어긋난 프레임이 들어가 검출이 0개가 되고, 얼굴이 화면에 뻔히 보이는데도
-    // "얼굴을 찾을 수 없어요" 에서 영구히 막힌다. 이 화면에서만 세로로 고정한다.
-    unawaited(SystemChrome.setPreferredOrientations(
-        const [DeviceOrientation.portraitUp]));
-
     // 카메라 열거가 실패해도 갤러리 경로는 살아 있어야 한다.
     if (!kIsWeb) _gate = faceGate(_stillOnlyCamera);
 
@@ -148,8 +141,6 @@ class _SkinCapturePageState extends ConsumerState<SkinCapturePage>
   void dispose() {
     _disposed = true;
     WidgetsBinding.instance.removeObserver(this);
-    unawaited(SystemChrome.setPreferredOrientations(DeviceOrientation.values));
-
     // 검출기를 먼저 닫으면 아직 날아오던 프레임이 닫힌 검출기를 부른다.
     // 카메라를 먼저 다 닫고, 그 뒤에 검출기를 닫는다.
     _runCamera(_closeCamera);

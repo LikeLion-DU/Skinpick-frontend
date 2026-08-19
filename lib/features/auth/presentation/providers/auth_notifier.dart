@@ -61,6 +61,14 @@ class AuthNotifier extends Notifier<AuthState> {
       final wasLoggedIn = state is Authenticated;
 
       _clearSession();
+
+      // 정리를 끝낸 **뒤에** 갈라진다. 복원 중(AuthInitial)이라면 이 401 은
+      // restore() 가 보낸 /auth/me 의 것이고, 전환은 restore() 가 최소 노출을
+      // 채운 다음에 한다. 여기서 앞질러 쓰면 라우터가 상태 변화를 보고 스플래시를
+      // 일찍 떠나, 만료 토큰으로 켰을 때만 브랜드 화면이 깜빡이고 사라진다.
+      // 상태가 사라지지는 않는다 — restore() 가 같은 Unauthenticated 를 세운다.
+      if (state is AuthInitial) return;
+
       state = Unauthenticated(expired: wasLoggedIn);
     });
 
@@ -98,8 +106,15 @@ class AuthNotifier extends Notifier<AuthState> {
     final result = await ref.read(authRepositoryProvider).getMe();
     return result.when(
       success: Authenticated.new,
-      // 만료·위조 토큰이면 조용히 로그인으로. 인터셉터가 토큰을 이미 지웠다.
-      failure: (_) => const Unauthenticated(),
+      // 만료·위조 토큰이면 조용히 로그인으로. 토큰은 UnauthorizedInterceptor 가
+      // 지운다 — /auth/me 의 401 은 세션 사망이라 인터셉터의 정리 대상이다.
+      // 여기서 또 지우지 않는다. 지우는 곳이 둘이면 한쪽만 따라가는 날이 온다.
+      //
+      // 만료 여부는 그대로 들고 간다. 이 경로가 곧 "만료 토큰으로 앱을 켰다" 라서,
+      // 버리면 사용자가 아무 설명 없는 빈 로그인 폼 앞에 떨어진다 — 로그인 화면은
+      // 이 플래그를 보고 "로그인이 만료되었습니다" 를 띄운다.
+      failure: (failure) =>
+          Unauthenticated(expired: failure is AuthFailure && failure.expired),
     );
   }
 
