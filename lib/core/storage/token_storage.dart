@@ -12,13 +12,13 @@ class TokenStorage {
 
   const TokenStorage([
     this._storage = const FlutterSecureStorage(
-      aOptions: AndroidOptions(
-        encryptedSharedPreferences: true,
-        // 키스토어가 리셋되면(기기 초기화·백업 복원·일부 OEM 업데이트) 저장된
-        // 값을 못 풀어 read 가 예외를 던진다. 이 옵션이 켜져 있으면 라이브러리가
-        // 못 푸는 값을 지우고 null 을 돌려준다 — 앱이 스스로 빠져나온다.
-        resetOnError: true,
-      ),
+      // **resetOnError 를 켜지 마라.** 이름과 달리 null 을 돌려주지 않는다 —
+      // 안드로이드 플러그인은 예외를 만나면 secureStorage.deleteAll() 을 부른 뒤
+      // `result.success("Data has been reset")` 로 답한다
+      // (FlutterSecureStoragePlugin.java). 그 문자열이 그대로 토큰 자리에 앉아
+      // `Authorization: Bearer Data has been reset` 이 나간다. write 도 같은
+      // 처리라, 저장이 실패해도 성공으로 보이고 토큰은 어디에도 없다.
+      aOptions: AndroidOptions(encryptedSharedPreferences: true),
     ),
   ]);
 
