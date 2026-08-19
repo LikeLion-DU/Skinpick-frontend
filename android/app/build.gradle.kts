@@ -34,12 +34,13 @@ android {
             // TODO: Add your own signing config for the release build.
             // Signing with the debug keys for now, so `flutter run --release` works.
             signingConfig = signingConfigs.getByName("debug")
-            // R8 이 ML Kit 을 깎아 릴리스에서만 얼굴 검출이 죽는다.
-            // 규칙과 실기기 로그 근거는 proguard-rules.pro 에 있다.
-            proguardFiles(
-                getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro",
-            )
+
+            // **여기서 proguardFiles 를 걸지 않는다.** Flutter 의 Gradle 플러그인이
+            // 릴리스에 minify 를 켜면서 기본 규칙 · flutter_proguard_rules.pro ·
+            // 이 디렉터리의 proguard-rules.pro 를 이미 다 붙인다
+            // (FlutterPlugin.kt 의 releaseBuildType.proguardFiles.add 세 줄).
+            // 여기 다시 적으면 축소 스위치가 여기 있는 것처럼 읽히는데, 실제 on/off 는
+            // Flutter 의 -Pshrink 다. 규칙은 proguard-rules.pro 에만 둔다.
         }
     }
 }

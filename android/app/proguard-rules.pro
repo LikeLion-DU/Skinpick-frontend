@@ -9,15 +9,27 @@
 # InputImage 변환이 깨진다. 얼굴 게이트와 음식 라벨링이 같이 죽는다.
 -keep class com.google.mlkit.** { *; }
 -keep class com.google.android.odml.image.** { *; }
-# usage.txt(릴리스 mapping 산출물)에서 실제로 깎인 것으로 확인된 패키지.
--keep class com.google.android.gms.internal.mlkit_common.** { *; }
--keep class com.google.android.gms.internal.mlkit_vision_face.** { *; }
--keep class com.google.android.gms.internal.mlkit_vision_common.** { *; }
--keep class com.google.android.gms.internal.mlkit_vision_image_labeling.** { *; }
--keep class com.google.android.gms.internal.mlkit_vision_image_labeling_bundled.** { *; }
+
+# **패키지를 열거하지 않는다.** 처음에는 usage.txt 에서 읽은 이름을 하나씩 적었는데
+# 두 군데가 빗나갔다. `mlkit_vision_image_labeling` 은 **존재하지 않는 패키지**여서
+# (실제 이름은 `mlkit_vision_label_*`) 규칙이 0개에 매치됐고 음식 라벨링은 그대로
+# 깎이고 있었다. `mlkit_vision_face.**` 는 `.**` 가 뒤에 점을 요구해서 형제인
+# `mlkit_vision_face_bundled` 를 못 잡았다 — 이 앱이 쓰는 것이 그 번들 모델이다.
+#
+# `_**` 는 언더스코어 변형까지 덮어서 mlkit_common · vision_face · face_bundled ·
+# vision_common · label_bundled · label_custom_bundled · internal_vkp · linkfirebase
+# 가 한 줄에 들어온다. 플러그인이 내부 패키지 이름을 바꿔도 따라간다.
+-keep class com.google.android.gms.internal.mlkit_** { *; }
+-keep class com.google.android.libraries.vision.** { *; }
+-keep class com.google.android.gms.vision.** { *; }
 
 # Flutter 플러그인 브리지(자바 쪽). 메서드 채널로 받은 맵을 InputImage 로
 # 바꾸는 변환기가 여기 있다 — 위 로그의 NPE 가 이 안에서 났다.
 -keep class com.google_mlkit_commons.** { *; }
 -keep class com.google_mlkit_face_detection.** { *; }
 -keep class com.google_mlkit_image_labeling.** { *; }
+
+# keep 범위를 넓히면 선택적 의존성의 미해결 참조가 딸려 온다. R8 full mode 는
+# 그걸 경고가 아니라 빌드 실패로 처리한다.
+-dontwarn com.google.mlkit.**
+-dontwarn com.google.android.gms.internal.mlkit_**
