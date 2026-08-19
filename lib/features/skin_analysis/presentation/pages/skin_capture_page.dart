@@ -929,84 +929,22 @@ class _SkinCapturePageState extends ConsumerState<SkinCapturePage>
                 ),
               ),
 
-              // 타원 중앙의 방향 안내 — "정면을 바라봐주세요".
-              Align(
-                alignment: const Alignment(0, -0.12),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    // 측면 단계에서는 문장보다 움직임이 빠르다. 단, **방향이
-                    // 문제일 때만** 돌린다 — 거리·밝기로 막혔는데 화살표가 흐르면
-                    // 사용자는 더 돌고, 각도가 커질수록 검출이 나빠진다.
-                    // 자리는 항상 잡아 둔다. 임계각 근처에서 판정이 300ms 마다
-                    // 진동하면 읽고 있는 문구가 같이 튄다.
-                    if (_stage != FacePhotoType.front)
-                      SizedBox(
-                        height: 44,
-                        child: _needsTurn
-                            ? Center(
-                                child: _TurnHint(
-                                    toLeft: _stage == FacePhotoType.left))
-                            : null,
-                      ),
-                    Text(
-                      _instruction(_stage),
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              Align(
-                alignment: Alignment.bottomCenter,
-                child: Padding(
-                  padding: const EdgeInsets.only(bottom: 18),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      // 왜 안 찍히는지 말해 준다. 이유 없이 잠긴 셔터는 고장으로 읽힌다.
-                      if (guide != null)
-                        Padding(
-                          padding: const EdgeInsets.only(bottom: 10),
-                          child: Text(guide,
-                              textAlign: TextAlign.center,
-                              style: const TextStyle(
-                                  color: Colors.white, fontSize: 12)),
-                        )
-                      else if (!_busy && ready)
-                        const Padding(
-                          padding: EdgeInsets.only(bottom: 10),
-                          child: Text('✓ 촬영 준비 완료 · 곧 자동으로 촬영됩니다',
-                              style: TextStyle(
-                                  color: Colors.greenAccent, fontSize: 12)),
-                        )
-                      // 조건은 맞았지만 아직 유지 중이다. 여기서 아무 말도 안 하면
-                      // 안내가 사라진 채 버튼만 꺼져 있어서 고장으로 읽힌다.
-                      else if (!_busy && readiness == CaptureReadiness.validating)
-                        const Padding(
-                          padding: EdgeInsets.only(bottom: 10),
-                          child: Text('좋아요 · 자세를 잠시 유지해주세요',
-                              style: TextStyle(
-                                  color: Colors.white70, fontSize: 12)),
-                        ),
-                      _CaptureShutter(
-                        enabled: ready && !_busy,
-                        busy: _busy,
-                        onTap: _capture,
-                      ),
-                      TextButton(
-                        onPressed: _busy ? null : _pickFromGallery,
-                        child: const Text('갤러리에서 선택',
-                            style: TextStyle(
-                                color: Colors.white70, fontSize: 12)),
-                      ),
-                    ],
-                  ),
-                ),
+              // 방향 안내와 촬영 조작을 **한 Column 에 세운다.** 예전에는 안내를
+              // `Alignment(0, 0.47)` 로 따로 띄웠는데, 그 0.47 은 SafeArea 높이
+              // 기준이고 타원의 0.47 은 전체 화면 높이 기준이라
+              // (_FaceGuidePainter) 서로 다른 좌표계였다. 큰 화면에서만 우연히
+              // 타원 아래에 놓였고, 360x640 에서는 하단 안내와 겹쳤으며
+              // 320x568 에서는 순서까지 뒤집혔다.
+              CaptureBottomBar(
+                stage: _stage,
+                needsTurn: _needsTurn,
+                instruction: _instruction(_stage),
+                guide: guide,
+                ready: ready,
+                busy: _busy,
+                readiness: readiness,
+                onCapture: _capture,
+                onPickFromGallery: _pickFromGallery,
               ),
             ],
           ),
@@ -1016,7 +954,117 @@ class _SkinCapturePageState extends ConsumerState<SkinCapturePage>
   }
 }
 
-/// 시안의 셔터 — 흰 원 + 오렌지 링. 게이트를 통과해야 켜진다.
+/// 촬영 화면 아래쪽 — 방향 안내부터 갤러리 버튼까지.
+///
+/// **한 Column 이라는 것이 핵심이다.** 방향 안내를 절대 좌표로 따로 띄우면 화면이
+/// 짧아질 때 하단 안내와 겹치거나 순서가 뒤집힌다(실제로 그랬다). Column 은 자식을
+/// 겹칠 수 없어서, 화면이 좁아지면 겹치는 대신 같이 밀린다.
+///
+/// 페이지 내부 조각인데 public 인 이유는 하나다. 이 배치는 카메라 프리뷰가 뜬 뒤에만
+/// 나와서 페이지를 통째로 띄우는 테스트로는 닿지 못하는데, 겹침이 바로 여기서 났었다.
+/// 순서·겹침은 `test/capture_bottom_bar_test.dart` 가 세 해상도에서 지킨다.
+class CaptureBottomBar extends StatelessWidget {
+  const CaptureBottomBar({
+    super.key,
+    required this.stage,
+    required this.needsTurn,
+    required this.instruction,
+    required this.guide,
+    required this.ready,
+    required this.busy,
+    required this.readiness,
+    required this.onCapture,
+    required this.onPickFromGallery,
+  });
+
+  final FacePhotoType stage;
+  final bool needsTurn;
+  final String instruction;
+
+  /// 왜 안 찍히는지. null 이면 막힌 이유가 없다.
+  final String? guide;
+  final bool ready;
+  final bool busy;
+  final CaptureReadiness readiness;
+  final VoidCallback onCapture;
+  final VoidCallback onPickFromGallery;
+
+  @override
+  Widget build(BuildContext context) {
+    return Align(
+      alignment: Alignment.bottomCenter,
+      child: Padding(
+        padding: const EdgeInsets.only(bottom: 18),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // 측면 단계에서는 문장보다 움직임이 빠르다. 단, **방향이 문제일 때만**
+            // 돌린다 — 거리·밝기로 막혔는데 화살표가 흐르면 사용자는 더 돌고,
+            // 각도가 커질수록 검출이 나빠진다. 자리는 항상 잡아 둔다. 임계각
+            // 근처에서 판정이 300ms 마다 진동하면 읽고 있는 문구가 같이 튄다.
+            if (stage != FacePhotoType.front)
+              SizedBox(
+                height: 44,
+                child: needsTurn
+                    ? Center(
+                        child: _TurnHint(toLeft: stage == FacePhotoType.left))
+                    : null,
+              ),
+            Padding(
+              padding: const EdgeInsets.only(bottom: 24),
+              child: Text(
+                instruction,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+            // 왜 안 찍히는지 말해 준다. 이유 없이 잠긴 셔터는 고장으로 읽힌다.
+            if (guide != null)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 10),
+                child: Text(guide!,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(color: Colors.white, fontSize: 12)),
+              )
+            else if (!busy && ready)
+              const Padding(
+                padding: EdgeInsets.only(bottom: 10),
+                child: Text('✓ 촬영 준비 완료 · 곧 자동으로 촬영됩니다',
+                    style: TextStyle(color: Colors.greenAccent, fontSize: 12)),
+              )
+            // 조건은 맞았지만 아직 유지 중이다. 여기서 아무 말도 안 하면 안내가
+            // 사라진 채 버튼만 꺼져 있어서 고장으로 읽힌다.
+            else if (!busy && readiness == CaptureReadiness.validating)
+              const Padding(
+                padding: EdgeInsets.only(bottom: 10),
+                child: Text('좋아요 · 자세를 잠시 유지해주세요',
+                    style: TextStyle(color: Colors.white70, fontSize: 12)),
+              ),
+            _CaptureShutter(
+              enabled: ready && !busy,
+              busy: busy,
+              onTap: onCapture,
+            ),
+            TextButton(
+              onPressed: busy ? null : onPickFromGallery,
+              child: const Text('갤러리에서 선택',
+                  style: TextStyle(color: Colors.white70, fontSize: 12)),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// 시안의 셔터 — 흰 링 + 흰 원판. 게이트를 통과해야 켜진다.
+///
+/// 준비 여부는 색이 아니라 밝기로 가른다(켜짐 흰색 / 꺼짐 white38·white54).
+/// 예전에는 켜진 링이 오렌지였다.
 class _CaptureShutter extends StatelessWidget {
   const _CaptureShutter({
     required this.enabled,
@@ -1030,6 +1078,9 @@ class _CaptureShutter extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // 시안(360-815)의 셔터는 흰 링 + 흰 원판이다. 준비 여부는 색 대신 밝기로
+    // 가른다 — 준비 신호는 가이드 링(초록)과 하단 문구가 이미 말하고 있어서,
+    // 셔터까지 주황으로 칠하면 화면에 셔터가 두 개 있는 것처럼 읽힌다.
     return GestureDetector(
       onTap: enabled ? onTap : null,
       child: Container(
@@ -1038,7 +1089,7 @@ class _CaptureShutter extends StatelessWidget {
         decoration: BoxDecoration(
           shape: BoxShape.circle,
           border: Border.all(
-            color: enabled ? AppColors.primary : Colors.white38,
+            color: enabled ? Colors.white : Colors.white38,
             width: 5,
           ),
         ),

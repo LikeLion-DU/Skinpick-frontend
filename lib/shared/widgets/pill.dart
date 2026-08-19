@@ -80,6 +80,7 @@ class Pill extends StatelessWidget {
         widthFactor: 1,
         child: Text(
           label,
+          textAlign: TextAlign.center,
           style: style,
           maxLines: maxLines,
           overflow: overflow,

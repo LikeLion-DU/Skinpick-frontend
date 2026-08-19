@@ -174,40 +174,83 @@ void main() {
     expect(pillHeight - textHeight, 10);
   });
 
-  testWidgets('폭이 고정된 자리는 글자를 자르지 않고 줄임표로 접는다', (tester) async {
-    // 단계 탭처럼 3열로 나뉜 칸이다. 예전에는 height 를 박아 두어서 배율 2.0 에서
-    // 글자가 위아래로 잘렸다 — 예외가 없어 테스트도 통과했다.
-    await tester.pumpWidget(MediaQuery(
-      data: const MediaQueryData(
-        size: designSize,
-        textScaler: TextScaler.linear(2.0),
-      ),
-      child: MaterialApp(
-        theme: AppTheme.light,
-        home: const Scaffold(
-          body: Row(
-            children: [
-              Expanded(
-                child: Pill(
-                  label: '주요 피부 고민',
-                  style: TextStyle(fontSize: 14),
-                  minHeight: 36,
-                  horizontalPadding: 8,
-                  borderRadius: 16,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+  /// 단계 탭과 같은 조건 — **3열이어야 한다.** 한 칸만 세우면 폭이 남아돌아
+  /// 어떤 접기 전략을 써도 통과한다(줄임표든 축소든). 프로덕션(_StepSwitcher)이
+  /// 실제로 겪는 압박을 만들어야 이 테스트가 무언가를 지킨다.
+  Widget stepTabs({required double scale}) => MediaQuery(
+        data: MediaQueryData(
+          size: designSize,
+          textScaler: TextScaler.linear(scale),
+        ),
+        child: MaterialApp(
+          theme: AppTheme.light,
+          home: Scaffold(
+            // 프로덕션(_StepSwitcher)은 스크롤되는 Column 안에 있어 세로가 자유롭다.
+            // Row 를 Scaffold 에 바로 물리면 화면 높이가 그대로 내려와서 알약이
+            // 세로로 자랄 수 없고, 높이를 보는 검증이 뜻을 잃는다.
+            body: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Row(
+                  children: [
+                    for (final label in ['피부 타입', '주요 피부 고민', '나의 생활 습관'])
+                      Expanded(
+                        child: Pill(
+                          label: label,
+                          style: const TextStyle(fontSize: 14),
+                          minHeight: 36,
+                          horizontalPadding: 8,
+                          borderRadius: 16,
+                          maxLines: 2,
+                        ),
+                      ),
+                  ],
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
-      ),
-    ));
+      );
+
+  testWidgets('폭이 고정된 자리는 글자를 자르지 않고 두 줄로 접는다', (tester) async {
+    // 프로덕션이 실제로 거는 조합만 검증한다 — `maxLines: 2`, 말줄임 없음.
+    // 예전 이 테스트는 프로덕션이 더는 쓰지 않는 `maxLines: 1 + ellipsis` 를
+    // 세워 놓고 초록이라, 단계 탭이 덮여 있는 것처럼 보이지만 아무것도 안 지켰다.
+    //
+    // 줄임표를 안 쓰는 이유는 라벨이 곧 그 탭의 정체이기 때문이다.
+    // "주요 피부 …" 는 무엇의 탭인지를 지운다.
+    await tester.pumpWidget(stepTabs(scale: 2.0));
 
     final text = tester.renderObject<RenderBox>(find.text('주요 피부 고민'));
-    final needed = text.getDryLayout(const BoxConstraints());
-    // 세로는 자르지 않는다. 가로는 줄임표로 접히므로 폭은 좁아도 된다.
+    final needed = text.getDryLayout(BoxConstraints(maxWidth: text.size.width));
+
     expect(text.size.height, greaterThanOrEqualTo(needed.height));
+    expect(tester.takeException(), isNull);
   });
 
+  testWidgets('라벨을 축소해서 맞추지 않는다 — 배율을 되돌리는 장치가 없다', (tester) async {
+    await tester.pumpWidget(stepTabs(scale: 2.0));
+
+    // **구조로 못 박는다.** FittedBox 는 사용자가 곱한 배율을 그대로 나눠 없애서,
+    // 2.0 을 걸어도 그려지는 글자가 12.8px 로 고정됐다 — 접근성 설정이 이 줄에만
+    // 안 먹는 상태였다. 크기를 재서 잡으려 하면 놓친다: FittedBox 는 변환이라
+    // RenderBox.size 에 안 나타나고, 화면상 높이는 줄바꿈이 섞여 오염된다.
+    // 넘칠 때는 축소가 아니라 두 줄로 접는다.
+    expect(
+      find.descendant(of: find.byType(Pill), matching: find.byType(FittedBox)),
+      findsNothing,
+      reason: '알약이 라벨을 축소해 맞추면 글자 크기 설정이 이 줄에만 안 먹는다',
+    );
+  });
+
+  testWidgets('배율을 올리면 알약이 세로로 자란다 — 글자를 가두지 않는다', (tester) async {
+    await tester.pumpWidget(stepTabs(scale: 1.0));
+    final base = tester.getSize(find.byType(Pill).first).height;
+
+    await tester.pumpWidget(stepTabs(scale: 2.0));
+    final bigger = tester.getSize(find.byType(Pill).first).height;
+
+    expect(bigger, greaterThan(base),
+        reason: '높이가 그대로면 글자가 상자에 갇혀 잘린다');
+  });
 }
