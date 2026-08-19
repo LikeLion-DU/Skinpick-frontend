@@ -136,4 +136,78 @@ void main() {
 
     expect(tester.getSize(find.byType(Pill)).width, greaterThan(53));
   });
+  testWidgets('세로 패딩은 기본 2 다 — 같은 줄 칩들의 높이가 이 값으로 맞는다', (tester) async {
+    // 세 번째 규칙이다. 한곳에 모으면서 blast radius 가 열두 곳으로 늘었으니
+    // 값 자체를 못 박는다 — 4 로 바꾸면 모든 알약이 조용히 4px 자란다.
+    await tester.pumpWidget(host(
+      // 최소 높이를 0 으로 두면 높이는 글자 + 위아래 패딩으로만 정해진다.
+      const Pill(
+        label: '가',
+        style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+        minHeight: 0,
+        horizontalPadding: 14,
+        borderRadius: 11,
+      ),
+    ));
+
+    final pillHeight = tester.getSize(find.byType(Pill)).height;
+    final textHeight = tester.getSize(find.text('가')).height;
+    expect(pillHeight - textHeight, 4, reason: '위아래 2 씩');
+  });
+
+  testWidgets('세로 패딩이 필요한 자리는 값을 바꿀 수 있다', (tester) async {
+    // 끼니 배지(3) · 음식명 칩(5) · 갭 칩(6) 이 그런 자리다. 닫아 두면 그 칩들이
+    // 이 위젯을 못 쓰고 규칙이 다른 곳에 남는다.
+    await tester.pumpWidget(host(
+      const Pill(
+        label: '가',
+        style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+        minHeight: 0,
+        horizontalPadding: 14,
+        borderRadius: 11,
+        verticalPadding: 5,
+      ),
+    ));
+
+    final pillHeight = tester.getSize(find.byType(Pill)).height;
+    final textHeight = tester.getSize(find.text('가')).height;
+    expect(pillHeight - textHeight, 10);
+  });
+
+  testWidgets('폭이 고정된 자리는 글자를 자르지 않고 줄임표로 접는다', (tester) async {
+    // 단계 탭처럼 3열로 나뉜 칸이다. 예전에는 height 를 박아 두어서 배율 2.0 에서
+    // 글자가 위아래로 잘렸다 — 예외가 없어 테스트도 통과했다.
+    await tester.pumpWidget(MediaQuery(
+      data: const MediaQueryData(
+        size: designSize,
+        textScaler: TextScaler.linear(2.0),
+      ),
+      child: MaterialApp(
+        theme: AppTheme.light,
+        home: const Scaffold(
+          body: Row(
+            children: [
+              Expanded(
+                child: Pill(
+                  label: '주요 피부 고민',
+                  style: TextStyle(fontSize: 14),
+                  minHeight: 36,
+                  horizontalPadding: 8,
+                  borderRadius: 16,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    ));
+
+    final text = tester.renderObject<RenderBox>(find.text('주요 피부 고민'));
+    final needed = text.getDryLayout(const BoxConstraints());
+    // 세로는 자르지 않는다. 가로는 줄임표로 접히므로 폭은 좁아도 된다.
+    expect(text.size.height, greaterThanOrEqualTo(needed.height));
+  });
+
 }

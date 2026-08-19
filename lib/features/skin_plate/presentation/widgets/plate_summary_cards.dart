@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import '../../../../shared/widgets/pill.dart';
 
 import '../../../../app/theme/app_colors.dart';
 import '../../../../app/theme/app_theme.dart';
 import '../../../../shared/enums/skin_basis.dart';
+import '../../../../shared/widgets/pill.dart';
 import '../../domain/entities/skin_plate.dart';
 
 /// "오늘 피부 상태 기준" · "최근 피부 상태 기준 · 8/15" 한 줄.

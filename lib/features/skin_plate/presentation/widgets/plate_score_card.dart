@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
-import '../../../../shared/widgets/pill.dart';
 
 import '../../../../app/theme/app_colors.dart';
-
 import '../../../../shared/enums/skin_level.dart';
+import '../../../../shared/widgets/pill.dart';
 
 /// 음식 결과 화면의 큰 점수 한 줄 — 숫자 + "점" + 등급 배지.
 ///
