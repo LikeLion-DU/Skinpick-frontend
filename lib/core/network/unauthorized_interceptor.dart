@@ -13,18 +13,33 @@ class UnauthorizedInterceptor extends Interceptor {
   final TokenStorage _tokenStorage;
   final void Function() _onUnauthorized;
 
+  /// 401 이 "자격 증명이 틀렸다" 는 뜻인 요청. 로그인 실패도
+  /// 401(INVALID_CREDENTIALS)이라 그대로 두면, 비밀번호를 한 번 틀렸을 뿐인데
+  /// 토큰이 지워지고 화면이 리다이렉트되어 입력하던 폼과 에러 메시지가 함께 사라진다.
+  ///
+  /// **`/auth/` 전체를 빼면 안 된다.** `/auth/me` 는 세션을 들고 보내는 요청이라
+  /// 401 이 곧 세션이 죽었다는 뜻이다. 통째로 빼 두었을 때는 만료 토큰이 기기에
+  /// 남아, 앱을 다시 켤 때마다 같은 토큰으로 `/auth/me` 를 두드렸다 — 로그인
+  /// 화면까지는 갔지만 실패하는 왕복이 영구히 반복됐다.
+  ///
+  /// 기준은 경로 접두사가 아니라 **401 의 의미**다. 자격 증명을 보내는 요청이면
+  /// 자격 증명 오류, 세션을 들고 보내는 요청이면 세션 사망이다. `/auth/` 아래에
+  /// 엔드포인트를 추가할 때 어느 쪽인지 보고 여기에 넣을지 정한다.
+  static const _credentialPaths = [
+    '/auth/login',
+    '/auth/signup',
+    '/auth/test-login',
+  ];
+
   @override
   Future<void> onError(
     DioException err,
     ErrorInterceptorHandler handler,
   ) async {
-    // /auth/ 요청은 제외한다.
-    // 로그인 실패도 401(INVALID_CREDENTIALS)이라 그대로 두면,
-    // 비밀번호를 한 번 틀렸을 뿐인데 토큰이 지워지고 화면이 리다이렉트되어
-    // 입력하던 폼과 에러 메시지가 함께 사라진다.
-    final isAuthRequest = err.requestOptions.path.contains('/auth/');
+    final isCredentialRequest =
+        _credentialPaths.any(err.requestOptions.path.contains);
 
-    if (err.response?.statusCode == 401 && !isAuthRequest) {
+    if (err.response?.statusCode == 401 && !isCredentialRequest) {
       await _tokenStorage.clear();
       _onUnauthorized();
     }
