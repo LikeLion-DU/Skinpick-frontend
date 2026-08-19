@@ -34,6 +34,14 @@ android {
             // TODO: Add your own signing config for the release build.
             // Signing with the debug keys for now, so `flutter run --release` works.
             signingConfig = signingConfigs.getByName("debug")
+
+            // **R8 이 켜져 있다.** 규칙을 연결하지 않으면 ML Kit 이 지워져서
+            // 얼굴·음식 게이트가 릴리스에서만 조용히 죽는다 — 이유는
+            // proguard-rules.pro 주석에 있다.
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro",
+            )
         }
     }
 }
