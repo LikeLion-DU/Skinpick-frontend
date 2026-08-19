@@ -164,6 +164,32 @@ void main() {
     await tester.tap(find.byType(GestureDetector).first, warnIfMissed: false);
     expect(selected, isNotNull);
   });
+  testWidgets('오늘 기록을 모를 때도 히어로 높이가 유지된다', (tester) async {
+    // 말풍선을 아예 빼면 히스토리가 도착하는 순간 홈이 120px 튀고, 그동안 기록
+    // 카드가 고정 위치 마스코트를 덮는다. 말만 감추고 자리는 남긴다.
+    await tester.binding.setSurfaceSize(designSize);
+
+    await tester.pumpWidget(host(const HomeHero(
+      nickname: '스킨픽',
+      score: null,
+      grade: null,
+      targetScore: null,
+    )));
+    final known = tester.getSize(find.byType(HomeHero)).height;
+    expect(find.textContaining('식단을 찍어보세요'), findsOneWidget);
+
+    await tester.pumpWidget(host(const HomeHero(
+      nickname: '스킨픽',
+      score: null,
+      grade: null,
+      targetScore: null,
+      scoreKnown: false,
+    )));
+    final unknown = tester.getSize(find.byType(HomeHero)).height;
+
+    expect(unknown, known, reason: '모를 때 높이가 달라지면 화면이 튄다');
+  });
+
   // 시스템 글자 크기를 최대로 올린 기기. 히어로의 큰 숫자와 기록 줄의 GOOD/BAD
   // 라벨이 같은 줄에 있어서, 여기서 넘치면 홈 첫 화면이 노란 줄무늬로 열린다.
   testWidgets('글자 크기 2.0 — 히어로와 기록 카드가 넘치지 않는다', (tester) async {

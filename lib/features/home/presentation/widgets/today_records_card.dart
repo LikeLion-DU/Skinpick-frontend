@@ -42,9 +42,10 @@ class TodayRecordsCard extends StatelessWidget {
   /// 아직 응답을 못 받았다. 빈 날과 다르게 그린다.
   final bool loading;
 
-  /// 불러오지 못했다. 문구는 `Failure.message` 다 — 네트워크·알 수 없는 오류는
-  /// `core/error/failure.dart` 가 번역한 앱 문구이고, 서버가 이유를 말해 준
-  /// 경우(`ServerFailure`)만 서버 문장이다. 앱이 여기서 새로 쓰지는 않는다.
+  /// 불러오지 못했다. 문구의 출처가 셋이다 — `core/error/failure.dart` 가 번역한
+  /// 앱 문구(네트워크·알 수 없는 오류), 서버가 이유를 말해 준 경우(`ServerFailure`),
+  /// 그리고 Result 로 감싸이지 못한 예외 경로에서 호출부가 넣는 문구
+  /// (`home_page` 의 `history.hasError`). 이 위젯이 문구를 만들지는 않는다.
   final String? failureMessage;
 
   /// 실패했을 때 다시 시도. 실패가 아니면 쓰이지 않는다.

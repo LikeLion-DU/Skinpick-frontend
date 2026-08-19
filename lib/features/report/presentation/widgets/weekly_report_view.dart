@@ -224,7 +224,11 @@ class _AverageBanner extends StatelessWidget {
       ),
       child: Row(
         children: [
+          // flex 를 2:1 로 둔다. 둘 다 1 이면 오른쪽 묶음이 안 쓴 폭이 왼쪽으로
+          // 돌아오지 않아서(RenderFlex 는 loose 여분을 재분배하지 않는다) 문장이
+          // 절반 폭에서 두 줄로 접힌다.
           Expanded(
+            flex: 2,
             child: Text(
               // 분모는 7일이 아니라 기록한 날이다. 그 사실이 화면에 보여야
               // 사용자가 "왜 5일치인데 평균이 이래?"를 묻지 않는다.
@@ -257,9 +261,12 @@ class _AverageBanner extends StatelessWidget {
                   fontSize: 40,
                   fontWeight: FontWeight.w600,
                   height: 1,
+                  // 등급을 모르면 중립색이다. primary 로 떨어뜨리면 그게 곧
+                  // NORMAL 의 색이라 앱이 모르는 등급을 "보통" 이라고 단정한다 —
+                  // BEST/개선일 카드와 같은 규칙으로 맞춘다.
                   color: score == null
                       ? AppColors.outline
-                      : (grade?.accentColor ?? AppColors.primary),
+                      : (grade?.accentColor ?? AppColors.textPrimary),
                 ),
               ),
               const Text(

@@ -174,10 +174,6 @@ class PlateSummaryCard extends StatelessWidget {
     // 둘 다 비면 룰이 하나도 안 걸린 평범한 식사다. 실제로 있다 —
     // 그때 빈 카드 두 장을 그리면 고장으로 읽히므로 한 줄로 대신한다.
     if (good.isEmpty && caution.isEmpty) {
-      // 서버 문장까지 없으면 그릴 것이 없다 — 테두리만 남은 빈 상자는
-      // 앱이 지어낸 문장보다 더 고장처럼 보인다. `skin_plate.summary` 는
-      // V1 부터 nullable 이라 옛 기록에서 실제로 빌 수 있다.
-      if (summary.isEmpty) return const SizedBox.shrink();
 
       return Container(
         width: double.infinity,
@@ -405,6 +401,9 @@ class NutrientTiles extends StatelessWidget {
             child: Container(
               // 네 칸을 나눠 쓰는 70px 짜리 칸이다. 높이를 92 로 박아 두면 글자
               // 크기를 키운 기기에서 "1,280 mg" 이 두 줄로 접히며 62px 넘친다.
+              //
+              // 세로 여백은 6 이다. 10 을 주면 기본 글자 크기에서 칸이 100 이 되어
+              // 시안 높이(92)를 넘긴다 — 최소 높이를 92 로 지키려면 이 값이어야 한다.
               constraints: const BoxConstraints(minHeight: 92),
               padding: const EdgeInsets.symmetric(vertical: 6),
               decoration: BoxDecoration(

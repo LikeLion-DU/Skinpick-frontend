@@ -225,22 +225,21 @@ class ReportScoreCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  // 등급에 붙는 고정 문구다. AI 가 쓴 문장은 아래 AI 카드에
-                  // 따로 있다 — 두 자리를 섞으면 "AI 가 점수를 매겼다"로 읽힌다.
-                  //
-                  // **점수가 있는데 등급만 없으면 "기록이 없다"고 말하지 않는다.**
-                  // 그 조합에서는 등급 문장만 비운다 — 점수 60 과 "오늘 5개
-                  // 기록했어요" 옆에 "아직 채점할 기록이 없어요" 가 함께 뜨던 자리다.
-                  grade?.summary ??
-                      (score == null ? '아직 채점할 기록이 없어요' : ''),
-                  style: const TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600,
-                    height: 1.35,
-                    color: Color(0xFF1A1A1A),
+                // 등급에 붙는 고정 문구다. AI 가 쓴 문장은 아래 AI 카드에 따로
+                // 있다 — 두 자리를 섞으면 "AI 가 점수를 매겼다"로 읽힌다.
+                //
+                // **점수가 있는데 등급만 없으면 아무 말도 하지 않는다.** "기록이
+                // 없다"는 거짓이고, 빈 문자열을 넘기면 20px 짜리 빈 줄이 남는다.
+                if (grade != null || score == null)
+                  Text(
+                    grade?.summary ?? '아직 채점할 기록이 없어요',
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                      height: 1.35,
+                      color: Color(0xFF1A1A1A),
+                    ),
                   ),
-                ),
                 if (footnote != null) ...[
                   const SizedBox(height: 10),
                   Text(
@@ -973,10 +972,12 @@ class PointList extends StatelessWidget {
               widthFactor: 1,
               child: Text(
                 point,
-                style: const TextStyle(
+                // 여기 색은 호출부가 알려 준다(`positive`) — 서버가 극성을 주지
+                // 않는 고민 태그와 달리 잘한 점/개선할 점이 이미 갈려 있다.
+                style: TextStyle(
                   fontSize: 11,
                   fontWeight: FontWeight.w600,
-                  color: AppColors.textOnCard,
+                  color: Color.lerp(accent, Colors.black, 0.15),
                 ),
               ),
             ),

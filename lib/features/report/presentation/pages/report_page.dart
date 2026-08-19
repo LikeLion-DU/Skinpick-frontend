@@ -150,8 +150,17 @@ class _TabSelector extends StatelessWidget {
               const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
           splashBorderRadius: BorderRadius.circular(10),
           tabs: [
+            // 배율 상한(1.2)만으로는 320dp 기기에서 라벨이 여전히 페이드로
+            // 잘린다(가용폭 102 < 필요 120). 링과 같은 백스톱을 둔다 — 들어갈
+            // 만큼만 줄이고, 잘리지는 않는다.
             for (final tab in ReportTab.values)
-              Tab(height: 34, text: tab.label),
+              Tab(
+                height: 34,
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(tab.label),
+                ),
+              ),
           ],
         ),
         ),

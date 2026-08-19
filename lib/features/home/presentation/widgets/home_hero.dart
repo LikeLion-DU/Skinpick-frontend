@@ -74,8 +74,18 @@ class HomeHero extends StatelessWidget {
         // 단정이고, 그 순간 아래 카드는 스피너나 오류를 보여주고 있다.
         if (score != null)
           _ScoreBlock(score: score, grade: grade, targetScore: targetScore)
-        else if (scoreKnown)
-          _EmptyBubble(nickname: nickname),
+        else
+          // **자리는 남기고 말만 감춘다.** 아예 빼면 히스토리가 도착하는 순간
+          // 홈이 120px 튀고, 그동안 기록 카드가 고정 위치 마스코트를 덮는다
+          // (마스코트는 Stack 에 Positioned 로 붙어 스크롤에 참여하지 않는다).
+          // 못 잰 영양 타일과 같은 처리다.
+          Visibility(
+            visible: scoreKnown,
+            maintainSize: true,
+            maintainAnimation: true,
+            maintainState: true,
+            child: _EmptyBubble(nickname: nickname),
+          ),
       ],
     );
   }

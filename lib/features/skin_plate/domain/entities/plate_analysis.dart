@@ -47,12 +47,8 @@ class PlateAnalysis implements PlateView {
 
   @override
   final SkinLevel? grade;
+
   @override
-  /// 룰 적용 전 기준 점수. **서버 `RuleConstants.BASE_SCORE` 가 주인이다.**
-  ///
-  /// 확정 시안이 계산 내역 카드를 지워서 지금 이 값을 그리는 화면은 없다.
-  /// 계약에는 남아 있으므로 필드도 남긴다 — 지웠다 되살리면 그때 계약을
-  /// 처음부터 다시 맞춰야 한다(시뮬레이션 코드와 같은 이유).
   final int? baseScore;
   @override
   final String summary;

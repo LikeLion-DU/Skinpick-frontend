@@ -28,8 +28,10 @@ class VerdictBadge extends StatelessWidget {
       // 패딩 8 이면 'GOOD' 이 기본 크기에서도 57 이 되어 시안 53 을 넘긴다.
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
       decoration: BoxDecoration(
-        // 주의 점수를 빨강으로 칠하지 않는다 — 빨강(bad)은 결과 화면의
-        // BAD 카드 전용이고, 여기 라벨은 오렌지다.
+        // **라벨은 오렌지다.** 숫자는 등급색(주의=빨강)을 따르고 라벨은 두 단으로
+        // 접힌 판정이라 오렌지 하나다 — 기록·음식 결과 두 화면이 같은 조합을 쓴다.
+        // 라벨까지 빨강으로 칠하면 한 줄에 같은 색이 둘이 되어 어느 쪽이 판정인지
+        // 흐려진다.
         color: isGood ? AppColors.good : AppColors.primary,
         borderRadius: BorderRadius.circular(12.5),
       ),

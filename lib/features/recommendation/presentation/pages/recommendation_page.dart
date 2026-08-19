@@ -69,7 +69,9 @@ class RecommendationPage extends ConsumerWidget {
                     _FoodSection(
                       title: '오늘 주의할 음식',
                       verdict: 'BAD',
-                      accent: AppColors.bad,
+                      // `VerdictBadge` 의 BAD 와 같은 오렌지다. 여기만 빨강이면
+                      // 같은 모양·같은 글자의 알약이 화면마다 다른 색이 된다.
+                      accent: AppColors.primary,
                       background: const Color(0xFFFFEDED),
                       foods: daily.avoid,
                     ),
