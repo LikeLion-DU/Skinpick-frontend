@@ -49,6 +49,10 @@ void main() {
     await tester.pumpWidget(host(filled));
     await tester.pumpAndSettle();
 
+    // 습관은 세 번째 단계다 — 확정 시안이 세 구역을 탭으로 갈랐다.
+    await tester.tap(find.text('나의 생활 습관'));
+    await tester.pumpAndSettle();
+
     // 접힌 습관 줄의 오른쪽에 현재 값이 찍힌다.
     expect(find.text('부족해요'), findsOneWidget);     // 수면
     expect(find.text('높음'), findsOneWidget);         // 스트레스
@@ -56,14 +60,18 @@ void main() {
     expect(find.text('충분해요'), findsOneWidget);     // 수분
   });
 
-  testWidgets('수분 섭취 줄이 있고 3단계를 고를 수 있다', (tester) async {
+  testWidgets('물 섭취 줄이 있고 3단계를 고를 수 있다', (tester) async {
     await tester.binding.setSurfaceSize(designSize);
     await tester.pumpWidget(host(fresh));
     await tester.pumpAndSettle();
 
-    expect(find.text('수분 섭취'), findsOneWidget);
+    await tester.tap(find.text('나의 생활 습관'));
+    await tester.pumpAndSettle();
 
-    await tester.tap(find.text('수분 섭취'));
+    // '물 섭취' 로 통일했다 — 예전 '수분 섭취' 는 피부 지표의 '수분' 과 같은 낱말이다.
+    expect(find.text('물 섭취'), findsOneWidget);
+
+    await tester.tap(find.text('물 섭취'));
     await tester.pumpAndSettle();
 
     expect(find.text('부족해요'), findsOneWidget);
@@ -74,6 +82,10 @@ void main() {
   testWidgets('고민을 전부 해제해도 제출할 수 있다', (tester) async {
     await tester.binding.setSurfaceSize(designSize);
     await tester.pumpWidget(host(filled));
+    await tester.pumpAndSettle();
+
+    // 고민은 두 번째 단계다 — 확정 시안이 한 스크롤이던 세 구역을 탭으로 갈랐다.
+    await tester.tap(find.text('주요 피부 고민'));
     await tester.pumpAndSettle();
 
     // 고민 하나를 눌러 해제한다. 이 계정은 ACNE 하나뿐이라 이걸로 0개가 된다.

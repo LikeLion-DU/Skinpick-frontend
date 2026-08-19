@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../app/router/app_router.dart';
@@ -7,8 +8,7 @@ import '../../../../app/theme/app_colors.dart';
 import '../../../../app/theme/app_theme.dart';
 import '../../../../core/di/providers.dart';
 import '../../../../core/widgets/app_widgets.dart';
-import '../../../../shared/enums/skin_level.dart';
-import '../../../../shared/widgets/score_badge.dart';
+import '../../../../shared/widgets/verdict_badge.dart';
 import '../../../report/presentation/providers/report_providers.dart';
 import '../../data/datasources/plate_image_store.dart';
 import '../../domain/entities/plate_history.dart';
@@ -65,7 +65,17 @@ class _PlateHistoryPageState extends ConsumerState<PlateHistoryPage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('오늘의 기록'),
+        // 시안은 제목을 오렌지 18 로 두고 화면 가운데에 놓는다. AppBar 테마의
+        // 기본값(16 w700 검정)을 이 화면만 덮는다 — 테마를 바꾸면 결과·추천
+        // 화면 제목까지 오렌지가 된다.
+        title: const Text(
+          '오늘의 기록',
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
+            color: AppColors.accentStrong,
+          ),
+        ),
         // 기록 저장 후 [기록 보러 가기] 는 `go` 라 이 화면이 스택의 **유일한**
         // 페이지가 된다. 그때 기본 뒤로가기 화살표는 아예 그려지지 않는데,
         // 하단 네비까지 없앴으므로 나갈 문이 하나도 남지 않는다.
@@ -325,7 +335,8 @@ class _MealCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final grade = SkinLevel.fromScore(item.plateScore);
+    // 서버가 매긴 등급이다 — 앱에 경계표를 두지 않는다.
+    final grade = item.grade;
     final time = '${item.recordedAt.hour}:'
         '${item.recordedAt.minute.toString().padLeft(2, '0')}';
 
@@ -397,22 +408,32 @@ class _MealCard extends ConsumerWidget {
                           fontWeight: FontWeight.w500,
                           color: AppColors.textOnCard,
                         )),
+                    // 사진(120) 옆 남은 폭에 32px 숫자와 GOOD/BAD 라벨이 함께
+                    // 앉는다. 글자 크기 2.0 이면 숫자만으로 칸을 넘기므로
+                    // 들어갈 만큼만 줄인다 — 라벨을 밀어내지 않고, 배율을
+                    // 미리 깎지도 않는다(넉넉한 기기에서는 다 커진다).
                     Row(
                       children: [
-                        Text(
-                          '${item.plateScore}점',
-                          style: TextStyle(
-                            fontSize: 32,
-                            fontWeight: FontWeight.w700,
-                            // 시안이 주의 점수를 빨강이 아니라 오렌지로 쓴다.
-                            // 빨강은 BAD 라벨 전용이다.
-                            color: grade.isGood
-                                ? AppColors.good
-                                : AppColors.primary,
+                        Flexible(
+                          child: FittedBox(
+                            fit: BoxFit.scaleDown,
+                            alignment: Alignment.centerLeft,
+                            child: Text(
+                              '${item.plateScore}점',
+                              style: TextStyle(
+                                fontSize: 32,
+                                fontWeight: FontWeight.w700,
+                                // 시안이 주의 점수를 빨강이 아니라 오렌지로 쓴다.
+                                // 빨강은 BAD 라벨 전용이다.
+                                color: (grade?.isGood ?? false)
+                                    ? AppColors.good
+                                    : AppColors.primary,
+                              ),
+                            ),
                           ),
                         ),
-                        const Spacer(),
-                        ScoreBadge(grade: grade, solid: true),
+                        const SizedBox(width: 8),
+                        if (grade != null) VerdictBadge(grade: grade),
                         const SizedBox(width: 4),
                       ],
                     ),
@@ -425,13 +446,61 @@ class _MealCard extends ConsumerWidget {
           const Divider(height: 1, color: AppColors.borderOnWhite),
           const SizedBox(height: 10),
           Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Spacer(),
+              // 서버가 고른 "주요영양" 칩. **앱이 영양값에서 고르지 않는다** —
+              // 목록 응답에는 영양값이 없고, 있더라도 "얼마부터 높은가"가 앱에
+              // 한 벌 더 생긴다. 걸리는 항목이 없는 끼니는 빈 배열이라 줄이 없다.
+              if (item.highlightTags.isNotEmpty)
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('주요영양',
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.textOnCard,
+                          )),
+                      const SizedBox(height: 6),
+                      Wrap(
+                        spacing: 5,
+                        runSpacing: 5,
+                        children: [
+                          for (final tag in item.highlightTags)
+                            Container(
+                              // 높이를 박지 않는다. 시안 값(20)을 고정하면 글자
+                              // 크기 2.0 에서 태그가 칩 밖으로 넘친다.
+                              constraints: const BoxConstraints(minHeight: 20),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 10, vertical: 2),
+                              alignment: Alignment.center,
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFF4F4F4),
+                                border: Border.all(
+                                    color: const Color(0xFFCBCBCB), width: 0.4),
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: Text(tag,
+                                  style: const TextStyle(
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w400,
+                                    color: Color(0xFF656565),
+                                  )),
+                            ),
+                        ],
+                      ),
+                    ],
+                  ),
+                )
+              else
+                const Spacer(),
               GestureDetector(
                 onTap: () =>
                     context.push('${Routes.plateResult}/${item.plateId}'),
                 behavior: HitTestBehavior.opaque,
                 child: const Row(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
                     Text('분석 결과 보기',
                         style: TextStyle(
@@ -476,18 +545,27 @@ class _AiCommentCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('오늘의 AI 코멘트',
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                color: AppColors.primary,
-              )),
+          Row(
+            children: [
+              SvgPicture.asset('assets/icons/ai_sparkle.svg',
+                  width: 18.8, height: 18.8),
+              const SizedBox(width: 6),
+              const Text('오늘의 AI 코멘트',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.accentStrong,
+                  )),
+            ],
+          ),
           const SizedBox(height: 12),
           Text(comment,
               style: const TextStyle(
                 fontSize: 12,
+                fontWeight: FontWeight.w300,
                 color: Color(0xFF411B09),
-                height: 1.32,
+                // 시안 행간 1.9. 좁게 두면 두 줄이 한 덩이로 뭉쳐 읽힌다.
+                height: 1.9,
               )),
         ],
       ),

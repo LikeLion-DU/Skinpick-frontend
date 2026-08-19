@@ -107,11 +107,24 @@ Map<String, dynamic> _$$SkinAgeDtoImplToJson(_$SkinAgeDtoImpl instance) =>
       'assessment': instance.assessment,
     };
 
+_$CareFocusDtoImpl _$$CareFocusDtoImplFromJson(Map<String, dynamic> json) =>
+    _$CareFocusDtoImpl(
+      focus: json['focus'] as String? ?? '',
+      label: json['label'] as String? ?? '',
+    );
+
+Map<String, dynamic> _$$CareFocusDtoImplToJson(_$CareFocusDtoImpl instance) =>
+    <String, dynamic>{
+      'focus': instance.focus,
+      'label': instance.label,
+    };
+
 _$SkinAnalysisDtoImpl _$$SkinAnalysisDtoImplFromJson(
         Map<String, dynamic> json) =>
     _$SkinAnalysisDtoImpl(
       skinAnalysisId: (json['skinAnalysisId'] as num).toInt(),
       skinScore: (json['skinScore'] as num).toInt(),
+      grade: json['grade'] as String?,
       metrics: SkinMetricsDto.fromJson(json['metrics'] as Map<String, dynamic>),
       metricDetails: (json['metricDetails'] as List<dynamic>?)
               ?.map((e) => ScoredItemDto.fromJson(e as Map<String, dynamic>))
@@ -128,6 +141,11 @@ _$SkinAnalysisDtoImpl _$$SkinAnalysisDtoImplFromJson(
               ?.map((e) => HighlightDto.fromJson(e as Map<String, dynamic>))
               .toList() ??
           const <HighlightDto>[],
+      careFocus: (json['careFocus'] as List<dynamic>?)
+              ?.map((e) => CareFocusDto.fromJson(e as Map<String, dynamic>))
+              .toList() ??
+          const <CareFocusDto>[],
+      careMessage: json['careMessage'] as String?,
       skinTypeGap: json['skinTypeGap'] == null
           ? null
           : SkinTypeGapDto.fromJson(
@@ -140,12 +158,15 @@ Map<String, dynamic> _$$SkinAnalysisDtoImplToJson(
     <String, dynamic>{
       'skinAnalysisId': instance.skinAnalysisId,
       'skinScore': instance.skinScore,
+      'grade': instance.grade,
       'metrics': instance.metrics,
       'metricDetails': instance.metricDetails,
       'skinType': instance.skinType,
       'skinAge': instance.skinAge,
       'summary': instance.summary,
       'highlights': instance.highlights,
+      'careFocus': instance.careFocus,
+      'careMessage': instance.careMessage,
       'skinTypeGap': instance.skinTypeGap,
       'analyzedAt': instance.analyzedAt.toIso8601String(),
     };

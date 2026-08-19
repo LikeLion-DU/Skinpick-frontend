@@ -1,7 +1,11 @@
 /// 일일·주간이 같이 쓰는 조각들.
 ///
-/// 두 화면이 그리는 것은 대부분 같다 — 점수 카드, 영양 막대, 고민 줄, AI 문장.
+/// 두 화면이 그리는 것은 대부분 같다 — 점수 카드, 영양, 고민, AI 문장, 끼니 줄.
 /// 각자 그리면 한쪽만 고쳐지고, 같은 뜻의 카드가 탭을 넘길 때마다 달라 보인다.
+///
+/// 확정 시안이 리포트를 **흰 카드 여러 장**으로 재구성했다. 옛 시안은 제목 +
+/// 내용이 배경 위에 바로 놓이는 구조였는데, 리포트는 구역이 여섯 개라 그렇게
+/// 두면 어디서 어디까지가 한 덩이인지 읽히지 않는다.
 library;
 
 import 'package:flutter/material.dart';
@@ -10,148 +14,492 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../app/theme/app_colors.dart';
 import '../../../../app/theme/app_theme.dart';
 import '../../../../shared/enums/skin_level.dart';
-import '../../../../shared/widgets/score_badge.dart';
+import '../../../../shared/widgets/score_gauge.dart';
+import '../../../../shared/widgets/section_mark.dart';
+import '../../../../shared/widgets/verdict_badge.dart';
 import '../../../skin_plate/data/datasources/plate_image_store.dart';
 import '../../../skin_plate/domain/entities/plate_history.dart';
 import '../../../skin_plate/presentation/providers/plate_history_provider.dart';
 import '../../domain/entities/report.dart';
 
-/// 구역 제목 + 내용. 제목 스타일을 화면마다 적지 않으려고 둔다.
-class ReportSection extends StatelessWidget {
-  const ReportSection({
+/// 시안의 흰 카드. 세로 막대 마크 + 제목 + (선택) 단서 한 줄.
+///
+/// 마크가 잎사귀가 아니라 막대인 것은 시안 그대로다 — 리포트는 표가 많아
+/// 둥근 마크가 숫자 사이에서 얼룩처럼 보인다.
+class ReportCard extends StatelessWidget {
+  const ReportCard({
     super.key,
     required this.title,
-    this.subtitle,
+    this.note,
+    this.padding = const EdgeInsets.fromLTRB(18, 16, 18, 20),
     required this.child,
   });
 
   final String title;
 
-  /// 제목 옆의 작은 단서. "기록한 날의 하루 평균" 같은 것 —
+  /// 제목 아래 작은 단서. "기록한 날의 하루 평균" 같은 것 —
   /// 이 한 줄이 없으면 사용자가 주간 영양을 주간 **합계**로 읽는다.
-  final String? subtitle;
+  final String? note;
 
+  final EdgeInsets padding;
   final Widget child;
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(title, style: Theme.of(context).textTheme.titleMedium),
-        if (subtitle != null) ...[
-          const SizedBox(height: 3),
-          Text(subtitle!, style: Theme.of(context).textTheme.bodySmall),
+    return Container(
+      width: double.infinity,
+      padding: padding,
+      decoration: BoxDecoration(
+        color: AppColors.background,
+        borderRadius: BorderRadius.circular(10),
+        boxShadow: const [
+          BoxShadow(color: AppColors.disabled, blurRadius: 3),
         ],
-        const SizedBox(height: 12),
-        child,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const BarMark(),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF1A1A1A),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          if (note != null) ...[
+            const SizedBox(height: 6),
+            Text(
+              note!,
+              style: const TextStyle(
+                fontSize: 10,
+                fontWeight: FontWeight.w400,
+                color: Color(0xFF999999),
+              ),
+            ),
+          ],
+          const SizedBox(height: 16),
+          child,
+        ],
+      ),
+    );
+  }
+}
+
+/// `‹ 2026년 8월 16일 (일) ›`. 일일은 하루, 주간은 한 주를 넘긴다.
+///
+/// 두 탭이 같은 자리·같은 크기를 쓰게 한다 — 탭을 넘길 때 이 줄이 움직이면
+/// 화면이 통째로 다시 그려지는 것처럼 보인다.
+class ReportDateNav extends StatelessWidget {
+  const ReportDateNav({
+    super.key,
+    required this.label,
+    required this.canGoBack,
+    required this.canGoForward,
+    required this.onShift,
+    this.backTooltip = '이전',
+    this.forwardTooltip = '다음',
+  });
+
+  final String label;
+  final bool canGoBack;
+  final bool canGoForward;
+
+  /// +1 이면 다음, -1 이면 이전.
+  final ValueChanged<int> onShift;
+
+  final String backTooltip;
+  final String forwardTooltip;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        IconButton(
+          onPressed: canGoBack ? () => onShift(-1) : null,
+          icon: const Icon(Icons.chevron_left, size: 18),
+          color: AppColors.textPrimary,
+          tooltip: backTooltip,
+        ),
+        // 폭을 고정한다. 날짜 문자열 길이에 따라 화살표가 좌우로 움직이면
+        // 연달아 누를 때 손가락이 빗나간다.
+        SizedBox(
+          width: 150,
+          child: Text(
+            label,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w300,
+              color: AppColors.textPrimary,
+            ),
+          ),
+        ),
+        IconButton(
+          // 미래는 잠근다. 열어 두면 빈 리포트가 뜨는데, 그건
+          // "기록이 없다"와 구분되지 않는다.
+          onPressed: canGoForward ? () => onShift(1) : null,
+          icon: const Icon(Icons.chevron_right, size: 18),
+          color: AppColors.textPrimary,
+          tooltip: forwardTooltip,
+        ),
       ],
     );
   }
 }
 
-/// 화면 맨 위의 종합 점수 카드.
+/// 화면 맨 위의 종합 점수 카드. 원형 게이지 + 등급 한 줄 + 기록 수.
 ///
 /// 점수가 없으면 `OO점` 이다 — **0 점을 그리지 않는다.** 0 은 "아주 나쁘게 먹었다"고
 /// 이건 "아직 안 찍었다"라서, 같은 자리에 같은 숫자로 쓰면 안 된다.
+///
+/// 시안은 게이지 옆에 두 문장("오늘은 전반적으로 …" + "균형 잡힌 식단이 …")을
+/// 두는데, 서버에 그런 필드가 없다. 등급에 붙는 고정 문구는 이미 하나
+/// ([SkinLevel.summary]) 있으므로 그것만 쓰고 두 번째 문장은 만들지 않는다 —
+/// 등급마다 문장을 하나 더 지어내면 그게 곧 앱이 쓴 카피다.
 class ReportScoreCard extends StatelessWidget {
   const ReportScoreCard({
     super.key,
-    required this.title,
     required this.score,
     required this.grade,
     this.footnote,
   });
 
-  final String title;
   final int? score;
   final SkinLevel? grade;
 
-  /// 점수 아래 작은 줄. "오늘 3끼 기록했어요" · "7일 중 5일 기록" 같은 것.
+  /// 점수 아래 작은 줄. "오늘 3개 기록했어요" · "7일 중 5일 기록" 같은 것.
   final String? footnote;
 
   @override
   Widget build(BuildContext context) {
     final grade = this.grade;
+    final score = this.score;
+    final accent = grade?.accentColor ?? AppColors.outline;
 
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 24),
+      padding: const EdgeInsets.fromLTRB(15, 19, 18, 19),
       decoration: BoxDecoration(
-        color: AppColors.surfaceCard,
-        border: Border.all(color: AppColors.borderOnCream),
-        borderRadius: BorderRadius.circular(AppTheme.cardRadius),
+        // 등급 색을 아주 옅게 깐다. 시안의 초록 카드(#F7F9F3)가 "좋음"일 때의
+        // 모습이고, 주의인 날에 그 초록을 그대로 두면 카드가 점수를 부정한다.
+        color: Color.lerp(accent, Colors.white, 0.94),
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: const [
+          BoxShadow(color: AppColors.borderOnCream, blurRadius: 3),
+        ],
       ),
-      child: Column(
+      child: Row(
         children: [
-          Text(
-            title,
-            style: const TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
-              color: AppColors.textOnCard,
+          if (grade == null || score == null)
+            _EmptyRing(score: score)
+          else
+            ScoreGauge(
+              score: score,
+              grade: grade,
+              size: 108,
+              trackColor: Color.lerp(accent, Colors.white, 0.82)!,
+              // 링 지름(108)은 고정 그래픽이다. 글자 크기 2.0 을 그대로 따르면
+              // "60점"이 링을 49px 넘겨 나간다. 배율을 1.3 까지만 따라간다 —
+              // 숫자는 커지지만 링 안에 남는다. 같은 점수가 아래 문장에도
+              // 등급으로 적혀 있어 여기서 잘리면 읽을 곳이 없다.
+              child: MediaQuery.withClampedTextScaling(
+                maxScaleFactor: 1.3,
+                child: _RingLabel(score: '$score', grade: grade),
+              ),
             ),
-          ),
-          const SizedBox(height: 12),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.baseline,
-            textBaseline: TextBaseline.alphabetic,
-            children: [
-              Text(
-                score?.toString() ?? 'OO',
-                style: TextStyle(
-                  fontSize: 46,
-                  fontWeight: FontWeight.w700,
-                  height: 1,
-                  color: grade?.accentColor ?? AppColors.textPrimary,
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  // 등급에 붙는 고정 문구다. AI 가 쓴 문장은 아래 AI 카드에
+                  // 따로 있다 — 두 자리를 섞으면 "AI 가 점수를 매겼다"로 읽힌다.
+                  grade?.summary ?? '아직 채점할 기록이 없어요',
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                    height: 1.35,
+                    color: Color(0xFF1A1A1A),
+                  ),
                 ),
-              ),
-              const Text(
-                '점',
-                style: TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.w500,
-                  height: 1,
-                  color: AppColors.textPrimary,
-                ),
-              ),
-              if (grade != null) ...[
-                const SizedBox(width: 8),
-                ScoreBadge(grade: grade),
+                if (footnote != null) ...[
+                  const SizedBox(height: 10),
+                  Text(
+                    footnote!,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w300,
+                      height: 1.4,
+                      color: AppColors.bodyInk,
+                    ),
+                  ),
+                ],
               ],
-            ],
-          ),
-          if (grade != null) ...[
-            const SizedBox(height: 12),
-            // 등급에 붙는 고정 문구다. AI 가 쓴 문장은 아래 AI 카드에 따로 있다 —
-            // 두 자리를 섞으면 "AI 가 점수를 매겼다"로 읽힌다.
-            Text(
-              grade.summary,
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w500,
-                color: AppColors.textOnCard,
-              ),
             ),
-          ],
-          if (footnote != null) ...[
-            const SizedBox(height: 14),
-            Text(footnote!, style: Theme.of(context).textTheme.bodySmall),
-          ],
+          ),
         ],
       ),
     );
   }
 }
 
-/// 영양 밸런스 막대들.
+class _RingLabel extends StatelessWidget {
+  const _RingLabel({required this.score, required this.grade});
+
+  final String score;
+  final SkinLevel grade;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.baseline,
+          textBaseline: TextBaseline.alphabetic,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              score,
+              style: TextStyle(
+                fontSize: 32,
+                fontWeight: FontWeight.w600,
+                height: 1,
+                color: grade.accentColor,
+              ),
+            ),
+            const Text(
+              '점',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                height: 1,
+                color: AppColors.bodyInk,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 4),
+        // 시안은 여기에 `GOOD` 을 적는데, 그러면 5단 등급이 좋음/그 외 두 단으로
+        // 접힌다. 앱은 이미 3단 어휘(좋음·보통·주의)를 홈·기록에서 쓰고 있으므로
+        // 그것을 그대로 쓴다 — 같은 68점이 화면마다 다른 말로 불리지 않는다.
+        Text(
+          grade.label,
+          style: TextStyle(
+            fontSize: 10,
+            fontWeight: FontWeight.w600,
+            color: grade.accentColor,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// 기록이 없는 날의 게이지 자리. 호를 그리지 않고 `OO점` 만 남긴다 —
+/// 4% 짜리 호라도 그리면 "아주 낮은 점수"로 읽힌다.
+class _EmptyRing extends StatelessWidget {
+  const _EmptyRing({required this.score});
+
+  final int? score;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 108,
+      height: 108,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        border: Border.all(color: AppColors.borderEmptySlot, width: 8),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.baseline,
+        textBaseline: TextBaseline.alphabetic,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            score?.toString() ?? 'OO',
+            style: const TextStyle(
+              fontSize: 30,
+              fontWeight: FontWeight.w600,
+              height: 1,
+              color: AppColors.outline,
+            ),
+          ),
+          const Text(
+            '점',
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              height: 1,
+              color: AppColors.outline,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// 영양 항목의 색. 서버가 준 위치와 방향만 본다 — 앱이 임계값을 세우지 않는다.
+///
+/// 상태를 모르면 색을 입히지 않는다. 모르는 값을 초록으로 칠하면 서버가
+/// 새 상태를 보낸 날 경고가 조용히 "정상"이 된다.
+Color _nutritionColor(NutritionItem item) => switch (item.status) {
+      null => AppColors.outline,
+      _ when item.isWarning => AppColors.accentStrong,
+      _ => AppColors.good,
+    };
+
+String _nutritionLabel(NutritionItem item) =>
+    item.status?.label(higherIsWorse: item.higherIsWorse) ?? '알 수 없음';
+
+/// 일일 리포트의 영양 타일. 3열 격자다.
 ///
 /// **항목 목록을 앱이 갖지 않는다.** 서버가 보낸 순서와 개수를 그대로 그리므로,
 /// 서버가 항목을 늘려도 이 위젯은 손댈 필요가 없다.
-class NutritionBars extends StatelessWidget {
-  const NutritionBars({super.key, required this.items});
+///
+/// 절대량(`1,560 / 2,000kcal`)은 타일에 넣지 않는다 — 3열 격자의 한 칸이 85px
+/// 라 8px 글자가 되어야 들어간다. 시안이 일일을 훑는 화면, 주간을 따져 보는
+/// 화면으로 나눠 놓았고 절대량은 주간 줄([NutritionRows])에 그대로 있다.
+class NutritionTiles extends StatelessWidget {
+  const NutritionTiles({super.key, required this.items});
+
+  final List<NutritionItem> items;
+
+  @override
+  Widget build(BuildContext context) {
+    if (items.isEmpty) {
+      return const ReportEmpty(message: '기록이 없어 영양을 계산할 수 없어요');
+    }
+
+    // 시스템 글자 크기만큼 칸을 높인다. 비율을 고정해 두면 2.0 에서 이름·상태어·
+    // 비율 세 줄이 칸 아래로 19px 넘쳤다 — 3열이라 폭은 늘릴 수 없으니 높이로 받는다.
+    final textScale = MediaQuery.textScalerOf(context).scale(13) / 13;
+
+    return GridView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      padding: EdgeInsets.zero,
+      itemCount: items.length,
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 3,
+        mainAxisSpacing: 12,
+        crossAxisSpacing: 12,
+        // 시안 타일은 85.4 × 130.4 다. 폭은 기기마다 달라지므로 비율로 잡는다.
+        childAspectRatio: 85.4 / (130.4 * textScale.clamp(1.0, 2.0)),
+      ),
+      itemBuilder: (context, index) => _NutritionTile(item: items[index]),
+    );
+  }
+}
+
+class _NutritionTile extends StatelessWidget {
+  const _NutritionTile({required this.item});
+
+  final NutritionItem item;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = _nutritionColor(item);
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 14),
+      decoration: BoxDecoration(
+        color: AppColors.background,
+        borderRadius: BorderRadius.circular(10.7),
+        boxShadow: const [
+          BoxShadow(color: Color(0xFFE8E7E6), blurRadius: 2.1, spreadRadius: 0.7),
+        ],
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Icon(_iconFor(item.nutrient), size: 28, color: color),
+          Column(
+            children: [
+              Text(
+                item.label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w400,
+                  color: Color(0xFF1A1A1A),
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                _nutritionLabel(item),
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: color,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                '${item.percent}%',
+                style: const TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w400,
+                  color: AppColors.textSecondary,
+                ),
+              ),
+            ],
+          ),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(3.6),
+            child: LinearProgressIndicator(
+              // 기준을 넘긴 항목은 막대가 꽉 찬다. clamp 를 빼면 1.0 을 넘겨
+              // 렌더가 죽는다 — 나트륨은 한 끼로도 200% 가 나온다.
+              value: (item.percent / 100).clamp(0.0, 1.0),
+              minHeight: 4.7,
+              backgroundColor: Color.lerp(color, Colors.white, 0.85),
+              valueColor: AlwaysStoppedAnimation<Color>(color),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// 서버 enum 이름으로 아이콘을 고른다. **표시는 `label` 로 한다** — 앱이
+  /// 항목 목록을 갖지 않기 위해서다. 모르는 항목은 접시 아이콘으로 떨어진다.
+  static IconData _iconFor(String nutrient) => switch (nutrient) {
+        'CALORIES' => Icons.local_fire_department,
+        'CARB' => Icons.rice_bowl,
+        'PROTEIN' => Icons.set_meal,
+        'FAT' => Icons.water_drop,
+        'SODIUM' => Icons.grain,
+        'SUGAR' => Icons.cake,
+        // 피부 영양 포인트 3종. 이 셋이 없으면 접시 아이콘 세 개가 나란히 뜬다 —
+        // 같은 카드 안에서 세 항목이 구분되지 않는다.
+        'VITAMIN_C' => Icons.emoji_food_beverage,
+        'OMEGA3' => Icons.set_meal_outlined,
+        'ZINC' => Icons.shield_outlined,
+        _ => Icons.restaurant,
+      };
+}
+
+/// 주간 리포트의 영양 줄. 절대량·기준·비율을 한 줄에 다 보여준다.
+///
+/// 왼쪽 70px 만 그라디언트가 드러나고 나머지는 흰 판이다 — 시안이 항목명을
+/// 색 위에, 숫자를 흰 바탕에 둔다. 숫자가 색 위에 있으면 읽기 어렵다.
+class NutritionRows extends StatelessWidget {
+  const NutritionRows({super.key, required this.items});
 
   final List<NutritionItem> items;
 
@@ -165,80 +513,128 @@ class NutritionBars extends StatelessWidget {
       children: [
         for (final item in items)
           Padding(
-            padding: const EdgeInsets.only(bottom: 16),
-            child: _NutritionBar(item: item),
+            padding: EdgeInsets.only(bottom: item == items.last ? 0 : 7),
+            child: _NutritionRow(item: item),
           ),
       ],
     );
   }
 }
 
-class _NutritionBar extends StatelessWidget {
-  const _NutritionBar({required this.item});
+class _NutritionRow extends StatelessWidget {
+  const _NutritionRow({required this.item});
 
   final NutritionItem item;
 
   @override
   Widget build(BuildContext context) {
-    // 상태를 모르면 색을 입히지 않는다. 모르는 값을 초록으로 칠하면
-    // 서버가 새 상태를 보낸 날 경고가 조용히 "정상"이 된다.
-    final color = switch (item.status) {
-      null => AppColors.outline,
-      _ when item.isWarning => AppColors.primary,
-      _ => AppColors.good,
-    };
+    final color = _nutritionColor(item);
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Expanded(
+    // 지표 막대와 같은 이유로 높이를 고정하지 않는다 — 시스템 글자 크기를
+    // 키우면 항목명과 숫자가 알약 밖으로 넘친다.
+    return Container(
+      constraints: const BoxConstraints(minHeight: 49),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            Color.lerp(color, Colors.white, 0.95)!,
+            Color.lerp(color, Colors.white, 0.55)!,
+          ],
+        ),
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: IntrinsicHeight(
+        child: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          SizedBox(
+            width: 70,
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: Padding(
+              padding: const EdgeInsets.only(left: 12),
               child: Text(
                 item.label,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.textPrimary,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                  color: AppColors.bodyInk,
                 ),
               ),
             ),
-            const SizedBox(width: 8),
-            Text(
-              '${formatAmount(item.amount)} / ${formatAmount(item.target.toDouble())}${item.unit}',
-              style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
             ),
-            const SizedBox(width: 6),
-            Text(
-              '${item.percent}%',
-              style: TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w700,
-                color: color,
+          ),
+          Expanded(
+            child: Container(
+              margin: const EdgeInsets.fromLTRB(0, 1.7, 3, 1.7),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+              decoration: BoxDecoration(
+                color: AppColors.background,
+                borderRadius: BorderRadius.circular(11),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          '${formatAmount(item.amount)} / '
+                          '${formatAmount(item.target.toDouble())}${item.unit}',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          textAlign: TextAlign.right,
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w400,
+                            color: Color(0xFF9C9C9C),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        '${item.percent}%',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: color,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(2.5),
+                    child: LinearProgressIndicator(
+                      value: (item.percent / 100).clamp(0.0, 1.0),
+                      minHeight: 5,
+                      backgroundColor: AppColors.disabled,
+                      valueColor: AlwaysStoppedAnimation<Color>(color),
+                    ),
+                  ),
+                ],
               ),
             ),
-          ],
-        ),
-        const SizedBox(height: 6),
-        ClipRRect(
-          borderRadius: BorderRadius.circular(4),
-          child: LinearProgressIndicator(
-            // 기준을 넘긴 항목은 막대가 꽉 찬다. clamp 를 빼면 1.0 을 넘겨
-            // 렌더가 죽는다 — 나트륨은 한 끼로도 200% 가 나온다.
-            value: (item.percent / 100).clamp(0.0, 1.0),
-            minHeight: 7,
-            backgroundColor: AppColors.borderOnWhite,
-            valueColor: AlwaysStoppedAnimation<Color>(color),
           ),
+        ],
         ),
-      ],
+      ),
     );
   }
 }
 
-/// 고민별 식단 점수 줄.
+/// 고민별 식단 점수. 시안의 옅은 카드 한 장씩이다.
+///
+/// 설명 문장(`message`)과 태그(`tags`)는 **서버가 준다** — 룰이 판정할 때 만들어
+/// 저장해 둔 `reason` 을 그대로 고른 것이라, 이 카드의 문장과 음식 결과 화면의
+/// 문장이 같은 말을 한다. 앱이 조합하지 않는다.
+///
+/// 둘 다 없을 수 있다. V8 이전 기록이면 문장이 없고, 그 고민에 걸린 룰이 하나도
+/// 없으면 태그도 비어 있다 — 그때는 점수와 상태 칩만 남는다.
 class ConcernList extends StatelessWidget {
   const ConcernList({super.key, required this.items});
 
@@ -259,43 +655,179 @@ class ConcernList extends StatelessWidget {
       children: [
         for (final item in items)
           Padding(
-            padding: const EdgeInsets.symmetric(vertical: 7),
-            child: Row(
+            padding: EdgeInsets.only(bottom: item == items.last ? 0 : 12),
+            child: _ConcernCard(item: item),
+          ),
+      ],
+    );
+  }
+}
+
+class _ConcernCard extends StatelessWidget {
+  const _ConcernCard({required this.item});
+
+  final ConcernScore item;
+
+  @override
+  Widget build(BuildContext context) {
+    final status = item.status;
+    final good = status?.isGood ?? false;
+    final accent = status?.accentColor ?? AppColors.outline;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+      decoration: BoxDecoration(
+        color: Color.lerp(accent, Colors.white, 0.93),
+        borderRadius: BorderRadius.circular(8),
+        boxShadow: const [
+          BoxShadow(color: AppColors.borderOnCream, blurRadius: 3),
+        ],
+      ),
+      child: Row(
+        // 문장과 태그가 붙으면 카드가 높아진다. 가운데 정렬로 두면 아이콘이
+        // 문장 중간에 떠서 줄과 어긋난다.
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 40,
+            height: 40,
+            alignment: Alignment.center,
+            decoration: const BoxDecoration(
+              color: AppColors.background,
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              good ? Icons.local_florist : Icons.water_drop,
+              size: 22,
+              color: accent,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Expanded(
-                  child: Text(
-                    item.label,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                      color: AppColors.textPrimary,
-                    ),
-                  ),
-                ),
-                // 변화량은 주간에서만 온다. 없으면 아무것도 그리지 않는다 —
-                // 앱이 계산하면 비교할 기준이 없는 주에 거짓 숫자가 뜬다.
-                if (item.change != null) ...[
-                  _ChangeLabel(change: item.change!),
-                  const SizedBox(width: 8),
-                ],
                 Text(
-                  '${item.score}점',
+                  item.label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
                     fontSize: 14,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.textPrimary,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.bodyInk,
                   ),
                 ),
-                if (item.status != null) ...[
-                  const SizedBox(width: 8),
-                  ScoreBadge(grade: item.status!, solid: true),
+                const SizedBox(height: 5),
+                Row(
+                  children: [
+                    Text(
+                      '${item.score}점',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w400,
+                        color: AppColors.bodyInk,
+                      ),
+                    ),
+                    // 변화량은 주간에서만 온다. 없으면 아무것도 그리지 않는다 —
+                    // 앱이 계산하면 비교할 기준이 없는 주에 거짓 숫자가 뜬다.
+                    if (item.change != null) ...[
+                      const SizedBox(width: 8),
+                      _ChangeLabel(change: item.change!),
+                    ],
+                  ],
+                ),
+                // 서버가 고른 룰의 이유 문장. 없으면 줄을 만들지 않는다.
+                if (item.message case final message? when message.isNotEmpty) ...[
+                  const SizedBox(height: 7),
+                  Text(
+                    message,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w400,
+                      height: 1.45,
+                      color: AppColors.bodyInk,
+                    ),
+                  ),
+                ],
+                if (item.tags.isNotEmpty) ...[
+                  const SizedBox(height: 9),
+                  Wrap(
+                    spacing: 6,
+                    runSpacing: 6,
+                    children: [
+                      for (final tag in item.tags)
+                        _ConcernTag(label: tag, accent: accent),
+                    ],
+                  ),
                 ],
               ],
             ),
           ),
-      ],
+          if (status != null)
+            _StatusPill(label: status.label, accent: accent),
+        ],
+      ),
+    );
+  }
+}
+
+/// 고민 카드의 근거 칩. **`#` 을 붙이지 않는다** — 서버가 보낸 문구는 "당류 과다"
+/// 이고, 앞에 글자를 더하면 그건 앱이 문장을 고친 것이다(식단 포인트 칩과 같은 규칙).
+class _ConcernTag extends StatelessWidget {
+  const _ConcernTag({required this.label, required this.accent});
+
+  final String label;
+  final Color accent;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 21,
+      padding: const EdgeInsets.symmetric(horizontal: 10),
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: Color.lerp(accent, Colors.white, 0.82),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          fontSize: 11,
+          fontWeight: FontWeight.w600,
+          color: Color.lerp(accent, Colors.black, 0.15),
+        ),
+      ),
+    );
+  }
+}
+
+/// 고민 상태 칩. 시안은 `GOOD`/`CHECK` 두 단인데 서버가 5단을 주므로
+/// 점수 카드와 같은 3단 어휘를 쓴다 — 한 화면에서 등급 어휘가 둘이면
+/// 사용자가 둘을 다른 축으로 읽는다.
+class _StatusPill extends StatelessWidget {
+  const _StatusPill({required this.label, required this.accent});
+
+  final String label;
+  final Color accent;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 24,
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: Color.lerp(accent, Colors.white, 0.78),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
+          color: accent,
+        ),
+      ),
     );
   }
 }
@@ -328,6 +860,13 @@ class _ChangeLabel extends StatelessWidget {
 }
 
 /// 잘한 점 / 개선할 점 목록. 문장은 기록을 저장할 때 서버가 붙여 둔 것이다.
+///
+/// 시안의 해시태그 칩과 같은 모양으로 그린다 — 짧은 구절이라 줄로 늘어놓으면
+/// 여백만 먹고, 칩으로 두면 한눈에 개수가 보인다.
+///
+/// **`#` 은 붙이지 않는다.** 시안은 `#당류 섭취 많음` 처럼 적지만 서버가 보낸
+/// 문구는 "당류 섭취 많음" 이고, 앞에 글자를 하나 더 붙이면 그건 앱이 문장을
+/// 고친 것이다. 모양만 칩으로 가져오고 글자는 받은 그대로 쓴다.
 class PointList extends StatelessWidget {
   const PointList({
     super.key,
@@ -340,32 +879,28 @@ class PointList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+    final accent = positive ? AppColors.good : AppColors.accentStrong;
+
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
       children: [
         for (final point in points)
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 4),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Icon(
-                  positive ? Icons.check_circle_outline : Icons.error_outline,
-                  size: 16,
-                  color: positive ? AppColors.good : AppColors.primary,
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    point,
-                    style: const TextStyle(
-                      fontSize: 13,
-                      height: 1.4,
-                      color: AppColors.textBody,
-                    ),
-                  ),
-                ),
-              ],
+          Container(
+            height: 21,
+            padding: const EdgeInsets.symmetric(horizontal: 10),
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: Color.lerp(accent, Colors.white, 0.82),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Text(
+              point,
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+                color: Color.lerp(accent, Colors.black, 0.15),
+              ),
             ),
           ),
       ],
@@ -373,7 +908,8 @@ class PointList extends StatelessWidget {
   }
 }
 
-/// AI 문장 카드. 기록 화면의 코멘트 카드와 같은 크림 그라디언트다.
+/// AI 문장 카드. 시안이 리포트에서는 흰 카드로 바꿨다 — 홈·기록의 크림 카드와
+/// 다른 것은 리포트가 이미 흰 카드 여섯 장이라 크림 한 장이 혼자 튀기 때문이다.
 ///
 /// **여기에 숫자를 넣지 않는다.** 점수는 데이터가 낸 결과이고 AI 는 그것을
 /// 설명할 뿐이라는 관계가 화면에서도 보여야 한다.
@@ -389,42 +925,41 @@ class AiCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(20, 18, 20, 20),
+      padding: const EdgeInsets.fromLTRB(18, 14, 18, 18),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [Color(0xFFFEF7F0), Color(0xFFFFF2E4)],
-        ),
-        border: Border.all(color: const Color(0xFFE8E8E8), width: 0.8),
-        borderRadius: BorderRadius.circular(16),
+        color: AppColors.background,
+        borderRadius: BorderRadius.circular(10),
+        boxShadow: const [
+          BoxShadow(color: AppColors.disabled, blurRadius: 3),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              const Icon(Icons.auto_awesome, size: 16, color: AppColors.primary),
+              const Icon(Icons.auto_awesome,
+                  size: 16, color: AppColors.accentStrong),
               const SizedBox(width: 6),
               Text(
                 title,
                 style: const TextStyle(
-                  fontSize: 14,
+                  fontSize: 12,
                   fontWeight: FontWeight.w600,
-                  color: AppColors.primary,
+                  color: AppColors.accentStrong,
                 ),
               ),
             ],
           ),
           for (final entry in entries) ...[
-            const SizedBox(height: 12),
+            const SizedBox(height: 10),
             if (entry.label != null)
               Padding(
                 padding: const EdgeInsets.only(bottom: 4),
                 child: Text(
                   entry.label!,
                   style: const TextStyle(
-                    fontSize: 12,
+                    fontSize: 11,
                     fontWeight: FontWeight.w700,
                     color: AppColors.textOnCard,
                   ),
@@ -433,9 +968,9 @@ class AiCard extends StatelessWidget {
             Text(
               entry.text,
               style: const TextStyle(
-                fontSize: 13,
-                height: 1.45,
-                color: Color(0xFF411B09),
+                fontSize: 11,
+                height: 1.6,
+                color: AppColors.bodyInk,
               ),
             ),
           ],
@@ -446,23 +981,28 @@ class AiCard extends StatelessWidget {
 }
 
 /// 끼니 한 줄. 홈의 오늘 기록 카드와 같은 모양이고, 사진도 같은 로컬 파일을 본다.
+///
+/// 점수 숫자 대신 GOOD/BAD 라벨을 쓴다 — 시안이 리포트·홈에서 같은 판단을
+/// 내렸다. 숫자는 눌러서 들어간 결과 화면에 있다.
 class MealRow extends ConsumerWidget {
   const MealRow({super.key, required this.meal, required this.onTap});
 
   final PlateHistoryItem meal;
   final VoidCallback onTap;
 
-  static const double _size = 40;
+  static const double _size = 38;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final directory = ref.watch(plateImageDirectoryProvider).valueOrNull;
+    // 서버가 매긴 등급이다 — 앱에 경계표를 두지 않는다.
+    final grade = meal.grade;
 
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(6),
       child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 7),
+        padding: const EdgeInsets.symmetric(vertical: 9),
         child: Row(
           children: [
             ClipRRect(
@@ -474,36 +1014,47 @@ class MealRow extends ConsumerWidget {
                       width: _size,
                       height: _size,
                       fit: BoxFit.cover,
-                      // 원본을 그대로 디코드하면 40px 칸에 수 MB 를 쓴다.
+                      // 원본을 그대로 디코드하면 38px 칸에 수 MB 를 쓴다.
                       cacheWidth:
                           (_size * MediaQuery.devicePixelRatioOf(context)).round(),
                       // 파일이 없는 경우와 읽기 실패를 따로 다룰 이유가 없다.
                       errorBuilder: (_, __, ___) => const _MealThumbnailFallback(),
                     ),
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: 16),
             Expanded(
-              child: Text(
-                meal.foodName,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                  color: AppColors.textPrimary,
-                ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // 끼니를 모르면(서버가 새 값을 보냈다면) 라벨을 비운다.
+                  // 아무 끼니로나 떨어뜨리면 사용자가 자기 기록을 못 믿는다.
+                  if (meal.mealType != null)
+                    Text(
+                      meal.mealType!.label,
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.bodyInk,
+                      ),
+                    ),
+                  const SizedBox(height: 4),
+                  Text(
+                    meal.foodName,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w400,
+                      color: AppColors.bodyInk,
+                    ),
+                  ),
+                ],
               ),
             ),
-            const SizedBox(width: 8),
-            Text(
-              '${meal.plateScore}점',
-              style: const TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w700,
-                color: AppColors.textPrimary,
-              ),
-            ),
-            const Icon(Icons.chevron_right, size: 18, color: AppColors.textSecondary),
+            if (grade != null) ...[
+              const SizedBox(width: 8),
+              VerdictBadge(grade: grade),
+            ],
           ],
         ),
       ),
@@ -561,36 +1112,30 @@ class ReportSkeleton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListView(
-      padding: const EdgeInsets.fromLTRB(AppTheme.pagePadding, 8, AppTheme.pagePadding, 32),
+      padding: const EdgeInsets.fromLTRB(20, 8, 20, 32),
       children: const [
-        _SkeletonBox(height: 160),
-        SizedBox(height: 28),
-        _SkeletonBox(height: 18, width: 120),
-        SizedBox(height: 14),
-        _SkeletonBox(height: 90),
-        SizedBox(height: 28),
-        _SkeletonBox(height: 18, width: 140),
-        SizedBox(height: 14),
-        _SkeletonBox(height: 90),
+        _SkeletonBox(height: 145),
+        SizedBox(height: 20),
+        _SkeletonBox(height: 250),
+        SizedBox(height: 20),
+        _SkeletonBox(height: 100),
       ],
     );
   }
 }
 
 class _SkeletonBox extends StatelessWidget {
-  const _SkeletonBox({required this.height, this.width});
+  const _SkeletonBox({required this.height});
 
   final double height;
-  final double? width;
 
   @override
   Widget build(BuildContext context) {
     return Container(
       height: height,
-      width: width,
       decoration: BoxDecoration(
         color: const Color(0xFFF2F2F2),
-        borderRadius: BorderRadius.circular(AppTheme.cardRadius),
+        borderRadius: BorderRadius.circular(10),
       ),
     );
   }

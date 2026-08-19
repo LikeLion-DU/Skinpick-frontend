@@ -65,6 +65,8 @@ class ConcernScore {
     required this.score,
     required this.status,
     required this.change,
+    this.message,
+    this.tags = const <String>[],
   });
 
   /// 서버 enum 이름(`ACNE` 등). 표시는 [label] 로 한다.
@@ -79,6 +81,13 @@ class ConcernScore {
   /// 기간 첫 기록일 대비 변화. **일일에는 항상 없고**, 주간도 기록일이
   /// 하루뿐이면 없다. 없을 때 앱이 계산하지 않는다 — 비교할 기준이 없다.
   final int? change;
+
+  /// 이 고민에 관해 가장 크게 움직인 룰의 이유 문장. 서버가 저장해 둔 문장이라
+  /// 앱이 짓지 않는다. V8 이전 기록·주간 응답에는 없다.
+  final String? message;
+
+  /// 같은 근거의 짧은 라벨들. 비어 있으면 칩 줄을 그리지 않는다.
+  final List<String> tags;
 }
 
 /// 하루의 대표 점수 한 줄. 주간 추이 · BEST DAY · WORST DAY 가 같은 모양을 쓴다.
@@ -90,11 +99,16 @@ class DayScore {
     required this.date,
     required this.dailyScore,
     required this.grade,
+    this.plateIds = const <int>[],
   });
 
   final DateTime date;
   final int dailyScore;
   final SkinLevel? grade;
+
+  /// 그날 기록의 id. **BEST/WORST 에만 채워진다** — 추이 그래프의 점에는 없다.
+  /// 앱은 이 id 로 로컬 사진을 찾는다(서버에 이미지가 없다 · PRD §9.6).
+  final List<int> plateIds;
 }
 
 /// 주간 AI 문장 넷. 숫자가 없는 것이 의도다 —
@@ -126,6 +140,7 @@ class DailyReport {
     required this.grade,
     required this.recordCount,
     required this.nutrition,
+    required this.skinNutrients,
     required this.concerns,
     required this.meals,
     required this.aiComment,
@@ -141,6 +156,12 @@ class DailyReport {
   final SkinLevel? grade;
   final int recordCount;
   final List<NutritionItem> nutrition;
+
+  /// 피부 영양 포인트 3종. 영양 밸런스와 **다른 카드**에 그린다.
+  ///
+  /// 표준 음식표에 매칭된 끼니에서만 값이 나오므로 `status` 가 null 일 수 있다 —
+  /// 그때 화면은 "알 수 없음"으로 그린다. 0 을 "부족"으로 읽으면 안 된다.
+  final List<NutritionItem> skinNutrients;
 
   /// 사용자가 고른 고민 중 식단으로 설명할 수 있는 것만. 없으면 빈 목록이다.
   final List<ConcernScore> concerns;

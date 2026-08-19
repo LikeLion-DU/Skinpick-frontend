@@ -16,8 +16,9 @@ import 'package:skinplate/shared/widgets/app_bottom_nav.dart';
 
 /// 하단 네비 개편이 실제로 반영됐는지.
 ///
-/// 기록은 **사라진 것이 아니라 자리를 옮겼다.** 네비에서 빠지고 홈의 "전체 기록
-/// 보기"로 들어간다. 그 경로가 살아 있는지는 홈 위젯 테스트가 본다.
+/// 기록은 **사라진 것이 아니라 자리를 옮겼다.** 네비에서 빠지고 홈 "오늘의 기록"
+/// 카드의 제목 줄(화살표)로 들어간다. 확정 시안이 별도 텍스트 버튼을 없애고
+/// 카드 헤더 자체를 눌리게 만들었다.
 void main() {
   const designSize = Size(402, 874);
 
@@ -43,7 +44,7 @@ void main() {
 
   testWidgets('기록 화면 경로는 그대로 살아 있다', (tester) async {
     // 네비에서 뺀 것이지 기능을 지운 것이 아니다. 상수가 사라지면
-    // 홈의 "전체 기록 보기"가 컴파일되지 않는다.
+    // 홈 "오늘의 기록" 카드의 화살표가 컴파일되지 않는다.
     expect(Routes.plateHistory, '/plate/history');
     expect(Routes.report, '/report');
   });
@@ -55,7 +56,7 @@ void main() {
         ['오늘의 리포트', '주간 리포트']);
   });
 
-  testWidgets('홈 — 하단 네비는 리포트로, 기록은 "전체 기록 보기" 로 간다', (tester) async {
+  testWidgets('홈 — 하단 네비는 리포트로, 기록은 카드 제목 줄로 간다', (tester) async {
     await tester.binding.setSurfaceSize(designSize);
 
     final container = ProviderContainer(overrides: [
@@ -94,8 +95,10 @@ void main() {
     await tester.pumpAndSettle();
 
     // 기록으로 가는 문이 홈에 남아 있어야 한다. 네비에서 뺐으므로 이게 유일하다.
-    expect(find.text('전체 기록 보기'), findsOneWidget);
-    await tester.tap(find.text('전체 기록 보기'));
+    // 시안에서 텍스트 버튼이 사라지고 카드 제목 줄 전체가 눌린다 — 제목을
+    // 눌러 이동하지 않으면 저장된 기록에 닿을 방법이 없어진다.
+    expect(find.text('오늘의 기록'), findsOneWidget);
+    await tester.tap(find.text('오늘의 기록'));
     await tester.pumpAndSettle();
     expect(find.text('기록 화면'), findsOneWidget);
 

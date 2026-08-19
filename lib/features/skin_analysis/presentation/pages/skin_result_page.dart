@@ -6,10 +6,14 @@ import '../../../../app/config/feature_flags.dart';
 import '../../../../app/router/app_router.dart';
 import '../../../../app/theme/app_colors.dart';
 import '../../../../app/theme/app_theme.dart';
+import '../../../../app/theme/metric_palette.dart';
 import '../../../../core/widgets/app_widgets.dart';
 import '../../../../shared/enums/metric_band.dart';
 import '../../../../shared/enums/skin_type.dart';
 import '../../../../shared/widgets/highlight_row.dart';
+import '../../../../shared/widgets/section_mark.dart';
+import '../../../../shared/widgets/skin_mascot.dart';
+import '../../../../shared/widgets/top_wash.dart';
 import '../../../auth/presentation/providers/auth_notifier.dart';
 import '../../domain/entities/skin_analysis.dart';
 import '../providers/skin_analysis_notifier.dart';
@@ -60,49 +64,33 @@ class SkinResultPage extends ConsumerWidget {
     final headline = _headline(analysis, declaredType);
 
     return Scaffold(
-      appBar: AppBar(),
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(
-            AppTheme.pagePadding, 0, AppTheme.pagePadding, 32),
+      body: Stack(
         children: [
+          const TopWash(),
+          SafeArea(
+            child: ListView(
+        padding: const EdgeInsets.fromLTRB(
+            AppTheme.pagePadding, 8, AppTheme.pagePadding, 32),
+        children: [
+          _ResultHeader(analysis: analysis, headline: headline),
           const SizedBox(height: 24),
-          Center(
-            child: Container(
-              width: 60,
-              height: 60,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(color: AppColors.primary, width: 1.5),
-              ),
-              child:
-                  const Icon(Icons.check, size: 38, color: AppColors.primary),
-            ),
-          ),
-          const SizedBox(height: 22),
-          Center(
-            child: Text('분석이 완료됐어요',
-                style: Theme.of(context).textTheme.titleLarge),
-          ),
-          const SizedBox(height: 10),
-          // 프로필이 이 화면보다 뒤로 옮겨갔다. "설정한 프로필을 바탕으로"는
-          // 온보딩 사용자에게 거짓말이고, 자가 신고 값은 원래 점수에 안 들어간다.
-          const Center(
-            child: Text(
-              '방금 촬영한 사진으로\n오늘의 피부 상태를 분석했어요 : )',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                  fontSize: 12, color: AppColors.textBody, height: 1.5),
-            ),
-          ),
-          const SizedBox(height: 36),
 
-          _TypeCard(analysis: analysis, headline: headline),
+          // 지표 막대 5개. 시안이 원 4개를 막대 5개로 바꿨고, 서버가 주는
+          // trouble 이 화면에 처음 나온다 — 음식 결과의 룰 이유가 인용하는
+          // 지표라, 한 번도 보여준 적 없는 값으로 감점을 설명하던 문제가 사라진다.
+          _MetricBars(analysis: analysis),
+          const SizedBox(height: 24),
+
+          _CareSection(analysis: analysis),
 
           // 서버가 못 냈으면(예전 분석이거나 응답을 못 믿을 때) 키 자체가 없다.
           // 그때는 카드를 숨긴다 — 빈 값으로 그리면 없는 데이터를 보여주는 셈이다.
-          // 범위도 앱에서 한 번 더 본다. 서버가 막고 있지만, 회귀가 나면
-          // "AI 추정 피부 나이 0세" 가 확신에 찬 설명 문장 옆에 그려진다.
-          if (analysis.skinAge?.isUsable ?? false) ...[
+          //
+          // **범위(18~80)는 앱에서 다시 보지 않는다.** 서버가 그 밖의 나이를 받으면
+          // 카드를 통째로 빼고 키를 생략한다(`SkinAnalysisService.skinAge`, 백엔드
+          // 테스트 "피부 나이가 18~80 밖이면 카드를 통째로 뺀다"). 앱이 같은 창을
+          // 한 벌 더 들면 서버가 창을 옮긴 날 한쪽만 따라간다.
+          if (analysis.skinAge != null) ...[
             const SizedBox(height: 22),
             _SkinAgeCard(skinAge: analysis.skinAge!),
           ],
@@ -117,9 +105,21 @@ class SkinResultPage extends ConsumerWidget {
             _SkinTypePrompt(analysisId: analysis.id),
 
           const SizedBox(height: 26),
-          ElevatedButton(
-            onPressed: () => context.push(Routes.foodCapture),
-            child: const Text('음식 분석 시작하기'),
+          // 시안 버튼은 높이 50 · 곡률 14 다. 테마 기본값(48 · 8)을 이 자리만
+          // 덮는다 — 테마를 바꾸면 촬영·설문 화면 버튼까지 같이 커진다.
+          SizedBox(
+            height: 50,
+            child: ElevatedButton(
+              onPressed: () => context.push(Routes.foodCapture),
+              style: ElevatedButton.styleFrom(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                textStyle:
+                    const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+              ),
+              child: const Text('내 피부 맞춤 음식 분석 시작하기'),
+            ),
           ),
           // S10 진입점. 방금 분석의 id 로 물어야 오늘 결과와 짝이 맞는다.
           // FeatureFlags 로 감싸지 않는다 — 켜 놓을 화면이라 항상 true 인 플래그는
@@ -140,6 +140,9 @@ class SkinResultPage extends ConsumerWidget {
             ),
           ],
           const SafetyNotice(),
+        ],
+            ),
+          ),
         ],
       ),
     );
@@ -176,9 +179,18 @@ String _headline(SkinAnalysis analysis, SkinType? declaredType) {
   return type == null ? '오늘의 피부' : '${type.label} 피부';
 }
 
-/// "건성 · 붉은기" 카드 — 제목·점수와 지표 4종 원.
-class _TypeCard extends StatelessWidget {
-  const _TypeCard({required this.analysis, required this.headline});
+/// 화면 머리 — 제목 · 분석 날짜 · 마스코트 · 오늘의 피부 타입.
+///
+/// 시안이 옛 "분석이 완료됐어요" 확인 화면을 걷어내고 결과를 바로 편다. 촬영 →
+/// 로딩 → 결과 흐름에서 로딩 화면이 이미 "분석이 완료됐어요"를 말하므로, 같은
+/// 말을 한 번 더 하는 화면이 사이에 끼어 있던 셈이다.
+///
+/// **총점은 배지에 남긴다.** 시안에는 총점 자리가 없지만 산식이 공개돼 있어
+/// 직접 검산할 수 있다는 것이 이 기능의 근거다(PRD §4.1). 시안이 그 자리에 둔
+/// "민감도 높음" 은 서버 응답에 대응하는 필드가 없어 그리지 않는다 —
+/// 상태 문구는 `skinType.label` 에 이미 조합돼 들어온다.
+class _ResultHeader extends StatelessWidget {
+  const _ResultHeader({required this.analysis, required this.headline});
 
   final SkinAnalysis analysis;
 
@@ -187,139 +199,416 @@ class _TypeCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final metrics = analysis.metrics;
+    final at = analysis.analyzedAt;
+    // 서버가 매긴 등급이다 — 앱에 경계표를 두지 않는다.
+    final grade = analysis.grade;
 
-    return Container(
-      padding: const EdgeInsets.fromLTRB(18, 20, 18, 22),
-      decoration: BoxDecoration(
-        color: AppColors.background,
-        border: Border.all(color: AppColors.primary, width: 0.6),
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              // **제목 하나만 남았다.** 예전에는 여기에 제목(규칙 도출 타입)과
-              // 칩(AI 관찰 타입)이 나란히 있었다. 서버가 둘로 판정하던 시절의
-              // 흔적인데, 값이 갈리면 "지성 피부" 옆에 "건성 · 민감 경향" 이
-              // 붙는 화면이 나왔다. 서버가 판정을 하나로 모으면서 칩은 제목과
-              // 같은 말을 두 번 하는 자리가 됐고, 문구에 상태까지 들어오므로
-              // 제목이 그대로 그 역할을 한다.
-              //
-              // 서버 문구를 그대로 쓴다 — 뒤에 '피부' 같은 것을 이어 붙이지
-              // 않는다. '수부지' 처럼 괄호로 끝나는 문구가 있어서 붙이면
-              // "…(수부지) 피부" 로 깨진다.
-              //
-              // 폭은 계속 새던 자리라 Expanded 로 감싼 채 둔다 — QA 에서 기본
-              // 글자 크기에도 "복합성 · T존 ..." 으로 잘렸고 2.0 에서는 제목까지
-              // "보통..." 이 됐다. 이제 경쟁하는 요소가 하나 줄었지만, 상태가
-              // 둘 붙으면 문구는 그때만큼 길어진다.
-              Expanded(
-                child: Text(
-                  headline,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: Color(0xFF1A1A1A),
-                  ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // 제목을 Expanded 로 감싼다. 시스템 글자 크기 2.0 에서 24px 제목과
+        // 체크 아이콘이 한 줄에 들어가지 않아 오른쪽으로 78px 넘쳤다 —
+        // 감싸 두면 그때만 두 줄로 접힌다.
+        const Row(
+          children: [
+            Expanded(
+              child: Text(
+                '피부 분석 결과',
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textPrimary,
                 ),
               ),
-              const SizedBox(width: 10),
-              // 서버가 준 총점. 앱에서 다시 계산하지 않는다.
-              Text.rich(
-                TextSpan(
-                  children: [
-                    TextSpan(
-                      text: '${analysis.skinScore}',
-                      style: const TextStyle(
-                        fontSize: 26,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.textPrimary,
-                        height: 1,
+            ),
+            SizedBox(width: 8),
+            Icon(Icons.check_circle_outline,
+                size: 22, color: AppColors.primary),
+          ],
+        ),
+        const SizedBox(height: 8),
+        Text(
+          '분석 날짜 : ${at.year}년 ${at.month}월 ${at.day}일',
+          style: const TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w500,
+            color: AppColors.textSecondary,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Row(
+          children: [
+            const SkinMascot(size: 150),
+            const SizedBox(width: 4),
+            Expanded(
+              child: Column(
+                children: [
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: grade?.tintColor ?? AppColors.surfaceCard,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      '종합 ${analysis.skinScore}점',
+                      style: TextStyle(
+                        fontSize: 9,
+                        fontWeight: FontWeight.w600,
+                        color: grade?.accentColor ?? AppColors.textOnCard,
                       ),
                     ),
-                    const TextSpan(
-                      text: '점',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
-                        color: AppColors.textPrimary,
-                        height: 1,
+                  ),
+                  const SizedBox(height: 10),
+                  // 서버 문구를 그대로 쓴다 — 뒤에 '피부' 같은 것을 이어 붙이지
+                  // 않는다. '수부지' 처럼 괄호로 끝나는 문구가 있어서 붙이면
+                  // "…(수부지) 피부" 로 깨진다.
+                  Text(
+                    headline,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF1A1A1A),
+                    ),
+                  ),
+                  // 타입 설명은 서버에 필드가 없어 enum 에 붙은 고정 UI 문구다
+                  // (마이페이지와 같은 값을 쓴다).
+                  if (analysis.skinType?.primary?.description
+                      case final description?) ...[
+                    const SizedBox(height: 10),
+                    Text(
+                      description,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w300,
+                        height: 15 / 10,
+                        color: AppColors.bodyInk,
                       ),
                     ),
                   ],
-                ),
+                ],
               ),
-            ],
-          ),
-          const SizedBox(height: 22),
-          Row(
-            children: [
-              _Metric(
-                label: '수분',
-                band: MetricBand.higherIsBetter(metrics.hydration),
-                icon: Icons.water_drop,
-                foreground: AppColors.hydrationFg,
-                background: AppColors.hydrationBg,
-              ),
-              _Metric(
-                label: '유분',
-                band: MetricBand.higherIsWorse(metrics.oil),
-                icon: Icons.opacity,
-                foreground: AppColors.oilFg,
-                background: AppColors.oilBg,
-              ),
-              _Metric(
-                label: '홍조',
-                band: MetricBand.higherIsWorse(metrics.redness),
-                icon: Icons.waves,
-                foreground: AppColors.rednessFg,
-                background: AppColors.rednessBg,
-              ),
-              _Metric(
-                label: '장벽',
-                band: MetricBand.higherIsBetter(metrics.barrier),
-                icon: Icons.auto_awesome,
-                foreground: AppColors.textureFg,
-                background: AppColors.textureBg,
-              ),
-            ],
-          ),
-
-          // 지표 숫자가 왜 그 숫자인지. 서버가 사진에서 본 것을 지표당 최대
-          // 2줄로 내려준다 — 앱이 점수에서 문장을 짓지 않는다. 확장 필드가
-          // 없던 기록은 근거가 비어 있고, 그때는 토글째 사라진다.
-          if (_evidenceRows(analysis) case final rows when rows.isNotEmpty) ...[
-            const SizedBox(height: 4),
-            _EvidenceSection(rows: rows),
-          ],
-
-          // 서버가 만든 한 줄 요약. 앱이 문장을 짓지 않는다.
-          if (analysis.summary.isNotEmpty) ...[
-            const SizedBox(height: 20),
-            Text(
-              analysis.summary,
-              style: const TextStyle(
-                  fontSize: 12, color: AppColors.textBody, height: 1.5),
             ),
           ],
+        ),
+      ],
+    );
+  }
+}
 
-          if (analysis.highlights.isNotEmpty) ...[
-            const SizedBox(height: 16),
-            const Divider(height: 1, color: AppColors.borderOnWhite),
-            const SizedBox(height: 14),
-            for (final highlight in analysis.highlights)
-              HighlightRow(highlight: highlight),
-          ],
+/// 지표 5개를 막대로 편다. 크림 알약 안에 흰 판이 앉고, 그 안에 눈금 막대가 있다.
+///
+/// 색은 **지표의 이름표**다(수분은 파랑, 홍조는 빨강…). 상태를 뜻하지 않는다 —
+/// 색으로 상태를 말하면 홍조 막대가 길수록 빨개져 "많을수록 좋다"로 읽히는데
+/// 홍조는 반대다. 그래서 **길이는 값, 색은 지표, 말은 판정([MetricBand])** 으로
+/// 셋을 나눈다.
+///
+/// 시안 캡션("점수가 높을 수록 좋게 나온 수치입니다")은 쓰지 않는다. 유분·홍조·
+/// 트러블은 높을수록 나쁘고 그 사실이 `toBars()` 의 방향 플래그에 박혀 있어서,
+/// 그 문장을 그대로 옮기면 화면이 다섯 지표 중 셋에 대해 거짓말을 한다.
+class _MetricBars extends StatelessWidget {
+  const _MetricBars({required this.analysis});
+
+  final SkinAnalysis analysis;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          '지표마다 좋은 방향이 달라 상태어를 함께 적었어요.',
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w300,
+            color: AppColors.bodyInk,
+          ),
+        ),
+        const SizedBox(height: 12),
+        for (final bar in analysis.metrics.toBars())
+          Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: _MetricBar(
+              label: bar.label,
+              value: bar.value,
+              color: MetricPalette.of(bar.key).bar,
+              // 상태어는 서버가 그 지표에 매긴 등급에서 나온다.
+              band: MetricBand.of(analysis.levelOf(bar.key),
+                  higherIsBetterMetric: bar.higherIsBetter),
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+class _MetricBar extends StatelessWidget {
+  const _MetricBar({
+    required this.label,
+    required this.value,
+    required this.color,
+    required this.band,
+  });
+
+  final String label;
+  final int value;
+  final Color color;
+
+  /// 서버 등급을 모르면 null 이고, 그때는 상태어 줄을 그리지 않는다.
+  final MetricBand? band;
+
+  @override
+  Widget build(BuildContext context) {
+    // **높이를 고정하지 않는다.** 시안 값(49)을 그대로 박아 두면 시스템 글자
+    // 크기 2.0 에서 이름·판정이 알약 밖으로 넘친다. 최소 높이로만 잡고
+    // 내용이 높이를 정하게 둔다.
+    return Container(
+      constraints: const BoxConstraints(minHeight: 49),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceCardWarm,
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: IntrinsicHeight(
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // 이름과 판정은 크림 위에, 막대와 눈금은 흰 판 위에 둔다 —
+          // 시안이 그렇게 갈랐고, 눈금 숫자가 색 위에 있으면 읽기 어렵다.
+          SizedBox(
+            width: 66,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                    color: Color(0xFF737373),
+                  ),
+                ),
+                if (band case final band?) ...[
+                  const SizedBox(height: 2),
+                  Text(
+                    band.label,
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w600,
+                      color: band.color,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+          Expanded(
+            child: Container(
+              margin: const EdgeInsets.fromLTRB(0, 1.7, 3, 1.7),
+              padding: const EdgeInsets.fromLTRB(12, 8, 12, 6),
+              decoration: BoxDecoration(
+                color: AppColors.background,
+                borderRadius: BorderRadius.circular(11),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(9.5),
+                    child: LinearProgressIndicator(
+                      // 서버가 준 원값을 그대로 쓴다. 방향을 뒤집지 않는다 —
+                      // 뒤집으면 같은 숫자가 지표마다 다른 길이로 그려진다.
+                      value: (value / 100).clamp(0.0, 1.0),
+                      minHeight: 14,
+                      backgroundColor: AppColors.surfaceCardWarm,
+                      valueColor: AlwaysStoppedAnimation<Color>(color),
+                    ),
+                  ),
+                  const SizedBox(height: 5),
+                  const Row(
+                    children: [
+                      _AxisLabel('0'),
+                      Spacer(),
+                      _AxisLabel('50'),
+                      Spacer(),
+                      _AxisLabel('100'),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
         ],
+        ),
       ),
     );
   }
 }
 
+class _AxisLabel extends StatelessWidget {
+  const _AxisLabel(this.text);
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      text,
+      style: const TextStyle(
+        fontSize: 8,
+        fontWeight: FontWeight.w600,
+        color: Color(0xFF545454),
+      ),
+    );
+  }
+}
+
+/// "지금 피부가 필요로 하는 관리" — 관리 축 칩 · 권고 문단 · 하이라이트 · 관찰 근거.
+///
+/// 칩(`careFocus`)과 문단(`careMessage`)을 **서버가 준다.** 지표에서 규칙으로
+/// 도출한 값이라(`SkinCareGuide`) 같은 사진은 언제 열어도 같은 문구이고, 예전에
+/// 저장된 분석에도 나온다 — 하이라이트와 같은 성격이다.
+///
+/// 앱이 지표를 보고 축을 고르지 않는다. 그러면 "무엇을 챙겨야 하는가"의 기준이
+/// 서버와 앱 두 곳에 생기고, 룰 임계값을 바꾼 날 한쪽만 따라간다.
+///
+/// `careMessage` 가 없는 응답(이 필드 이전 서버)에서는 `summary` 로 떨어진다 —
+/// 관찰 요약이라 권고와 다른 말이지만, 빈 카드보다는 낫다.
+class _CareSection extends StatelessWidget {
+  const _CareSection({required this.analysis});
+
+  final SkinAnalysis analysis;
+
+  @override
+  Widget build(BuildContext context) {
+    final rows = _evidenceRows(analysis);
+    final text = _careText(analysis);
+
+    // 칩도 문장도 하이라이트도 근거도 없는 응답(새 필드 이전 서버 + 요약까지 빈
+    // 기록)이면 제목만 남는다. 빈 카드는 오류처럼 보이므로 통째로 접는다.
+    if (analysis.careFocus.isEmpty &&
+        text == null &&
+        analysis.highlights.isEmpty &&
+        rows.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // 제목을 Expanded 로 감싼다. 글자 크기 2.0 에서 14px 제목이 두 배가 되어
+        // 한 줄에 들어가지 않는다 — 감싸 두면 그때만 두 줄로 접힌다.
+        const Row(
+          children: [
+            LeafMark(),
+            SizedBox(width: 6),
+            Expanded(
+              child: Text(
+                '지금 피부가 필요로 하는 관리',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.bodyInk,
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        // 관리 축 칩. 서버가 지표에서 규칙으로 낸 것을 라벨 그대로 그린다.
+        if (analysis.careFocus.isNotEmpty) ...[
+          Wrap(
+            spacing: 9,
+            runSpacing: 9,
+            children: [
+              for (final focus in analysis.careFocus)
+                Container(
+                  height: 22,
+                  padding: const EdgeInsets.symmetric(horizontal: 14),
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: AppColors.background,
+                    border: Border.all(color: AppColors.primary),
+                    borderRadius: BorderRadius.circular(11),
+                  ),
+                  child: Text(
+                    focus.label,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.primary,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 12),
+        ],
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
+          decoration: BoxDecoration(
+            color: AppColors.surfaceCardSand,
+            borderRadius: BorderRadius.circular(11),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // 서버가 만든 권고 문단. 없으면 관찰 요약으로 떨어지고, 그것마저
+              // 없으면 자리를 비운다 — 둘 다 서버 문장이고 앱이 짓는 문장은
+              // 하나도 없다. "두드러지는 지표가 없어요" 같은 문장을 앱이 채우면
+              // 그건 서버가 하지 않은 판정이다.
+              if (text != null)
+                Text(
+                  text,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w300,
+                    height: 20 / 12,
+                    color: Color(0xFF4D1700),
+                  ),
+                ),
+              if (analysis.highlights.isNotEmpty) ...[
+                const SizedBox(height: 14),
+                const Divider(height: 1, color: AppColors.borderOnCream),
+                const SizedBox(height: 10),
+                for (final highlight in analysis.highlights)
+                  HighlightRow(highlight: highlight),
+              ],
+              // 지표 숫자가 왜 그 숫자인지. 서버가 사진에서 본 것을 지표당 최대
+              // 2줄로 내려준다 — 앱이 점수에서 문장을 짓지 않는다. 확장 필드가
+              // 없던 기록은 근거가 비어 있고, 그때는 토글째 사라진다.
+              if (rows.isNotEmpty) _EvidenceSection(rows: rows),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// 카드 문단에 쓸 문장. **서버가 준 것만 쓴다.**
+///
+/// 1순위는 `careMessage`(관리 권고), 없으면 `summary`(AI 관찰 요약), 둘 다 없으면
+/// 고정 문구다. 마지막 폴백은 지표가 다 정상인 예전 분석에서만 나온다 —
+/// 지금 서버는 그 경우에도 "지금 균형 유지" 권고를 준다.
+/// 관리 문단으로 쓸 **서버 문장**. 없으면 null 이다.
+///
+/// `careMessage`(서버가 지표에서 만든 권고) → `summary`(AI 관찰 요약) 순이다.
+/// 둘 다 없으면 아무 문장도 만들지 않는다.
+String? _careText(SkinAnalysis analysis) {
+  if (analysis.careMessage case final message? when message.isNotEmpty) {
+    return message;
+  }
+  if (analysis.summary.isNotEmpty) return analysis.summary;
+  return null;
+}
 
 /// 관찰 근거를 그리는 순서와 이름.
 ///
@@ -429,49 +718,6 @@ class _EvidenceSection extends StatelessWidget {
   }
 }
 
-class _Metric extends StatelessWidget {
-  const _Metric({
-    required this.label,
-    required this.band,
-    required this.icon,
-    required this.foreground,
-    required this.background,
-  });
-
-  final String label;
-  final MetricBand band;
-  final IconData icon;
-  final Color foreground;
-  final Color background;
-
-  @override
-  Widget build(BuildContext context) {
-    return Expanded(
-      child: Column(
-        children: [
-          Container(
-            width: 57,
-            height: 57,
-            decoration: BoxDecoration(shape: BoxShape.circle, color: background),
-            child: Icon(icon, size: 24, color: foreground),
-          ),
-          const SizedBox(height: 10),
-          Text(label,
-              style:
-                  const TextStyle(fontSize: 12, color: Color(0xFF1A1A1A))),
-          const SizedBox(height: 4),
-          Text(band.label,
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: band.color,
-              )),
-        ],
-      ),
-    );
-  }
-}
-
 /// AI 추정 피부 나이 카드.
 ///
 /// 실제 나이를 맞히는 것이 아니라 사진 기반 외관 추정이라, 보조 문구를 항상 같이
@@ -485,77 +731,72 @@ class _SkinAgeCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(18, 18, 18, 20),
-      decoration: BoxDecoration(
-        color: AppColors.background,
-        border: Border.all(color: AppColors.primary, width: 0.6),
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              // Flexible 이 없으면 시스템 글자 크기를 키웠을 때 하드 오버플로다.
-              // 두 자식이 다 고정 크기라 늘어날 자리가 없다.
-              // Flexible + Spacer 로 두면 남는 폭을 반씩 나눠 가져서, Spacer 가
-              // 120px 를 붙들고 있는데 제목만 "AI 추정 피부 나…" 로 잘린다.
-              // Expanded 하나면 오른쪽 정렬은 그대로고 제목이 여유를 다 쓴다.
-              const Expanded(
-                child: Text(
-                  'AI 추정 피부 나이',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textPrimary,
-                  ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Row(
+          children: [
+            LeafMark(),
+            SizedBox(width: 6),
+            Expanded(
+              child: Text(
+                'AI 추정 피부 나이',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.bodyInk,
                 ),
               ),
-              const SizedBox(width: 8),
-              Text.rich(
-                TextSpan(
-                  children: [
-                    TextSpan(
-                      text: '${skinAge.estimatedSkinAge}',
-                      style: const TextStyle(
-                        fontSize: 26,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.textPrimary,
-                        height: 1,
-                      ),
-                    ),
-                    const TextSpan(
-                      text: '세',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
-                        color: AppColors.textPrimary,
-                        height: 1,
-                      ),
-                    ),
-                  ],
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
+          decoration: BoxDecoration(
+            color: AppColors.surfaceCardSand,
+            borderRadius: BorderRadius.circular(11),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                '${skinAge.estimatedSkinAge}세',
+                style: const TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF1A1A1A),
+                ),
+              ),
+              if (skinAge.assessment.isNotEmpty) ...[
+                const SizedBox(height: 12),
+                Text(
+                  skinAge.assessment,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w300,
+                    height: 20 / 12,
+                    color: Color(0xFF4D1700),
+                  ),
+                ),
+              ],
+              const SizedBox(height: 10),
+              // 실제 나이를 맞히는 것이 아니라 사진 기반 외관 추정이라, 보조
+              // 문구를 항상 같이 띄운다. 숫자만 놓으면 측정값으로 읽힌다.
+              const Text(
+                '사진 속 피부결, 주름, 탄력, 피부톤 등을 종합한 AI 추정값입니다.',
+                style: TextStyle(
+                  fontSize: 9,
+                  fontWeight: FontWeight.w300,
+                  height: 1.5,
+                  color: Color(0xFF4D1700),
                 ),
               ),
             ],
           ),
-          if (skinAge.assessment.isNotEmpty) ...[
-            const SizedBox(height: 14),
-            Text(
-              skinAge.assessment,
-              style: const TextStyle(
-                  fontSize: 12, color: AppColors.textBody, height: 1.5),
-            ),
-          ],
-          const SizedBox(height: 12),
-          const Text(
-            '사진 속 피부결, 주름, 탄력, 피부톤 등을 종합한 AI 추정값입니다.',
-            style: TextStyle(fontSize: 10, color: AppColors.textBody, height: 1.4),
-          ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }
@@ -642,17 +883,62 @@ class _GapCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('평소 생각하신 타입 : ${gap.declared.label}'),
-            Text('오늘 측정 기준     : ${gap.observed.label}'),
-            const Divider(),
-            Text(gap.message),
-          ],
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 18),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceCardSand,
+        borderRadius: BorderRadius.circular(11),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              _GapChip(label: '평소 생각', value: gap.declared.label),
+              _GapChip(label: '오늘 측정', value: gap.observed.label),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Text(
+            gap.message,
+            style: const TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w300,
+              height: 20 / 12,
+              color: Color(0xFF4D1700),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// 갭 카드의 두 칸. "평소 생각 · 지성" 처럼 라벨과 값을 한 칩에 담는다.
+class _GapChip extends StatelessWidget {
+  const _GapChip({required this.label, required this.value});
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: AppColors.background,
+        border: Border.all(color: AppColors.borderOnCream),
+        borderRadius: BorderRadius.circular(11),
+      ),
+      child: Text(
+        '$label · $value',
+        style: const TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
+          color: AppColors.primary,
         ),
       ),
     );
@@ -692,26 +978,56 @@ class _SkinTypePromptState extends ConsumerState<_SkinTypePrompt> {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text('평소 본인 피부는 어떻다고 생각하세요?'),
-            const SizedBox(height: 12),
-            Wrap(
-              spacing: 8,
-              children: [
-                for (final type in SkinType.selectable)
-                  ActionChip(
-                    label: Text(type.label),
-                    onPressed: _busy ? null : () => _select(type),
-                  ),
-              ],
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 18),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceCardSand,
+        borderRadius: BorderRadius.circular(11),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            '평소 본인 피부는 어떻다고 생각하세요?',
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: AppColors.bodyInk,
             ),
-          ],
-        ),
+          ),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              for (final type in SkinType.selectable)
+                GestureDetector(
+                  onTap: _busy ? null : () => _select(type),
+                  behavior: HitTestBehavior.opaque,
+                  child: Container(
+                    height: 22,
+                    padding: const EdgeInsets.symmetric(horizontal: 14),
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: AppColors.background,
+                      border: Border.all(
+                          color: _busy ? AppColors.disabled : AppColors.primary),
+                      borderRadius: BorderRadius.circular(11),
+                    ),
+                    child: Text(
+                      type.label,
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: _busy ? AppColors.disabled : AppColors.primary,
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ],
       ),
     );
   }

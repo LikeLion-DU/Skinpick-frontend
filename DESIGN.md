@@ -3,7 +3,7 @@ name: 스킨픽
 design_system_name: Skin Plate UI
 slug: skin-plate-ui
 category: health
-last_updated: "2026-08-15"
+last_updated: "2026-08-19"
 created_at: 2026-08-09
 sources:
   - lib/app/theme/app_colors.dart
@@ -12,7 +12,7 @@ sources:
   - lib/app/router/app_router.dart
   - lib/app/config/feature_flags.dart
   - pubspec.yaml
-  - lib/shared/enums/score_grade.dart
+  - lib/shared/enums/skin_level.dart
   - lib/shared/enums/highlight_status.dart
   - lib/shared/enums/skin_type.dart
   - lib/shared/enums/meal_type.dart
@@ -48,6 +48,35 @@ logo: assets/icons/logo_skinpick.svg
 ---
 
 # Skin Plate UI — design.md
+
+> **2026-08-19 · 확정 시안(Figma `최종유아이` 캔버스) 반영 중.** 이 문서의 본문은
+> 08-15 시점, 즉 **그 앞 시안**을 기록한 것이라 아래 항목은 이미 코드와 다르다.
+> 값을 옮겨 쓰기 전에 이 목록을 먼저 확인할 것 — 본문 갱신은 따로 한다.
+>
+> | 무엇 | 옛 시안(본문) | 확정 시안(현재 코드) |
+> |---|---|---|
+> | 홈 배경 | 흰색 + 크림 카드 | **오렌지 그라디언트 히어로**(`#FF7D40` → 흰색, 41.37%) + 흰 글자 |
+> | 홈 점수 | 크림 카드 안 40/25, 기록 없으면 `OO점` | 배경 위 64/32, 기록 없으면 **말풍선**(숫자 자리 없음) |
+> | 하단 네비 | 흰 알약 · FAB `#FF5404`→`#FFD240` | 살구 알약(`#FFAF89` α0.64) · FAB `#FF4D00`→`#FF7D40` |
+> | 피부 결과 지표 | 원 4개(수분·유분·홍조·장벽) | **막대 5개**(트러블 포함) + 0/50/100 눈금 |
+> | 음식 결과 점수 | 크림 카드 + 원형 게이지 | 배경 위 64/32 + 등급 배지 (게이지는 리포트로) |
+> | 음식 결과 요약 | GOOD/BAD 한 카드 | **두 카드 나란히**(`#F7F9F3` / `#FFEDED`) |
+> | 리포트 | 제목 + 내용이 배경 위 | **흰 카드 여러 장**(radius 10, 그림자 `#D9D9D9`) + 날짜 이동 |
+> | 리포트 탭 | 크림 알약(radius 100) | 회색 트랙 `#F3F3F3`(radius 10) + 흰 칸 |
+> | 프로필 설문 | 한 스크롤 · 진행 점 4개 | **탭 3단계** + 진행 막대 · 동그라미 글리프 타일 |
+> | 스플래시 | 흰 배경 + 2색 로고 | 대각선 오렌지(`#FFAD87`→`#FF5101`) + 흰 로고 |
+> | 마이페이지 | 없음(피부 프로필 화면) | 마스코트 · 타입 카드 · 지표 5칸 · 습관 카드 |
+>
+> **새로 생긴 토큰** — `surfaceCardWarm` `surfaceCardSand` `accentStrong`
+> `progressFill` `badgeNeutralBg` `navPill` `mascotGlow` `bubble` `bodyInk`
+> `metricBar*`(5) `gray*`(5) · `AppTheme.floatingCardRadius`
+> `floatingCardShadow` `heroTextShadow`.
+>
+> **시안에 있고 서버에 없어서 안 그린 것** — "민감도 높음" 배지 · 관리 방향 칩
+> (수분·장벽 / 향산화 / 건강한 지방 섭취) · 고민별 설명 문장과 해시태그 ·
+> 피부 영양 포인트(비타민C·오메가3·아연) · 기록 카드의 주요영양 칩 ·
+> BEST/개선일 썸네일 · 피부 타입 "수부지".
+
 
 ## Brand & Style
 
@@ -525,7 +554,7 @@ PRD §6 원칙 6이 요구한 "점수가 눈앞에서 움직이는" 재계산 �
 4. `lib/app/router/app_router.dart` — 화면 ID(S00~S09)와 경로, 인증 가드.
 5. `lib/app/config/feature_flags.dart` — 시안에 없어 진입점만 막은 기능(행동 시뮬레이션·추천 화면)과 그 이유.
 6. `pubspec.yaml` — Pretendard 4종 동봉 근거, `flutter_svg` 도입 이유, 자산 목록.
-7. `lib/shared/enums/score_grade.dart` — 점수 → 등급 → 색(solid·tint·accent) 변환의 유일한 통로.
+7. `lib/shared/enums/skin_level.dart` — 점수 → 등급 → 색(solid·tint·accent) 변환의 유일한 통로. (옛 `score_grade.dart` 는 경계 75/60 을 따로 쓰다가 홈과 리포트의 등급이 갈려서 없어졌다.)
 8. `lib/shared/enums/highlight_status.dart` — 하이라이트 상태 파서. 모르는 값을 `warn` 으로 떨어뜨리는 이유.
 9. `lib/shared/enums/skin_type.dart` — 피부 타입 어휘와 선택 칩 목록.
 10. `lib/shared/enums/meal_type.dart` — 끼니 표기. 모르는 값을 비우는 이유.

@@ -18,6 +18,8 @@ import '../../../../core/camera/camera_error_message.dart';
 import '../../../../core/camera/preview_fit.dart';
 import '../../../../core/utils/photo_picker.dart';
 import '../../../../core/widgets/camera_preview_box.dart';
+import '../../../../shared/widgets/ray_ring.dart';
+import '../../../../shared/widgets/skin_mascot.dart';
 import '../../data/datasources/face_gate.dart';
 import '../../domain/captured_image_validator.dart';
 import '../../domain/entities/face_gate_result.dart';
@@ -650,6 +652,15 @@ class _SkinCapturePageState extends ConsumerState<SkinCapturePage>
               const SizedBox(height: 12),
               Text('정확한 분석을 위해 정면, 좌측, 우측 사진을\n촬영해주세요.',
                   style: Theme.of(context).textTheme.bodyMedium),
+              const Spacer(),
+              // 시안은 이 자리에 마스코트를 방사 눈금 고리 안에 세운다. 촬영 중
+              // 얼굴 가이드와 같은 고리라, 안내에서 본 자리에 얼굴을 넣게 된다.
+              const Center(
+                child: RayRing(
+                  diameter: 300,
+                  child: SkinMascot(size: 176),
+                ),
+              ),
               const Spacer(),
               ElevatedButton(
                 onPressed: () {
@@ -1342,7 +1353,10 @@ class _FaceGuidePainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    // 시안 비율 — 프레임 402 에 타원 306×390, 세로 중심은 위쪽 47%.
+    // **높이 비율(0.45)을 건드리지 마라.** 게이트는 얼굴 높이가 프레임의
+    // 0.34~0.65 일 때 통과시킨다(`FaceGateConfig`). 이 타원이 그 구간 가운데를
+    // 가리키도록 맞춰 놓은 값이라, 지름을 폭 기준으로 바꾸면 기기 화면비에 따라
+    // 목표가 통과 구간 밖으로 밀린다 — 가이드에 얼굴을 맞췄는데 안 찍히는 화면이 된다.
     final oval = Rect.fromCenter(
       center: Offset(size.width / 2, size.height * 0.47),
       width: size.width * 0.76,
@@ -1358,23 +1372,39 @@ class _FaceGuidePainter extends CustomPainter {
       Paint()..color = Colors.black.withValues(alpha: 0.45),
     );
 
+    // 확정 시안이 흰 얇은 타원과 방위점 4개를 **오렌지 고리 + 방사 눈금**으로
+    // 바꿨다. 통과했을 때 초록으로 바뀌는 것은 남긴다 — 시안에는 통과 상태가
+    // 없지만, 색이 안 바뀌면 사용자가 언제 셔터를 눌러도 되는지 알 수 없다.
+    final color = passing ? Colors.greenAccent : AppColors.primary;
+
     canvas.drawOval(
       oval,
       Paint()
         ..style = PaintingStyle.stroke
-        ..strokeWidth = passing ? 3 : 1.5
-        ..color = passing ? Colors.greenAccent : Colors.white,
+        ..strokeWidth = passing ? 4 : 3
+        ..color = color,
     );
 
-    // 시안의 방위점 4개 — 상·하·좌·우.
-    final dot = Paint()..color = passing ? Colors.greenAccent : Colors.white;
-    for (final point in [
-      oval.topCenter,
-      oval.bottomCenter,
-      oval.centerLeft,
-      oval.centerRight,
-    ]) {
-      canvas.drawCircle(point, 5.5, dot);
+    // 눈금은 타원 둘레를 따라 세운다. 원 기준으로 그리면 세로로 긴 타원 옆에서
+    // 눈금만 동그랗게 돌아 두 모양이 어긋난다.
+    const tickCount = 44;
+    final tick = Paint()
+      ..strokeWidth = 2
+      ..strokeCap = StrokeCap.round
+      ..color = color;
+
+    for (var index = 0; index < tickCount; index++) {
+      final angle = 2 * math.pi * index / tickCount;
+      final unit = Offset(math.cos(angle), math.sin(angle));
+      final base = Offset(
+        oval.center.dx + unit.dx * (oval.width / 2 + 7),
+        oval.center.dy + unit.dy * (oval.height / 2 + 7),
+      );
+      final end = Offset(
+        oval.center.dx + unit.dx * (oval.width / 2 + 21),
+        oval.center.dy + unit.dy * (oval.height / 2 + 21),
+      );
+      canvas.drawLine(base, end, tick);
     }
   }
 

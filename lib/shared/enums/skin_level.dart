@@ -2,13 +2,13 @@ import 'package:flutter/material.dart';
 
 import '../../app/theme/app_colors.dart';
 
-/// **앱의 유일한 총점 등급.** 서버 `SkinLevel` 과 이름·경계가 같다.
+/// **앱의 유일한 총점 등급.** 이름은 서버 `SkinLevel` 과 같다.
 ///
-/// 서버가 등급을 보내는 자리(리포트의 `grade`·`status`)에서는 [fromJson] 으로 그
-/// 값을 그대로 쓰고, 서버가 점수만 보내는 자리(홈 카드·기록 카드·결과 화면)에서만
-/// [fromScore] 로 같은 경계를 적용한다. **경계표는 이 파일 한 곳뿐이다** —
-/// 화면마다 다른 임계값을 두면 같은 68점이 홈에서는 "보통", 리포트에서는 "좋음"이
-/// 된다. 실제로 그랬다.
+/// **앱에 경계표(20/40/60/80)가 없다.** 등급은 점수를 보내는 모든 응답이 함께
+/// 실어 보내므로 [fromJson] 으로 받기만 한다. 앱이 점수에서 다시 매기던 시절에는
+/// 같은 표가 서버와 앱 두 곳에 있었고, 서버가 경계를 옮기면 한쪽만 따라갔다.
+///
+/// 모르는 값은 null 이라 등급 배지가 사라진다 — 틀린 등급보다 없는 등급이 낫다.
 ///
 /// 표시는 3단계(좋음·보통·주의)로 접는다. 판정은 서버의 5단계 그대로 두고 **말만**
 /// 줄이는 것이라, 등급을 앱이 다시 매기는 것이 아니다. 접는 규칙이 [label] 이다.
@@ -30,23 +30,6 @@ enum SkinLevel {
       if (level.wire == value) return level;
     }
     return null;
-  }
-
-  /// 점수에서 등급을 낸다. **서버 `SkinLevel.of(int)` 과 한 글자도 다르면 안 된다** —
-  /// 리포트는 서버가 매긴 등급을 그리고 홈·기록은 이 함수가 매긴 등급을 그리므로,
-  /// 두 식이 갈리는 순간 같은 점수가 화면마다 다른 등급으로 보인다.
-  ///
-  /// 경계는 서버가 정한 것을 옮겨 온 것이지 앱이 새로 만든 것이 아니다
-  /// (0~20 SEVERE · 21~40 CAUTION · 41~60 NORMAL · 61~80 GOOD · 81~100 EXCELLENT).
-  ///
-  /// 히스토리 응답에 `grade` 필드가 생기면 이 함수를 쓰는 자리를 [fromJson] 으로
-  /// 옮기고 여기를 지우는 것이 맞다.
-  static SkinLevel fromScore(int score) {
-    if (score <= 20) return SkinLevel.severe;
-    if (score <= 40) return SkinLevel.caution;
-    if (score <= 60) return SkinLevel.normal;
-    if (score <= 80) return SkinLevel.good;
-    return SkinLevel.excellent;
   }
 
   /// 좋음 구간인지. 시안이 "좋음일 때만 초록"으로 칠하는 자리가 몇 군데 있다.

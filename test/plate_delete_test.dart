@@ -14,6 +14,7 @@ import 'package:skinplate/features/skin_plate/domain/repositories/plate_reposito
 import 'package:skinplate/features/skin_plate/presentation/pages/plate_history_page.dart';
 import 'package:skinplate/features/skin_plate/presentation/providers/plate_history_provider.dart';
 import 'package:skinplate/shared/enums/meal_type.dart';
+import 'package:skinplate/shared/enums/skin_level.dart';
 import 'package:skinplate/shared/enums/plate_action_code.dart';
 
 /// 기록 삭제는 되돌릴 수 없다 — 서버 기록도 기기 사진도 사라진다.
@@ -31,6 +32,9 @@ void main() {
         plateId: 7,
         foodName: '소시지 플래터',
         plateScore: 81,
+        grade: SkinLevel.excellent,
+        // 서버가 고른 주요영양 태그. 앱이 영양 목록을 갖지 않는다.
+        highlightTags: const ['나트륨', '단백질', '포화지방'],
         mealType: MealType.dinner,
         recordedAt: DateTime.now(),
       ),
@@ -47,6 +51,30 @@ void main() {
           home: const PlateHistoryPage(),
         ),
       );
+
+  testWidgets('주요영양 태그와 등급을 서버가 준 대로 그린다', (tester) async {
+    await tester.binding.setSurfaceSize(designSize);
+    await tester.pumpWidget(host(_FakeRepository()));
+    await tester.pumpAndSettle();
+
+    expect(find.text('주요영양'), findsOneWidget);
+    for (final tag in ['나트륨', '단백질', '포화지방']) {
+      expect(find.text(tag), findsOneWidget, reason: '$tag 칩이 없다');
+    }
+    // 81 점을 앱이 다시 등급으로 바꾸지 않는다 — 서버가 준 EXCELLENT 를 옮긴다.
+    expect(find.text('GOOD'), findsOneWidget);
+  });
+
+  testWidgets('글자 크기 2.0 — 태그 줄이 넘치지 않는다', (tester) async {
+    await tester.binding.setSurfaceSize(designSize);
+    await tester.pumpWidget(MediaQuery(
+      data: const MediaQueryData(textScaler: TextScaler.linear(2.0)),
+      child: host(_FakeRepository()),
+    ));
+    await tester.pumpAndSettle();
+
+    expect(tester.takeException(), isNull);
+  });
 
   testWidgets('× 를 눌러도 바로 지우지 않고 먼저 묻는다', (tester) async {
     final repository = _FakeRepository();

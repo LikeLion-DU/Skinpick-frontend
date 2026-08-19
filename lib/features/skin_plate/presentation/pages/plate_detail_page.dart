@@ -88,7 +88,7 @@ class _Body extends StatelessWidget {
         ),
         FoodTraitChips(food: plate.food),
         const SizedBox(height: 18),
-        PlateScoreCard(score: plate.plateScore),
+        PlateScoreCard(score: plate.plateScore, grade: plate.grade),
         const SizedBox(height: 26),
         // 저장된 기록도 같은 근거를 보여준다. 그때 채점에 쓰인 분석 id 로 읽으므로
         // 그 뒤에 피부를 다시 분석했어도 이 기록의 기준은 바뀌지 않는다.

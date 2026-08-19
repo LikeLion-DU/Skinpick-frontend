@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:skinplate/shared/enums/skin_level.dart';
 
@@ -5,40 +7,23 @@ import 'package:skinplate/shared/enums/skin_level.dart';
 ///
 /// 예전에는 앱이 75/60 경계(ScoreGrade)를 쓰고 서버는 80/60/40/20 경계를 써서,
 /// 같은 68점이 홈에서는 "보통", 리포트에서는 "좋음"으로 떴다. 실기기에서 잡힌
-/// 사고라 여기 경계값을 고정해 둔다.
+/// 사고다. 그 뒤로 앱이 서버 경계를 옮겨 적어 두었는데, 그것도 결국 표가 두 벌인
+/// 것이라 **이제는 앱에 경계표가 아예 없다** — 점수를 보내는 응답이 등급도 함께
+/// 보내고 앱은 그 문자열만 읽는다.
 ///
-/// **이 표는 서버 `SkinLevel.of(int)` 을 옮겨 온 것이다.** 서버가 경계를 바꾸면
-/// 이 테스트가 먼저 깨져야 한다 — 그래야 두 곳이 조용히 갈리지 않는다.
+/// 그래서 이 파일이 지키는 것은 두 가지다. 앱이 점수에서 등급을 다시 매기지
+/// 않는다는 것, 그리고 5단계를 3단계 라벨로 접는 규칙이 한 곳에만 있다는 것.
 void main() {
-  group('경계값에서 한 칸씩 갈린다', () {
-    test('81 부터 EXCELLENT, 80 은 아직 GOOD', () {
-      expect(SkinLevel.fromScore(81), SkinLevel.excellent);
-      expect(SkinLevel.fromScore(80), SkinLevel.good);
-      expect(SkinLevel.fromScore(79), SkinLevel.good);
-    });
+  test('앱에는 점수→등급 표가 없다 — 서버가 매긴 것만 읽는다', () {
+    // 이 테스트는 코드가 아니라 **소스**를 본다. 등급을 점수에서 내는 함수가
+    // 다시 생기면(=경계표가 두 벌이 되면) 여기서 먼저 걸린다.
+    final source = File('lib/shared/enums/skin_level.dart').readAsStringSync();
 
-    test('61 부터 GOOD, 60 은 NORMAL', () {
-      expect(SkinLevel.fromScore(61), SkinLevel.good);
-      expect(SkinLevel.fromScore(60), SkinLevel.normal);
-      expect(SkinLevel.fromScore(59), SkinLevel.normal);
-    });
-
-    test('41 부터 NORMAL, 40 은 CAUTION', () {
-      expect(SkinLevel.fromScore(41), SkinLevel.normal);
-      expect(SkinLevel.fromScore(40), SkinLevel.caution);
-      expect(SkinLevel.fromScore(39), SkinLevel.caution);
-    });
-
-    test('21 부터 CAUTION, 20 은 SEVERE', () {
-      expect(SkinLevel.fromScore(21), SkinLevel.caution);
-      expect(SkinLevel.fromScore(20), SkinLevel.severe);
-      expect(SkinLevel.fromScore(19), SkinLevel.severe);
-    });
-
-    test('0 과 100 에서도 등급이 나온다 — 화면이 비지 않는다', () {
-      expect(SkinLevel.fromScore(0), SkinLevel.severe);
-      expect(SkinLevel.fromScore(100), SkinLevel.excellent);
-    });
+    expect(source, isNot(contains('fromScore')));
+    for (final boundary in ['20', '40', '60', '80']) {
+      expect(source, isNot(contains('score <= $boundary')),
+          reason: '경계 $boundary 이 앱으로 돌아왔다');
+    }
   });
 
   group('5단계를 3단계 한글 라벨로 접는다', () {
@@ -69,25 +54,13 @@ void main() {
     });
   });
 
-  group('서버가 준 등급과 점수에서 낸 등급이 같은 표를 지난다', () {
-    test('리포트가 받은 grade 와 홈이 계산한 grade 가 일치한다', () {
-      // 리포트는 서버가 보낸 문자열을, 홈·기록은 점수를 등급으로 바꾼다.
-      // 두 경로가 같은 답을 내야 68점이 어느 화면에서나 "좋음"이다.
-      const cases = <int, String>{
-        92: 'EXCELLENT',
-        68: 'GOOD',
-        60: 'NORMAL',
-        35: 'CAUTION',
-        12: 'SEVERE',
-      };
-
-      for (final entry in cases.entries) {
-        expect(
-          SkinLevel.fromScore(entry.key),
-          SkinLevel.fromJson(entry.value),
-          reason: '${entry.key}점',
-        );
+  group('서버 문자열을 그대로 읽는다', () {
+    test('서버 enum 이름 다섯 개를 모두 안다', () {
+      // 서버 SkinLevel 의 이름이다. 하나라도 못 읽으면 그 등급의 배지가 사라진다.
+      for (final wire in ['SEVERE', 'CAUTION', 'NORMAL', 'GOOD', 'EXCELLENT']) {
+        expect(SkinLevel.fromJson(wire), isNotNull, reason: wire);
       }
+      expect(SkinLevel.values, hasLength(5));
     });
 
     test('모르는 등급은 null 이다 — 아무 등급으로나 떨어뜨리지 않는다', () {

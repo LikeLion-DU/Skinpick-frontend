@@ -1,14 +1,17 @@
 import 'package:flutter/material.dart';
 
 import '../../app/theme/app_colors.dart';
+import 'skin_level.dart';
 
-/// 피부 지표 하나를 상태어 + 색으로 바꾼다.
+/// 지표 하나의 **상태어 + 색**. 서버가 그 지표에 매긴 등급을 화면 말로 접는다.
 ///
-/// `ScoreGrade` 와 헷갈리지 말 것. 저쪽은 **총점**(0~100 합산 점수) 전용이고 경계가
-/// 75/60 이다. 여기는 **개별 지표** 전용이고 경계가 60/40 이다 — 시안이 두 축을
-/// 다르게 잡았다. 지표에 ScoreGrade 를 쓰면 홍조 50 같은 평범한 값이 빨강이 된다.
+/// **경계는 앱에 없다.** 예전에는 여기에 60/40 표가 있었고, 서버는 같은 지표를
+/// `ScoredItemDto.of` 에서 방향을 맞춘 뒤 `SkinLevel.of` 로 매겼다 — 표가 두 벌이라
+/// 값이 딱 40·60 인 날 두 곳이 갈렸다. 이제 서버 `metricDetails[].level` 만 읽는다.
 ///
-/// 방향이 반드시 필요하다 — 수분 30 은 나쁘고 홍조 30 은 좋다.
+/// 방향은 여전히 필요하다. **단어를 고르는 데만** 쓴다 — 수분이 낮으면 "부족"이고
+/// 홍조가 높으면 "주의"다. 서버는 둘 다 CAUTION 으로 보내므로(방향을 이미 맞춰
+/// 매긴다) 어느 쪽 말로 옮길지는 화면이 정한다. 판정이 아니라 어휘다.
 class MetricBand {
   const MetricBand(this.label, this.color);
 
@@ -18,21 +21,20 @@ class MetricBand {
   static const _blue = Color(0xFF3A85E2);
   static const _red = Color(0xFFFA6154);
 
-  /// 높을수록 좋은 지표(수분·장벽). 낮으면 "부족"이다.
-  static MetricBand higherIsBetter(int value) {
-    if (value < 40) return const MetricBand('부족', _blue);
-    if (value < 60) return const MetricBand('보통', AppColors.primary);
-    return const MetricBand('좋음', AppColors.good);
+  /// 서버가 준 지표 등급을 상태어로 바꾼다.
+  ///
+  /// 등급을 모르면 null 이고, 그러면 화면이 상태어 자리를 비운다 — 틀린 판정보다
+  /// 없는 판정이 낫다. (`SkinLevel.fromJson` 과 같은 규칙)
+  static MetricBand? of(SkinLevel? level,
+      {required bool higherIsBetterMetric}) {
+    return switch (level) {
+      null => null,
+      SkinLevel.excellent || SkinLevel.good =>
+        const MetricBand('좋음', AppColors.good),
+      SkinLevel.normal => const MetricBand('보통', AppColors.primary),
+      SkinLevel.caution || SkinLevel.severe => higherIsBetterMetric
+          ? const MetricBand('부족', _blue)
+          : const MetricBand('주의', _red),
+    };
   }
-
-  /// 높을수록 나쁜 지표(유분·홍조·트러블). 높으면 "주의"다.
-  static MetricBand higherIsWorse(int value) {
-    if (value >= 60) return const MetricBand('주의', _red);
-    if (value >= 40) return const MetricBand('보통', AppColors.primary);
-    return const MetricBand('좋음', AppColors.good);
-  }
-
-  /// `SkinMetrics.toBars()` 가 주는 방향 플래그로 고른다.
-  static MetricBand of(int value, {required bool higherIsBetterMetric}) =>
-      higherIsBetterMetric ? higherIsBetter(value) : higherIsWorse(value);
 }

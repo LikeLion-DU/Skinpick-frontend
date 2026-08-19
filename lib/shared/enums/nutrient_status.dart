@@ -27,4 +27,20 @@ enum NutrientStatus {
         NutrientStatus.high => higherIsWorse,
         NutrientStatus.low => !higherIsWorse,
       };
+
+  /// 타일에 찍는 상태어. **위치를 한국어로 옮긴 것이지 판정이 아니다** —
+  /// 경계는 서버가 이미 [NutrientStatus] 로 잘라서 보냈고, 어느 쪽이 나쁜지는
+  /// `higherIsWorse` 가 말한다. 앱은 그 둘을 읽어 이름만 붙인다.
+  ///
+  /// 시안은 이 자리에 **적정 · 보통 · 부족 · 주의** 네 단어를 쓰는데, 같은
+  /// `NORMAL` 구간에 적정(60%)과 보통(68%)이 섞여 있어 둘을 가르는 규칙이
+  /// 없다. 서버가 주는 세 위치에만 이름을 붙인다 — 앱이 네 번째 경계를
+  /// 만들면 그게 곧 두 곳에 생긴 판정 규칙이다.
+  String label({required bool higherIsWorse}) => switch (this) {
+        NutrientStatus.low => '부족',
+        NutrientStatus.normal => '적정',
+        // 단백질만 방향이 반대다. 많은 것이 문제가 아닌 항목에 "과다"를 쓰면
+        // 초록색 옆에 경고 단어가 붙어 화면이 자기 말을 뒤집는다.
+        NutrientStatus.high => higherIsWorse ? '과다' : '충분',
+      };
 }

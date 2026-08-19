@@ -62,7 +62,16 @@ class AppBottomNav extends StatelessWidget {
             Container(
               height: _barHeight,
               decoration: BoxDecoration(
-                color: AppColors.background,
+                // 흰색이 아니라 반투명 살구색이다. 확정 시안이 색을 바꿨다 —
+                // 홈 배경이 아래로 흰색까지 풀리기 때문에, 흰 알약은 그 위에서
+                // 윤곽이 사라지고 막대가 어디서 시작하는지 보이지 않는다.
+                //
+                // 알파는 시안 렌더에서 역산한 값이다(0xA3 ≈ 0.64). 원본 SVG 의
+                // 그룹 불투명도는 0.4 인데, 시안이 같은 그룹을 두 겹으로
+                // 깔아 둔 프레임(기록·리포트·홈 첫 화면)이 실제로는 0.64 로
+                // 보인다. 미선택 아이콘이 흰색이라 **더 진한 쪽을 택했다** —
+                // 0.4 로 깔면 흰 아이콘이 배경과 구분되지 않는다.
+                color: const Color(0xA3FFAF89),
                 borderRadius: BorderRadius.circular(100),
                 boxShadow: const [
                   BoxShadow(
@@ -138,8 +147,11 @@ class _Tab extends StatelessWidget {
               width: size,
               height: size,
               // 파일에 박힌 색을 그대로 두면 선택 상태를 표현할 수 없다.
+              // 미선택은 회색이 아니라 흰색이다. 알약이 살구색으로 바뀌면서
+              // 회색 아이콘이 배경보다 어두워져 오히려 눈에 먼저 걸렸다 —
+              // 선택된 자리보다 미선택이 진하면 어디에 있는지 헷갈린다.
               colorFilter: ColorFilter.mode(
-                selected ? AppColors.primary : AppColors.disabled,
+                selected ? AppColors.primary : Colors.white,
                 BlendMode.srcIn,
               ),
             ),
@@ -168,7 +180,10 @@ class _CaptureButton extends StatelessWidget {
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [AppColors.fabGradientTop, AppColors.fabGradientBottom],
+            // 시안이 그라디언트를 바꿨다. 옛 값(#FF5404 → #FFD240)은 아래가
+            // 노랑이라 살구색 알약 위에서 버튼이 떠 보이지 않았다. 확정 시안은
+            // 위가 진하고 아래가 밝은 오렌지 한 계열이다.
+            colors: [AppColors.accentStrong, AppColors.primary],
           ),
         ),
         child: Center(

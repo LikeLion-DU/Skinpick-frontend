@@ -11,6 +11,7 @@ import 'package:skinplate/features/auth/presentation/providers/auth_notifier.dar
 import 'package:skinplate/features/skin_analysis/domain/entities/skin_analysis.dart';
 import 'package:skinplate/features/skin_analysis/presentation/providers/skin_analysis_notifier.dart';
 import 'package:skinplate/shared/enums/highlight_status.dart';
+import 'package:skinplate/shared/enums/skin_level.dart';
 
 /// 피부 프로필은 **음식 개인화의 기준을 확인하는 화면**이다.
 /// 여기서 새로 계산하는 값이 없어야 하고, 미설정이 빈칸으로 새면 안 된다.
@@ -27,10 +28,43 @@ void main() {
       trouble: 25,
       barrier: 78,
     ),
+    // 서버가 방향을 맞춰 매긴 지표 등급. 타일의 상태어가 여기서 나온다 —
+    // 앱에는 지표 경계표가 없다.
+    metricDetails: const [
+      ScoredItem(key: 'hydration', level: SkinLevel.caution, score: 38,
+          evidence: []),
+      ScoredItem(key: 'oil', level: SkinLevel.normal, score: 52, evidence: []),
+      ScoredItem(key: 'redness', level: SkinLevel.caution, score: 64,
+          evidence: []),
+      ScoredItem(key: 'trouble', level: SkinLevel.good, score: 25,
+          evidence: []),
+      ScoredItem(key: 'barrier', level: SkinLevel.good, score: 78,
+          evidence: []),
+    ],
+    careFocus: const [
+      CareFocus(focus: 'HYDRATION', label: '수분·장벽'),
+      CareFocus(focus: 'ANTIOXIDANT', label: '항산화'),
+    ],
     summary: '건조와 홍조가 함께 보여요.',
     highlights: const [
       Highlight(label: '피부 장벽 양호', status: HighlightStatus.good),
     ],
+    analyzedAt: DateTime(2026, 8, 16, 10, 30),
+  );
+
+  /// 확장 필드가 없던 시절의 분석. 지표 값은 있고 등급은 없다.
+  final legacyAnalysis = SkinAnalysis(
+    id: 102,
+    skinScore: 58,
+    metrics: const SkinMetrics(
+      hydration: 38,
+      oil: 52,
+      redness: 64,
+      trouble: 25,
+      barrier: 78,
+    ),
+    summary: '건조와 홍조가 함께 보여요.',
+    highlights: const [],
     analyzedAt: DateTime(2026, 8, 16, 10, 30),
   );
 
@@ -64,8 +98,45 @@ void main() {
     for (final label in ['수분', '유분', '홍조', '트러블', '장벽']) {
       expect(find.text(label), findsOneWidget, reason: '$label 지표가 없다');
     }
-    expect(find.text('2026. 8. 16'), findsOneWidget);
+    // 언제 측정한 기준인지가 이 화면의 존재 이유다. 시안이 그 자리에 둔
+    // "민감도 높음" 배지는 서버에 필드가 없어 날짜로 채웠다.
+    expect(find.text('2026. 8. 16 측정'), findsOneWidget);
     expect(find.text('다크서클'), findsOneWidget);
+
+    // 상태어는 서버 등급을 옮긴 것이다. 수분은 낮아서 "부족", 홍조는 높아서
+    // "주의" — 같은 CAUTION 을 방향에 맞는 말로 옮긴다.
+    expect(find.text('부족'), findsOneWidget);
+    expect(find.text('주의'), findsOneWidget);
+    expect(find.text('보통'), findsOneWidget);
+    expect(find.text('좋음'), findsNWidgets(2));
+
+    // 관리 축 칩은 고민(다크서클)과 다른 값이다 — 제목이 둘로 나뉘어 있다.
+    expect(find.text('지금 필요한 관리'), findsOneWidget);
+    expect(find.text('수분·장벽'), findsOneWidget);
+  });
+
+  testWidgets('지표 등급이 없는 옛 분석 — 상태어만 빠지고 타일은 남는다', (tester) async {
+    await tester.binding.setSurfaceSize(designSize);
+    await tester.pumpWidget(host(latest: legacyAnalysis));
+    await tester.pumpAndSettle();
+
+    for (final label in ['수분', '유분', '홍조', '트러블', '장벽']) {
+      expect(find.text(label), findsOneWidget, reason: '$label 지표가 없다');
+    }
+    // 앱이 38 을 보고 "부족"이라 말하지 않는다 — 그게 두 번째 경계표다.
+    expect(find.text('부족'), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('글자 크기 2.0 — 지표 타일과 관리 칩이 넘치지 않는다', (tester) async {
+    await tester.binding.setSurfaceSize(designSize);
+    await tester.pumpWidget(MediaQuery(
+      data: const MediaQueryData(textScaler: TextScaler.linear(2.0)),
+      child: host(latest: analysis),
+    ));
+    await tester.pumpAndSettle();
+
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('미설정 습관은 빈칸이 아니라 미설정으로 적는다', (tester) async {

@@ -3,9 +3,9 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../app/router/app_router.dart';
 import '../../../../app/theme/app_colors.dart';
-import '../../../../app/theme/app_theme.dart';
 import '../../../../core/utils/kst_date.dart';
 import '../../../../shared/widgets/app_bottom_nav.dart';
+import '../../../../shared/widgets/top_wash.dart';
 import '../widgets/daily_report_view.dart';
 import '../widgets/weekly_report_view.dart';
 
@@ -56,26 +56,33 @@ class _ReportPageState extends State<ReportPage>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('리포트')),
-      body: SafeArea(
-        bottom: false,
-        child: Column(
-          children: [
-            _TabSelector(controller: _controller),
-            Expanded(
-              child: TabBarView(
-                controller: _controller,
-                children: [
-                  for (final tab in ReportTab.values)
-                    switch (tab) {
-                      ReportTab.daily => DailyReportView(date: _today),
-                      ReportTab.weekly => const WeeklyReportView(),
-                    },
-                ],
-              ),
+      // AppBar 를 두지 않는다. 시안은 이 화면의 맨 위를 오렌지 물 + 탭 알약으로
+      // 채우는데, AppBar 를 두면 그 위에 흰 띠가 하나 더 얹혀 물이 잘린다.
+      // 리포트는 하단 네비의 탭이라 뒤로가기 버튼도 필요 없다.
+      body: Stack(
+        children: [
+          const TopWash(),
+          SafeArea(
+            bottom: false,
+            child: Column(
+              children: [
+                _TabSelector(controller: _controller),
+                Expanded(
+                  child: TabBarView(
+                    controller: _controller,
+                    children: [
+                      for (final tab in ReportTab.values)
+                        switch (tab) {
+                          ReportTab.daily => DailyReportView(date: _today),
+                          ReportTab.weekly => const WeeklyReportView(),
+                        },
+                    ],
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
       bottomNavigationBar: AppBottomNav(
         current: AppTab.report,
@@ -93,8 +100,12 @@ class _ReportPageState extends State<ReportPage>
   }
 }
 
-/// 시안의 알약 모양을 따른 탭 선택기. Material 기본 밑줄 인디케이터는
-/// 이 앱 어디에도 없어서 혼자 튄다.
+/// 시안의 탭 선택기. Material 기본 밑줄 인디케이터는 이 앱 어디에도 없어서
+/// 혼자 튄다.
+///
+/// 확정 시안이 알약(radius 100)을 **모난 사각(radius 10)** 으로 바꾸고 트랙을
+/// 크림에서 회색(#F3F3F3)으로 내렸다. 오렌지 물 위에 크림 트랙을 두면 배경과
+/// 같은 계열이라 트랙이 안 보이고, 선택된 흰 칸만 떠 있는 것으로 읽힌다.
 class _TabSelector extends StatelessWidget {
   const _TabSelector({required this.controller});
 
@@ -103,33 +114,34 @@ class _TabSelector extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(
-          AppTheme.pagePadding, 8, AppTheme.pagePadding, 12),
+      padding: const EdgeInsets.fromLTRB(21, 8, 21, 4),
       child: Container(
-        padding: const EdgeInsets.all(4),
+        height: 44,
+        padding: const EdgeInsets.all(5),
         decoration: BoxDecoration(
-          color: AppColors.surfaceCard,
-          borderRadius: BorderRadius.circular(100),
+          color: const Color(0xFFF3F3F3),
+          borderRadius: BorderRadius.circular(10),
         ),
         child: TabBar(
           controller: controller,
           indicator: BoxDecoration(
             color: AppColors.background,
-            borderRadius: BorderRadius.circular(100),
+            borderRadius: BorderRadius.circular(10),
             boxShadow: const [
-              BoxShadow(color: Color(0x14000000), blurRadius: 6),
+              BoxShadow(color: Color(0x40000000), blurRadius: 6.7),
             ],
           ),
           indicatorSize: TabBarIndicatorSize.tab,
+          indicatorPadding: EdgeInsets.zero,
           dividerColor: Colors.transparent,
           labelColor: AppColors.primary,
-          unselectedLabelColor: AppColors.textSecondary,
-          labelStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
+          unselectedLabelColor: const Color(0xFFC5C5C5),
+          labelStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
           unselectedLabelStyle:
-              const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
-          splashBorderRadius: BorderRadius.circular(100),
+              const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+          splashBorderRadius: BorderRadius.circular(10),
           tabs: [
-            for (final tab in ReportTab.values) Tab(height: 38, text: tab.label),
+            for (final tab in ReportTab.values) Tab(height: 34, text: tab.label),
           ],
         ),
       ),

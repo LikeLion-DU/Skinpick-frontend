@@ -3,6 +3,7 @@ import '../../../../shared/enums/food_traits.dart';
 import '../../../../shared/enums/ingredient_tag.dart';
 import '../../../../shared/enums/plate_action_code.dart';
 import '../../../../shared/enums/skin_basis.dart';
+import '../../../../shared/enums/skin_level.dart';
 
 /// 결과 화면이 실제로 그리는 면(面)만 모은 것.
 ///
@@ -21,6 +22,10 @@ abstract interface class PlateView {
   DateTime? get skinMeasuredAt;
 
   int get plateScore;
+
+  /// [plateScore] 의 등급. **서버가 매긴다** — 앱에 경계표를 두지 않는다.
+  /// 이 필드가 없던 서버와 붙으면 null 이고, 화면은 배지를 비운다.
+  SkinLevel? get grade;
   int get baseScore;
   String get summary;
   FoodAnalysis get food;
@@ -38,6 +43,7 @@ class SkinPlate implements PlateView {
     this.skinBasis,
     this.skinMeasuredAt,
     required this.plateScore,
+    this.grade,
     this.baseScore = 70,
     required this.summary,
     required this.food,
@@ -65,6 +71,9 @@ class SkinPlate implements PlateView {
 
   @override
   final int plateScore;
+
+  @override
+  final SkinLevel? grade;
 
   /// 계산 내역 카드의 첫 줄("기본 70"). 앱이 하드코딩하면 클램프된 점수에서 역산이 틀린다.
   @override

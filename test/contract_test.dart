@@ -16,6 +16,7 @@ import 'package:skinplate/shared/enums/highlight_status.dart';
 import 'package:skinplate/shared/enums/ingredient_tag.dart';
 import 'package:skinplate/shared/enums/insight_category.dart';
 import 'package:skinplate/shared/enums/meal_type.dart';
+import 'package:skinplate/shared/enums/metric_band.dart';
 import 'package:skinplate/shared/enums/nutrient_status.dart';
 import 'package:skinplate/shared/enums/plate_action_code.dart';
 import 'package:skinplate/shared/enums/skin_basis.dart';
@@ -140,16 +141,23 @@ void main() {
     expect(analysis.skinTypeGap!.matched, isFalse);
     expect(analysis.skinTypeGap!.message, isNotEmpty);
 
-    // 지표 5개에 서버 등급과 근거가 붙어 온다. 화면 색은 아직 MetricBand 가 그리지만
-    // 값이 유실되면 다음 화면 작업에서야 드러나므로 여기서 잡는다.
+    // 지표 5개에 서버 등급과 근거가 붙어 온다. **상태어의 유일한 출처다** —
+    // 이 값이 유실되면 세 화면의 상태어가 한꺼번에 사라진다.
     expect(analysis.metricDetails.map((d) => d.key).toList(),
         ['hydration', 'oil', 'redness', 'trouble', 'barrier']);
     expect(analysis.metricDetails.first.score, 38);
-    // 등급은 DTO 층에서 본다 — 읽는 화면이 없어 도메인까지 올리지 않았다.
     // 방향을 맞춘 뒤 매긴 값이라 유분 52 는 정렬 48 로 NORMAL 이다.
-    final rawDetails = SkinAnalysisDto.fromJson(data('skin_latest')).metricDetails;
-    expect(rawDetails[1].level, 'NORMAL');
-    expect(rawDetails.map((d) => d.level), everyElement(isNotEmpty));
+    expect(analysis.levelOf('oil'), SkinLevel.normal);
+    expect(analysis.metricDetails.map((d) => d.level),
+        everyElement(isNotNull));
+    // 수분 38 은 낮아서 나쁜 쪽이고, 홍조 64 는 높아서 나쁜 쪽이다 — 서버는 둘 다
+    // CAUTION 으로 보낸다(방향을 이미 맞췄다). 화면은 같은 등급을 다른 말로 옮긴다.
+    expect(analysis.levelOf('hydration'), SkinLevel.caution);
+    expect(analysis.levelOf('redness'), SkinLevel.caution);
+    expect(MetricBand.of(analysis.levelOf('hydration'),
+            higherIsBetterMetric: true)!.label, '부족');
+    expect(MetricBand.of(analysis.levelOf('redness'),
+            higherIsBetterMetric: false)!.label, '주의');
     expect(analysis.metricDetails.first.evidence, isNotEmpty);
 
     // 오늘의 타입 + 상태. 위 skinTypeGap.observed 와 **같은 값**이어야 한다 —
@@ -453,6 +461,95 @@ void main() {
     expect(today.aiComment, isNotEmpty);
     expect(today.plates.single.mealType, isNotNull);
     expect(today.plates.single.recordedAt.year, 2026);
+
+    // **이 캡처에는 grade 도 highlightTags 도 없다** — 그 필드가 생기기 전 배포본이다.
+    // 앱이 그대로 떠야 한다: 등급 배지와 태그 줄만 사라지고 나머지는 다 나온다.
+    // (새 필드를 실은 응답은 아래 '실서버 응답 — 새 계약' 이 본다)
+    expect(plate.containsKey('grade'), isFalse);
+    expect(plate.containsKey('highlightTags'), isFalse);
+    expect(today.grade, isNull);
+    expect(today.plates.single.grade, isNull);
+    expect(today.plates.single.highlightTags, isEmpty);
+  });
+
+  /// 이번에 늘린 계약(등급 · 피부 영양 · 고민 문장 · plateIds · 관리 축)을 **실서버
+  /// 응답 원문**으로 못 박는다. 2026-08-19 로컬 서버(AI_MOCK=true) · 테스트 계정.
+  ///
+  /// 위 픽스처들은 손으로 쓴 것이라 필드명이 서버와 어긋나도 저 혼자 파싱에 성공한다.
+  /// 서버가 키를 바꾸면 json_serializable 은 조용히 기본값을 두고 화면만 빈다.
+  ///
+  /// 다시 뜨는 법:
+  ///   curl -s "$BASE/reports/daily?date=YYYY-MM-DD" -H "Authorization: Bearer $TOKEN"
+  group('실서버 응답 — 새 계약', () {
+    test('GET /reports/daily — skinNutrients · 고민 문장 · 끼니 태그', () {
+      final json = data('report_daily_live');
+
+      // 앱이 읽는 키가 실제로 그 이름으로 온다.
+      for (final key in ['dailyScore', 'grade', 'nutrition', 'skinNutrients',
+                         'concerns', 'meals']) {
+        expect(json.containsKey(key), isTrue, reason: '$key 가 없다');
+      }
+
+      final report = DailyReportDto.fromJson(json).toEntity();
+
+      // ① 피부 영양 포인트 3종. **표준 음식표에 매칭된 끼니가 없으면 status 키가
+      // 아예 없다** — 실제 응답이 그렇게 왔다(비타민C·아연은 status 없음).
+      expect(report.skinNutrients.map((item) => item.nutrient),
+          ['VITAMIN_C', 'OMEGA3', 'ZINC']);
+      final vitaminC = report.skinNutrients.first;
+      expect(vitaminC.status, isNull);
+      expect(vitaminC.isWarning, isFalse, reason: '못 잰 것을 부족으로 읽으면 안 된다');
+      // 오메가3 는 빈도(회)라 0회면 서버가 LOW 를 매긴다 — 재고 있는 값이다.
+      final omega3 = report.skinNutrients[1];
+      expect(omega3.unit, '회');
+      expect(omega3.status, NutrientStatus.low);
+
+      // ② 고민 문장과 태그. 앱이 짓지 않는다.
+      final concern = report.concerns.first;
+      expect(concern.message, isNotNull);
+      expect(concern.tags, isNotEmpty);
+
+      // ③ 끼니 카드의 주요영양 태그 + 서버가 매긴 등급.
+      expect(report.meals.first.highlightTags, isNotEmpty);
+      expect(report.meals.first.grade, isNotNull);
+      expect(report.grade, isNotNull);
+    });
+
+    test('GET /reports/weekly — BEST/WORST 에만 plateIds 가 실린다', () {
+      final json = data('report_weekly_live');
+      final weekly = WeeklyReportDto.fromJson(json).toEntity();
+
+      // ④ 실제 기록 id 다. 앱은 이 id 로 로컬 사진을 찾는다(PRD §9.6).
+      expect(weekly.bestDay!.plateIds, isNotEmpty);
+      expect(weekly.bestDay!.plateIds.every((id) => id > 0), isTrue);
+      // 추이 그래프 칸에는 키가 없다 — 썸네일을 그리지 않는 자리다.
+      final trend = (json['dailyScores'] as List).first as Map<String, dynamic>;
+      expect(trend.containsKey('plateIds'), isFalse);
+      expect(weekly.dailyScores.first.plateIds, isEmpty);
+      // 주간 고민에는 문장이 없고 태그만 온다(한 끼 문장이 한 주 옆에 붙으면 안 된다).
+      final concern = (json['concerns'] as List).first as Map<String, dynamic>;
+      expect(concern.containsKey('message'), isFalse);
+      expect(weekly.concerns.first.tags, isNotEmpty);
+    });
+
+    test('GET /skin/analyses/latest — 등급 · 지표 등급 · 관리 축', () {
+      final json = data('skin_latest_live');
+
+      for (final key in ['grade', 'metricDetails', 'careFocus', 'careMessage']) {
+        expect(json.containsKey(key), isTrue, reason: '$key 가 없다');
+      }
+
+      final analysis = SkinAnalysisDto.fromJson(json).toEntity();
+
+      // 총점 등급과 지표별 등급을 서버가 매긴다 — 앱에 경계표가 없다.
+      expect(analysis.grade, isNotNull);
+      expect(analysis.metricDetails.map((detail) => detail.level),
+          everyElement(isNotNull));
+      // ⑥ 관리 축과 문단. 라벨은 서버 문구를 그대로 쓴다.
+      expect(analysis.careFocus, isNotEmpty);
+      expect(analysis.careFocus.first.label, isNotEmpty);
+      expect(analysis.careMessage, isNotNull);
+    });
   });
 
   test('POST /plates/records — 저장되면 plateId·createdAt·foodAnalysisId 가 생긴다', () {

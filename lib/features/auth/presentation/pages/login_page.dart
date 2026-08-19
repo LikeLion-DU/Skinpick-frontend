@@ -86,8 +86,15 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                 ),
               ),
               const SizedBox(height: 14),
-              const Text('스킨픽에 오신 것을 환영합니다!',
-                  style: TextStyle(fontSize: 14, color: AppColors.textPrimary)),
+              const Text(
+                '스킨픽에 오신 것을 환영합니다!',
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w500,
+                  letterSpacing: -0.21,
+                  color: AppColors.grayBaseDarkest,
+                ),
+              ),
               const SizedBox(height: 28),
               if (expired)
                 const Padding(
@@ -145,14 +152,18 @@ class _LoginPageState extends ConsumerState<LoginPage> {
               const SizedBox(height: 56),
               const Row(
                 children: [
-                  Expanded(child: Divider(color: AppColors.borderOnWhite)),
+                  Expanded(child: Divider(color: AppColors.grayLight)),
                   Padding(
                     padding: EdgeInsets.symmetric(horizontal: 14),
                     child: Text('SNS 계정으로 로그인',
                         style: TextStyle(
-                            fontSize: 12, color: AppColors.textSecondary)),
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w600,
+                          letterSpacing: -0.16,
+                          color: AppColors.grayBase,
+                        )),
                   ),
-                  Expanded(child: Divider(color: AppColors.borderOnWhite)),
+                  Expanded(child: Divider(color: AppColors.grayLight)),
                 ],
               ),
               const SizedBox(height: 26),
@@ -216,13 +227,17 @@ class _LoginPageState extends ConsumerState<LoginPage> {
           padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
           child: Text(label,
               style: const TextStyle(
-                  fontSize: 12, color: AppColors.textSecondary)),
+                fontSize: 11.5,
+                fontWeight: FontWeight.w600,
+                letterSpacing: -0.16,
+                color: AppColors.grayBaseExtraDark,
+              )),
         ),
       );
 
   Widget _divider() => Container(
         width: 1,
-        height: 10,
-        color: AppColors.borderOnWhite,
+        height: 6,
+        color: AppColors.grayLight,
       );
 }

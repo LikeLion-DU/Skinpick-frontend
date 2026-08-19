@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../../../app/theme/app_colors.dart';
 import '../../../../app/theme/app_theme.dart';
@@ -63,15 +64,15 @@ class SkinBasisLine extends StatelessWidget {
   }
 }
 
-/// 매운 정도 · 기름기 칩.
+/// AI 가 사진에서 읽은 음식 특성 칩 — 매운 정도 · 기름기 · 예상 섭취량.
 ///
-/// 값이 없는 항목은 칩을 안 그리고, 둘 다 없으면 영역째 사라진다 — 빈 칩보다
+/// 값이 없는 항목은 칩을 안 그리고, 셋 다 없으면 영역째 사라진다 — 빈 칩보다
 /// 없는 편이 낫다. 서버 프롬프트가 "확실하지 않으면 UNKNOWN" 을 강제하고
 /// 안 매움·담백도 안 그리므로(모순 방지, [Spiciness.label] 참고) 실제로 자주 빈다.
 ///
-/// **예상 섭취량(portionSize)은 여기 없다.** 서버는 저장·리포트 환산에 계속 쓰지만
-/// 화면에는 내지 않는다 — 척도를 정의한 기준이 없는 AI 관찰값이라, 칩으로 얹으면
-/// 사용자가 자기 식사량의 근거로 읽는다.
+/// **제목이 "이 음식의 특징"이다.** 시안은 이 줄 위에 "오늘의 피부 기준"이라고
+/// 적었는데, 칩 내용은 전부 음식 쪽 관찰값이라 그 제목이 가리키는 것과 다르다.
+/// 언제 잰 피부를 기준 삼았는지는 [SkinBasisLine] 이 따로 말한다.
 class FoodTraitChips extends StatelessWidget {
   const FoodTraitChips({super.key, required this.food});
 
@@ -82,45 +83,67 @@ class FoodTraitChips extends StatelessWidget {
     final traits = <(String, String)>[
       if (food.spiciness.label case final value?) ('매운 정도', value),
       if (food.oiliness.label case final value?) ('기름기', value),
+      if (food.portionSize.label case final value?) ('예상 섭취량', value),
     ];
 
     if (traits.isEmpty) return const SizedBox.shrink();
 
     return Padding(
-      padding: const EdgeInsets.only(top: 10),
-      child: Wrap(
-        spacing: 6,
-        runSpacing: 6,
+      padding: const EdgeInsets.only(top: 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          for (final (name, value) in traits)
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-              decoration: BoxDecoration(
-                color: AppColors.surfaceCard,
-                border: Border.all(color: AppColors.borderOnCream),
-                borderRadius: BorderRadius.circular(4),
-              ),
-              child: Text(
-                '$name · $value',
-                style: const TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w500,
-                  color: AppColors.textOnCard,
-                ),
-              ),
+          const Text(
+            '이 음식의 특징',
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w400,
+              color: AppColors.primary,
             ),
+          ),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              for (final (name, value) in traits)
+                Container(
+                  height: 25,
+                  padding: const EdgeInsets.symmetric(horizontal: 10),
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFEF6EE),
+                    border: Border.all(color: const Color(0xFFFFD6C2)),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Text(
+                    '$name : $value',
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w400,
+                      color: AppColors.primary,
+                    ),
+                  ),
+                ),
+            ],
+          ),
         ],
       ),
     );
   }
 }
 
-/// "분석 요약" — GOOD / BAD 카드.
+/// "분석 요약" — GOOD / BAD 두 카드를 나란히.
 ///
 /// 서버 피드백(good·caution)을 문장으로 늘어놓는다. 시안은 GOOD 한 단락,
 /// BAD 한 단락이지만 서버는 항목 단위로 주므로 항목마다 한 줄씩 쓴다.
 /// 점수 델타는 여기 쓰지 않는다 — 시안이 숫자를 지웠고, "왜 이 점수인가"는
-/// 점수 카드가 이미 말하고 있다.
+/// 점수 줄이 이미 말하고 있다.
+///
+/// 확정 시안이 한 장을 **두 장으로 갈랐다**. 위아래로 쌓으면 GOOD 을 읽고 나서
+/// BAD 를 만나기까지 스크롤이 끼는데, 이 화면의 요점은 둘을 한눈에 견주는 것이다.
+///
+/// 한쪽이 비어도 카드를 남긴다 — 두 칸이 한 칸으로 줄면 "분석이 덜 됐다"로 읽힌다.
 class PlateSummaryCard extends StatelessWidget {
   const PlateSummaryCard({
     super.key,
@@ -133,42 +156,101 @@ class PlateSummaryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // 둘 다 비면 룰이 하나도 안 걸린 평범한 식사다. 실제로 있다 —
+    // 그때 빈 카드 두 장을 그리면 고장으로 읽히므로 한 줄로 대신한다.
+    if (good.isEmpty && caution.isEmpty) {
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+        decoration: BoxDecoration(
+          color: AppColors.background,
+          border: Border.all(color: AppColors.disabled),
+          borderRadius: BorderRadius.circular(AppTheme.cardRadius),
+        ),
+        child: const Text(
+          '특별히 걸리는 항목 없이 무난한 식사예요.',
+          style: TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.w500,
+            color: AppColors.textOnCard,
+            height: 1.5,
+          ),
+        ),
+      );
+    }
+
+    // 두 카드의 높이를 맞춘다. 글자 수가 달라 한쪽이 짧으면 나란한 두 칸이
+    // 어긋난 계단처럼 보인다.
+    return IntrinsicHeight(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Expanded(
+            child: _VerdictColumn(
+              title: 'GOOD',
+              titleColor: AppColors.good,
+              background: const Color(0xFFF7F9F3),
+              items: good,
+              emptyMessage: '이 끼니에서 특별히 좋았던 항목은 없어요.',
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: _VerdictColumn(
+              title: 'BAD',
+              titleColor: AppColors.bad,
+              background: const Color(0xFFFFEDED),
+              items: caution,
+              emptyMessage: '걸리는 항목이 없어요.',
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _VerdictColumn extends StatelessWidget {
+  const _VerdictColumn({
+    required this.title,
+    required this.titleColor,
+    required this.background,
+    required this.items,
+    required this.emptyMessage,
+  });
+
+  final String title;
+  final Color titleColor;
+  final Color background;
+  final List<PlateFeedback> items;
+  final String emptyMessage;
+
+  @override
+  Widget build(BuildContext context) {
     return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(20, 18, 20, 18),
+      padding: const EdgeInsets.fromLTRB(14, 12, 14, 16),
       decoration: BoxDecoration(
-        color: AppColors.background,
+        color: background,
         border: Border.all(color: AppColors.disabled),
         borderRadius: BorderRadius.circular(AppTheme.cardRadius),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (good.isNotEmpty) ...[
-            const Text('GOOD',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.good,
-                )),
-            const SizedBox(height: 4),
-            for (final item in good) _item(item),
-          ],
-          if (good.isNotEmpty && caution.isNotEmpty) const SizedBox(height: 14),
-          if (caution.isNotEmpty) ...[
-            const Text('BAD',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.bad,
-                )),
-            const SizedBox(height: 4),
-            for (final item in caution) _item(item),
-          ],
-          // 둘 다 비면 카드가 빈 껍데기로 남는다. 룰이 하나도 안 걸린 평범한
-          // 식사가 실제로 있다 — 그때도 침묵보다는 한 줄이 낫다.
-          if (good.isEmpty && caution.isEmpty)
-            _line('특별히 걸리는 항목 없이 무난한 식사예요.'),
+          Text(
+            title,
+            style: TextStyle(
+              fontSize: 26,
+              fontWeight: FontWeight.w600,
+              height: 1.1,
+              color: titleColor,
+            ),
+          ),
+          const SizedBox(height: 12),
+          if (items.isEmpty)
+            _line(emptyMessage, color: AppColors.textSecondary)
+          else
+            for (final item in items) _item(item),
         ],
       ),
     );
@@ -177,13 +259,12 @@ class PlateSummaryCard extends StatelessWidget {
   /// 제목 한 줄 + 설명 한 줄. 설명(reason)은 V8 이전 기록에 없으므로 그때는
   /// 제목만 그린다 — 빈 줄을 남기면 카드에 구멍이 생긴다.
   Widget _item(PlateFeedback feedback) => Padding(
-        padding: const EdgeInsets.only(bottom: 6),
+        padding: const EdgeInsets.only(bottom: 8),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _line(feedback.message, weight: FontWeight.w600),
-            if (feedback.reason case final reason?
-                when reason.isNotEmpty)
+            if (feedback.reason case final reason? when reason.isNotEmpty)
               _line(reason, color: AppColors.textSecondary),
           ],
         ),
@@ -205,7 +286,8 @@ class PlateSummaryCard extends StatelessWidget {
       );
 }
 
-/// "AI 맞춤 TIP" 크림 카드.
+/// "AI 맞춤 TIP" 카드. 기록 화면의 AI 코멘트와 같은 그라디언트다 —
+/// 둘 다 서버가 저장할 때 만들어 둔 문장이라 같은 껍데기를 쓴다.
 class PlateTipCard extends StatelessWidget {
   const PlateTipCard({super.key, required this.tip});
 
@@ -215,30 +297,41 @@ class PlateTipCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      constraints: const BoxConstraints(minHeight: 92),
-      padding: const EdgeInsets.fromLTRB(18, 18, 18, 16),
+      padding: const EdgeInsets.fromLTRB(18, 14, 18, 16),
       decoration: BoxDecoration(
-        color: AppColors.surfaceCard,
-        border: Border.all(color: AppColors.borderOnCream),
-        borderRadius: BorderRadius.circular(AppTheme.cardRadius),
+        gradient: const LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [Color(0xFFFEF7F0), Color(0xFFFFF2E4)],
+        ),
+        border: Border.all(color: const Color(0xFFE8E8E8), width: 0.8),
+        borderRadius: BorderRadius.circular(16),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('AI 맞춤 TIP',
-              style: TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w600,
-                color: Color(0xFF272727),
-              )),
-          const SizedBox(height: 8),
+          Row(
+            children: [
+              SvgPicture.asset('assets/icons/ai_sparkle.svg',
+                  width: 17, height: 17),
+              const SizedBox(width: 5),
+              const Text('AI 맞춤 TIP',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.accentStrong,
+                  )),
+            ],
+          ),
+          const SizedBox(height: 10),
           Text(
             tip,
             style: const TextStyle(
-              fontSize: 10,
-              fontWeight: FontWeight.w500,
-              color: AppColors.textOnCard,
-              height: 1.47,
+              fontSize: 12,
+              fontWeight: FontWeight.w300,
+              color: Color(0xFF411B09),
+              // 시안 행간 1.9. 좁게 두면 두 줄이 한 덩이로 뭉쳐 읽힌다.
+              height: 1.9,
             ),
           ),
         ],
@@ -271,11 +364,12 @@ class NutrientTiles extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // 순서는 시안 그대로다 — 칼로리 · 지방 · 당류 · 나트륨.
     final tiles = [
-      (Icons.local_fire_department_outlined, '칼로리', '${_comma(caloriesKcal)} kcal'),
-      (Icons.water_drop_outlined, '나트륨', '${_comma(sodiumMg)} mg'),
+      (Icons.monitor_heart_outlined, '칼로리', '${_comma(caloriesKcal)} kcal'),
+      (Icons.cloud_outlined, '지방', '${_comma(fatG)} g'),
       (Icons.icecream_outlined, '당류', '${_comma(sugarG)} g'),
-      (Icons.opacity_outlined, '지방', '${_comma(fatG)} g'),
+      (Icons.grain, '나트륨', '${_comma(sodiumMg)} mg'),
     ];
 
     return Row(
@@ -297,7 +391,7 @@ class NutrientTiles extends StatelessWidget {
                   const SizedBox(height: 6),
                   Text(tile.$2,
                       style: const TextStyle(
-                        fontSize: 10,
+                        fontSize: 11,
                         fontWeight: FontWeight.w500,
                         color: AppColors.textOnCard,
                       )),

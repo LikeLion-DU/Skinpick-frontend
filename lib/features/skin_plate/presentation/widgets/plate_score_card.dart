@@ -1,9 +1,7 @@
-import 'dart:math' as math;
-
 import 'package:flutter/material.dart';
 
 import '../../../../app/theme/app_colors.dart';
-import '../../../../app/theme/app_theme.dart';
+
 import '../../../../shared/enums/skin_level.dart';
 
 /// 분석 결과 맨 위의 "내 피부 적합도" 카드.
@@ -16,155 +14,77 @@ import '../../../../shared/enums/skin_level.dart';
 /// 넣었다가 "잘 모르겠어요 피부 기준" 이 그대로 화면에 떴다. 음식 판정은 실제
 /// 측정 지표로 하므로 기준을 말하는 자리는 [SkinBasisLine] 하나다.
 class PlateScoreCard extends StatelessWidget {
-  const PlateScoreCard({super.key, required this.score});
+  const PlateScoreCard({super.key, required this.score, required this.grade});
 
   final int score;
 
+  /// 서버가 매긴 등급. **앱이 점수에서 다시 내지 않는다** — 경계표가 두 벌이 되면
+  /// 서버가 경계를 옮긴 날 같은 점수가 화면마다 다른 등급으로 뜬다.
+  ///
+  /// 모르면(옛 서버) 숫자를 기본 잉크색으로 그리고 배지를 뺀다.
+  final SkinLevel? grade;
+
   @override
   Widget build(BuildContext context) {
-    final grade = SkinLevel.fromScore(score);
+    final grade = this.grade;
+    final numberColor = grade?.accentColor ?? AppColors.textPrimary;
 
-    return Container(
-      height: 156,
-      padding: const EdgeInsets.fromLTRB(20, 20, 16, 18),
-      decoration: BoxDecoration(
-        color: AppColors.surfaceCard,
-        border: Border.all(color: AppColors.borderOnCream),
-        borderRadius: BorderRadius.circular(AppTheme.cardRadius),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              // 기준 문구가 빠지면서 아래를 밀어 주던 Spacer 도 없어졌다.
-              // 가운데로 모아야 오른쪽 게이지(118)와 눈높이가 맞는다 —
-              // 그냥 두면 글자가 카드 위쪽에 붙고 아래가 통째로 빈다.
-              mainAxisAlignment: MainAxisAlignment.center,
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.baseline,
+      textBaseline: TextBaseline.alphabetic,
+      children: [
+        // 세 자리 점수(100점)가 와도 배지가 밀려나지 않도록 줄을 줄여서 맞춘다.
+        Flexible(
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.baseline,
+              textBaseline: TextBaseline.alphabetic,
               children: [
-                const Text(
-                  '내 피부 적합도',
+                Text(
+                  '$score',
                   style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                    color: AppColors.textOnCard,
+                    fontSize: 64,
+                    fontWeight: FontWeight.w600,
+                    height: 1,
+                    color: numberColor,
                   ),
                 ),
-                const SizedBox(height: 6),
-                // 세 자리 점수(100점)가 와도 게이지 옆 좁은 칸에서 안 넘치도록
-                // 줄 전체를 줄여서 맞춘다. 두 자리에서는 원래 크기 그대로다.
-                FittedBox(
-                  fit: BoxFit.scaleDown,
-                  alignment: Alignment.centerLeft,
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.baseline,
-                    textBaseline: TextBaseline.alphabetic,
-                    children: [
-                      Text('$score',
-                          style: const TextStyle(
-                            fontSize: 40,
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.textPrimary,
-                            height: 1,
-                          )),
-                      const Text('점',
-                          style: TextStyle(
-                            fontSize: 25,
-                            fontWeight: FontWeight.w500,
-                            color: AppColors.textPrimary,
-                            height: 1,
-                          )),
-                      const SizedBox(width: 10),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 9, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: grade.tintColor,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Text(
-                          grade.label,
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w500,
-                            color: grade.accentColor,
-                          ),
-                        ),
-                      ),
-                    ],
+                Text(
+                  '점',
+                  style: TextStyle(
+                    fontSize: 32,
+                    fontWeight: FontWeight.w600,
+                    height: 1,
+                    color: numberColor,
                   ),
                 ),
               ],
             ),
           ),
-          ScoreGauge(score: score, grade: grade),
+        ),
+        if (grade != null) ...[
+          const SizedBox(width: 12),
+          Container(
+            height: 24,
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: grade.tintColor,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Text(
+              grade.label,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+                color: grade.accentColor,
+              ),
+            ),
+          ),
         ],
-      ),
+      ],
     );
   }
-}
-
-/// 점수에 비례해 차는 원호와 등급 표정.
-class ScoreGauge extends StatelessWidget {
-  const ScoreGauge({super.key, required this.score, required this.grade});
-
-  final int score;
-  final SkinLevel grade;
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      width: 118,
-      height: 118,
-      child: CustomPaint(
-        painter: _GaugePainter(
-          // 0 점이어도 짧은 호를 남긴다. 완전히 비면 게이지가 아니라
-          // 회색 원으로 보여서 "고장났나"가 먼저 떠오른다.
-          fraction: (score / 100).clamp(0.04, 1.0),
-          color: grade.accentColor,
-        ),
-        child: Center(
-          child: Icon(grade.faceIcon, size: 44, color: grade.accentColor),
-        ),
-      ),
-    );
-  }
-}
-
-class _GaugePainter extends CustomPainter {
-  const _GaugePainter({required this.fraction, required this.color});
-
-  final double fraction;
-  final Color color;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final center = size.center(Offset.zero);
-    final radius = size.width / 2 - 5;
-
-    final track = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 8
-      ..strokeCap = StrokeCap.round
-      ..color = AppColors.background;
-    canvas.drawCircle(center, radius, track);
-
-    final arc = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 8
-      ..strokeCap = StrokeCap.round
-      ..color = color;
-    // 12시 방향에서 시작해 시계 방향으로 찬다.
-    canvas.drawArc(
-      Rect.fromCircle(center: center, radius: radius),
-      -math.pi / 2,
-      2 * math.pi * fraction,
-      false,
-      arc,
-    );
-  }
-
-  @override
-  bool shouldRepaint(_GaugePainter oldDelegate) =>
-      oldDelegate.fraction != fraction || oldDelegate.color != color;
 }

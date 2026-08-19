@@ -5,13 +5,20 @@ import 'package:flutter/material.dart';
 import '../../../../app/theme/app_colors.dart';
 import '../../../../app/theme/app_theme.dart';
 import '../../../../shared/enums/skin_level.dart';
+import '../../../../shared/widgets/section_mark.dart';
+import '../../../../shared/widgets/verdict_badge.dart';
 import '../../../skin_plate/data/datasources/plate_image_store.dart';
 import '../../../skin_plate/domain/entities/plate_history.dart';
 
-/// 홈의 "오늘의 기록" 카드.
+/// 홈의 "오늘의 기록" 카드. 오렌지 히어로 위에 떠 있는 크림 카드다.
 ///
-/// 기록이 없을 때 빈 카드를 두지 않고 `ex)` 예시 한 줄과 빈 슬롯을 보여준다.
+/// 기록이 없을 때 빈 카드를 두지 않고 예시 한 줄과 빈 슬롯을 보여준다.
 /// 무엇을 찍으면 되는지 말로 설명하는 대신 결과물을 미리 보여 주는 쪽이다.
+///
+/// 예시 줄에 `ex)` 를 붙이는 것은 시안에 없는 한 글자다. 시안은 예시를 진짜
+/// 기록과 똑같이 그리는데, 그러면 첫 사용자가 자기가 찍지 않은 "그릭요거트,
+/// 블루베리"를 자기 기록으로 읽는다. 없는 데이터를 있는 것처럼 보이게 하는
+/// 것이라 이 한 글자는 남긴다.
 class TodayRecordsCard extends StatelessWidget {
   const TodayRecordsCard({
     super.key,
@@ -19,6 +26,7 @@ class TodayRecordsCard extends StatelessWidget {
     required this.imageDirectory,
     required this.onCapture,
     required this.onItemTap,
+    required this.onSeeAll,
   });
 
   final List<PlateHistoryItem> items;
@@ -29,23 +37,88 @@ class TodayRecordsCard extends StatelessWidget {
   final VoidCallback onCapture;
   final ValueChanged<PlateHistoryItem> onItemTap;
 
+  /// 기록 화면으로 가는 **유일한 문**이다. 하단 네비에서 기록 자리를 리포트에
+  /// 내주었으므로, 이 화살표가 없으면 날짜별 기록에 닿을 방법이 사라진다.
+  final VoidCallback onSeeAll;
+
   @override
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(18, 20, 18, 18),
+      padding: const EdgeInsets.fromLTRB(22, 23, 22, 24),
       decoration: BoxDecoration(
-        color: AppColors.background,
-        border: Border.all(color: AppColors.borderOnWhite),
-        borderRadius: BorderRadius.circular(AppTheme.cardRadius),
-        boxShadow: const [
-          BoxShadow(color: Color(0x1A000000), blurRadius: 7.2),
+        color: AppColors.surfaceCardWarm,
+        borderRadius: BorderRadius.circular(AppTheme.floatingCardRadius),
+        boxShadow: const [AppTheme.floatingCardShadow],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _Header(onSeeAll: onSeeAll),
+          const SizedBox(height: 20),
+          if (items.isEmpty)
+            _Empty(onCapture: onCapture)
+          else
+            for (final item in items)
+              Padding(
+                padding: EdgeInsets.only(bottom: item == items.last ? 0 : 15),
+                child: _Row(
+                  item: item,
+                  imageDirectory: imageDirectory,
+                  onTap: () => onItemTap(item),
+                ),
+              ),
         ],
       ),
-      child: items.isEmpty ? _Empty(onCapture: onCapture) : _List(
-        items: items,
-        imageDirectory: imageDirectory,
-        onItemTap: onItemTap,
+    );
+  }
+}
+
+class _Header extends StatelessWidget {
+  const _Header({required this.onSeeAll});
+
+  final VoidCallback onSeeAll;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onSeeAll,
+      behavior: HitTestBehavior.opaque,
+      child: const Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: EdgeInsets.only(top: 2),
+            child: LeafMark(),
+          ),
+          SizedBox(width: 6),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '오늘의 기록',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.accentStrong,
+                  ),
+                ),
+                SizedBox(height: 5),
+                Text(
+                  '기록을 함께 만들어가요!',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w400,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Icon(Icons.chevron_right,
+              size: 20, color: AppColors.textSecondary),
+        ],
       ),
     );
   }
@@ -61,31 +134,25 @@ class _Empty extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          '기록을 함께 만들어가요!',
-          style: TextStyle(fontSize: 15, color: AppColors.textOnCard),
-        ),
-        const SizedBox(height: 20),
         Text('ex)', style: Theme.of(context).textTheme.bodySmall),
-        const SizedBox(height: 4),
-
-        // 실제 기록이 아니라 예시다. 진짜 기록과 헷갈리지 않도록 위에 ex) 를 둔다.
+        const SizedBox(height: 6),
         const _SampleRow(),
-        const SizedBox(height: 16),
+        const SizedBox(height: 18),
 
-        // 시안의 빈 슬롯. 눌러서 바로 촬영으로 갈 수 있게 했다 — 시안에는 + 표시만
-        // 있지만, 보이는 곳을 눌렀는데 아무 일도 없으면 고장으로 읽힌다.
+        // 시안의 빈 슬롯. 눌러서 바로 촬영으로 갈 수 있게 했다 — 시안에는 +
+        // 표시만 있지만, 보이는 곳을 눌렀는데 아무 일도 없으면 고장으로 읽힌다.
         GestureDetector(
           onTap: onCapture,
           behavior: HitTestBehavior.opaque,
           child: Container(
-            height: 184,
+            height: 157,
             decoration: BoxDecoration(
-              border: Border.all(color: AppColors.borderEmptySlot),
-              borderRadius: BorderRadius.circular(5),
+              color: AppColors.surfaceCardWarm,
+              border: Border.all(color: AppColors.primary, width: 1.5),
+              borderRadius: BorderRadius.circular(17),
             ),
             child: const Center(
-              child: Icon(Icons.add, size: 20, color: AppColors.borderEmptySlot),
+              child: Icon(Icons.add, size: 20, color: AppColors.primary),
             ),
           ),
         ),
@@ -94,83 +161,17 @@ class _Empty extends StatelessWidget {
   }
 }
 
+/// 실제 기록이 아니라 예시다. 위의 `ex)` 와 짝이다.
 class _SampleRow extends StatelessWidget {
   const _SampleRow();
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Container(
-          width: 32,
-          height: 32,
-          decoration: BoxDecoration(
-            color: AppColors.surfaceCard,
-            borderRadius: BorderRadius.circular(5),
-          ),
-          child: const Icon(Icons.ramen_dining,
-              size: 18, color: AppColors.textSecondary),
-        ),
-        const SizedBox(width: 14),
-        const Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('아침',
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.textSecondary,
-                  )),
-              SizedBox(height: 4),
-              Text('그릭요거트, 블루베리',
-                  style: TextStyle(
-                    fontSize: 10,
-                    fontWeight: FontWeight.w500,
-                    color: AppColors.textSecondary,
-                  )),
-            ],
-          ),
-        ),
-        const Text('78점',
-            style: TextStyle(
-              fontSize: 10,
-              fontWeight: FontWeight.w500,
-              color: AppColors.good,
-            )),
-        const SizedBox(width: 6),
-        const Icon(Icons.sentiment_satisfied_alt,
-            size: 20, color: AppColors.good),
-      ],
-    );
-  }
-}
-
-class _List extends StatelessWidget {
-  const _List({
-    required this.items,
-    required this.imageDirectory,
-    required this.onItemTap,
-  });
-
-  final List<PlateHistoryItem> items;
-  final Directory? imageDirectory;
-  final ValueChanged<PlateHistoryItem> onItemTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        for (final item in items)
-          Padding(
-            padding: const EdgeInsets.only(bottom: 14),
-            child: _Row(
-              item: item,
-              imageDirectory: imageDirectory,
-              onTap: () => onItemTap(item),
-            ),
-          ),
-      ],
+    return const _RowLayout(
+      thumbnail: _ThumbnailFallback(),
+      mealLabel: '아침',
+      foodName: '그릭요거트, 블루베리',
+      grade: SkinLevel.good,
     );
   }
 }
@@ -188,52 +189,83 @@ class _Row extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final grade = SkinLevel.fromScore(item.plateScore);
-
     return GestureDetector(
       onTap: onTap,
       behavior: HitTestBehavior.opaque,
-      child: Row(
-        children: [
-          _Thumbnail(plateId: item.plateId, directory: imageDirectory),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // 끼니를 모르면(서버가 새 값을 보냈다면) 배지를 비운다.
-                // 아무 끼니로나 떨어뜨리면 사용자가 자기 기록을 못 믿는다.
-                if (item.mealType != null)
-                  Text(item.mealType!.label,
-                      style: const TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.textSecondary,
-                      )),
-                const SizedBox(height: 4),
+      child: _RowLayout(
+        thumbnail: _Thumbnail(
+          plateId: item.plateId,
+          directory: imageDirectory,
+        ),
+        // 끼니를 모르면(서버가 새 값을 보냈다면) 라벨을 비운다.
+        // 아무 끼니로나 떨어뜨리면 사용자가 자기 기록을 못 믿는다.
+        mealLabel: item.mealType?.label,
+        foodName: item.foodName,
+        // 서버가 매긴 등급이다 — 앱에 경계표를 두지 않는다.
+        grade: item.grade,
+      ),
+    );
+  }
+}
+
+/// 예시 줄과 실제 줄이 한 픽셀도 다르지 않아야 한다 — 두 벌로 그리면
+/// 한쪽만 고쳐지고, 예시가 실물과 다르면 예시로서 쓸모가 없다.
+class _RowLayout extends StatelessWidget {
+  const _RowLayout({
+    required this.thumbnail,
+    required this.mealLabel,
+    required this.foodName,
+    required this.grade,
+  });
+
+  final Widget thumbnail;
+  final String? mealLabel;
+  final String foodName;
+
+  /// 서버가 매긴 등급. 모르면(옛 서버) 라벨을 그리지 않는다.
+  final SkinLevel? grade;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        thumbnail,
+        const SizedBox(width: 15),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (mealLabel != null)
                 Text(
-                  item.foodName,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+                  mealLabel!,
                   style: const TextStyle(
-                    fontSize: 10,
-                    fontWeight: FontWeight.w500,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
                     color: AppColors.textSecondary,
                   ),
                 ),
-              ],
-            ),
+              const SizedBox(height: 6),
+              Text(
+                foodName,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w500,
+                  color: AppColors.textSecondary,
+                ),
+              ),
+            ],
           ),
-          Text('${item.plateScore}점',
-              style: TextStyle(
-                fontSize: 10,
-                fontWeight: FontWeight.w500,
-                color: grade.accentColor,
-              )),
-          const SizedBox(width: 6),
-          Icon(grade.faceIcon, size: 20, color: grade.accentColor),
+        ),
+        if (grade != null) ...[
+          const SizedBox(width: 8),
+          // 숫자가 아니라 라벨이다. 카드 안에 숫자가 셋(점수·목표·적합도)이면
+          // 어느 것이 오늘의 점수인지 흐려진다 — 숫자는 눌러서 들어간 결과
+          // 화면에 있다.
+          VerdictBadge(grade: grade!),
         ],
-      ),
+      ],
     );
   }
 }
@@ -249,7 +281,7 @@ class _Thumbnail extends StatelessWidget {
   final int plateId;
   final Directory? directory;
 
-  static const double _size = 32;
+  static const double _size = 52;
 
   @override
   Widget build(BuildContext context) {
@@ -263,7 +295,7 @@ class _Thumbnail extends StatelessWidget {
         width: _size,
         height: _size,
         fit: BoxFit.cover,
-        // 원본을 그대로 디코드하면 32px 칸에 수 MB 를 쓴다. 배율만큼만 디코드한다.
+        // 원본을 그대로 디코드하면 52px 칸에 수 MB 를 쓴다. 배율만큼만 디코드한다.
         cacheWidth: (_size * MediaQuery.devicePixelRatioOf(context)).round(),
         errorBuilder: (_, __, ___) => const _ThumbnailFallback(),
       ),
@@ -271,21 +303,21 @@ class _Thumbnail extends StatelessWidget {
   }
 }
 
-/// 파일이 없어도 줄이 깨지지 않게 같은 크기의 회색 자리를 남긴다.
+/// 파일이 없어도 줄이 깨지지 않게 같은 크기의 자리를 남긴다.
 class _ThumbnailFallback extends StatelessWidget {
   const _ThumbnailFallback();
 
   @override
   Widget build(BuildContext context) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(5),
-      child: Container(
-        width: _Thumbnail._size,
-        height: _Thumbnail._size,
+    return Container(
+      width: _Thumbnail._size,
+      height: _Thumbnail._size,
+      decoration: BoxDecoration(
         color: AppColors.surfaceCard,
-        child: const Icon(Icons.restaurant,
-            size: 16, color: AppColors.textSecondary),
+        borderRadius: BorderRadius.circular(5),
       ),
+      child: const Icon(Icons.restaurant,
+          size: 20, color: AppColors.textSecondary),
     );
   }
 }

@@ -54,6 +54,15 @@ void main() {
     await tester.pumpWidget(host(data('skin_latest')));
     await tester.pumpAndSettle();
 
+    // 확정 시안이 화면 위쪽을 지표 막대 5개로 채워서 나이 카드가 첫 화면 밖으로
+    // 내려갔다. ListView 는 안 보이는 자식을 만들지 않으므로 스크롤해서 찾는다.
+    await tester.scrollUntilVisible(
+      find.text('AI 추정 피부 나이'),
+      300,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.pumpAndSettle();
+
     expect(find.text('AI 추정 피부 나이'), findsOneWidget);
     // 실제 나이를 맞히는 것이 아니라 사진 기반 추정이라 보조 문구가 항상 붙는다.
     expect(find.textContaining('AI 추정값입니다'), findsOneWidget);
@@ -120,11 +129,19 @@ void main() {
     await tester.pumpWidget(host(data('skin_latest')));
     await tester.pumpAndSettle();
 
+    // 관리 축 칩이 붙으면서 토글이 첫 화면 밖으로 내려갔다. ListView 는 안 보이는
+    // 자식을 만들지 않으므로 스크롤해서 찾는다.
     final toggle = find.text('관찰 근거 자세히 보기');
-    expect(toggle, findsOneWidget);
     expect(find.textContaining('볼과 입가에 부분적인 각질이 보임'), findsNothing);
 
-    await tester.ensureVisible(toggle);
+    await tester.scrollUntilVisible(
+      toggle,
+      300,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.pumpAndSettle();
+    expect(toggle, findsOneWidget);
+
     await tester.tap(toggle);
     await tester.pumpAndSettle();
 
@@ -168,8 +185,15 @@ void main() {
     await tester.pumpWidget(host(json));
     await tester.pumpAndSettle();
 
+    // 2.0 에서는 토글이 첫 화면 밖으로 내려가 아직 만들어지지도 않았다.
+    // ensureVisible 은 이미 트리에 있는 위젯만 다룬다.
     final toggle = find.text('관찰 근거 자세히 보기');
-    await tester.ensureVisible(toggle);
+    await tester.scrollUntilVisible(
+      toggle,
+      300,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.pumpAndSettle();
     await tester.tap(toggle);
     await tester.pumpAndSettle();
 
@@ -188,8 +212,15 @@ void main() {
     await tester.pumpWidget(host(data('skin_latest'), textScale: 2.0));
     await tester.pumpAndSettle();
 
+    // 2.0 에서는 토글이 첫 화면 밖으로 내려가 아직 만들어지지도 않았다.
+    // ensureVisible 은 이미 트리에 있는 위젯만 다룬다.
     final toggle = find.text('관찰 근거 자세히 보기');
-    await tester.ensureVisible(toggle);
+    await tester.scrollUntilVisible(
+      toggle,
+      300,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.pumpAndSettle();
     await tester.tap(toggle);
     await tester.pumpAndSettle();
 

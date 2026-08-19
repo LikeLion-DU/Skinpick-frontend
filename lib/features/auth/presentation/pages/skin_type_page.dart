@@ -58,6 +58,11 @@ class _SkinTypePageState extends ConsumerState<SkinTypePage> {
   /// 어느 습관 줄이 펼쳐져 있는지. 시안이 한 번에 하나만 펼친다.
   _HabitRow? _expanded;
 
+  /// 보고 있는 단계. 확정 시안이 한 화면에 다 늘어놓던 세 구역을 **탭 세 개**로
+  /// 갈랐다 — 타입 6칸 + 고민 9칸 + 습관 4줄이 한 스크롤에 있으면 첫 화면에서
+  /// 끝이 안 보이고, 어디까지 답했는지도 알 수 없다.
+  _ProfileStep _step = _ProfileStep.type;
+
   bool _busy = false;
   String? _error;
 
@@ -96,12 +101,10 @@ class _SkinTypePageState extends ConsumerState<SkinTypePage> {
     }
   }
 
-  /// 진행 점 4개 중 몇 개가 찼는가. 시작(1) + 타입 + 고민 + 습관.
-  int get _progress =>
-      1 +
-      (_type != null ? 1 : 0) +
-      (_concerns.isNotEmpty ? 1 : 0) +
-      ((_sleep ?? _stress ?? _exercise ?? _water) != null ? 1 : 0);
+  /// 막대가 얼마나 찼는가. **답한 개수가 아니라 보고 있는 단계**다 —
+  /// 시안이 첫 탭에서 1/3 을 채워 두고, 고민은 건너뛸 수 있는 항목이라
+  /// 답한 개수로 재면 막대가 뒤로 가는 경우가 생긴다.
+  double get _progress => (_step.index + 1) / _ProfileStep.values.length;
 
   Future<void> _submit() async {
     if (!_complete) return;
@@ -158,6 +161,134 @@ class _SkinTypePageState extends ConsumerState<SkinTypePage> {
   @override
   Widget build(BuildContext context) => _form(context);
 
+  /// 생활 습관 4종. 한 번에 한 줄만 펼친다 — 넷을 다 펼치면 화면이 옵션으로 덮인다.
+  Widget _habits() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // 습관은 full 모드에서 선택이고 lifestyle 모드에서 필수다. 그 차이를
+        // 적어 두지 않으면 왜 버튼이 안 열리는지 알 수 없다.
+        Text(
+          _lifestyleOnly ? '네 가지를 모두 알려주세요' : '지금 넘어가도 나중에 채울 수 있어요',
+          style: TextStyle(
+            fontSize: 12,
+            color: _lifestyleOnly ? AppColors.primary : AppColors.textSecondary,
+          ),
+        ),
+        const SizedBox(height: 16),
+
+        _HabitSection(
+          row: _HabitRow.sleep,
+          icon: Icons.nightlight_outlined,
+          label: '수면 패턴',
+          value: _sleep?.label,
+          expanded: _expanded == _HabitRow.sleep,
+          onToggleExpand: () => setState(() =>
+              _expanded = _expanded == _HabitRow.sleep ? null : _HabitRow.sleep),
+          child: _CardOptions<SleepPattern>(
+            options: SleepPattern.values,
+            selected: _sleep,
+            labelOf: (option) => option.label,
+            descriptionOf: (option) => option.description,
+            iconOf: (option) => switch (option) {
+              SleepPattern.lacking => Icons.sentiment_dissatisfied,
+              SleepPattern.normal => Icons.sentiment_neutral,
+              SleepPattern.enough => Icons.sentiment_satisfied_alt,
+            },
+            iconColorOf: (option, selected) =>
+                selected ? AppColors.primary : AppColors.textSecondary,
+            onSelect: (option) => setState(() {
+              _sleep = option;
+              _expanded = null;
+            }),
+          ),
+        ),
+        const SizedBox(height: 8),
+
+        _HabitSection(
+          row: _HabitRow.stress,
+          icon: Icons.sentiment_very_dissatisfied_outlined,
+          label: '스트레스 정도',
+          value: _stress?.label,
+          expanded: _expanded == _HabitRow.stress,
+          onToggleExpand: () => setState(() => _expanded =
+              _expanded == _HabitRow.stress ? null : _HabitRow.stress),
+          child: _CardOptions<StressLevel>(
+            options: StressLevel.values,
+            selected: _stress,
+            labelOf: (option) => option.label,
+            descriptionOf: (option) => option.description,
+            iconOf: (option) => switch (option) {
+              StressLevel.low => Icons.sentiment_satisfied_alt,
+              StressLevel.normal => Icons.sentiment_neutral,
+              StressLevel.high => Icons.sentiment_very_dissatisfied,
+            },
+            // 스트레스는 시안이 신호등 색을 쓴다 — 선택 여부와 무관하게 항상.
+            iconColorOf: (option, _) => switch (option) {
+              StressLevel.low => AppColors.good,
+              StressLevel.normal => const Color(0xFFFFC107),
+              StressLevel.high => AppColors.bad,
+            },
+            onSelect: (option) => setState(() {
+              _stress = option;
+              _expanded = null;
+            }),
+          ),
+        ),
+        const SizedBox(height: 8),
+
+        _HabitSection(
+          row: _HabitRow.exercise,
+          icon: Icons.fitness_center,
+          label: '운동 습관',
+          value: _exercise?.label,
+          expanded: _expanded == _HabitRow.exercise,
+          onToggleExpand: () => setState(() => _expanded =
+              _expanded == _HabitRow.exercise ? null : _HabitRow.exercise),
+          child: _RowOptions(
+            selected: _exercise,
+            onSelect: (option) => setState(() {
+              _exercise = option;
+              _expanded = null;
+            }),
+          ),
+        ),
+        const SizedBox(height: 8),
+
+        _HabitSection(
+          row: _HabitRow.water,
+          icon: Icons.water_drop_outlined,
+          // 시안·마이페이지가 '물 섭취' 로 쓴다. 예전 '수분 섭취' 는 피부 지표의
+          // '수분' 과 같은 낱말이라, 한 앱에서 두 가지를 같은 말로 부르고 있었다.
+          label: '물 섭취',
+          value: _water?.label,
+          expanded: _expanded == _HabitRow.water,
+          onToggleExpand: () => setState(() =>
+              _expanded = _expanded == _HabitRow.water ? null : _HabitRow.water),
+          // 수면과 같은 3단계 척도라 같은 카드형을 쓴다. 운동의 _RowOptions 는
+          // ExerciseHabit 이 박혀 있어 여기 쓰려면 제네릭화부터 해야 한다.
+          child: _CardOptions<WaterIntake>(
+            options: WaterIntake.values,
+            selected: _water,
+            labelOf: (option) => option.label,
+            descriptionOf: (option) => option.description,
+            iconOf: (option) => switch (option) {
+              WaterIntake.lacking => Icons.sentiment_dissatisfied,
+              WaterIntake.normal => Icons.sentiment_neutral,
+              WaterIntake.enough => Icons.sentiment_satisfied_alt,
+            },
+            iconColorOf: (option, selected) =>
+                selected ? AppColors.primary : AppColors.textSecondary,
+            onSelect: (option) => setState(() {
+              _water = option;
+              _expanded = null;
+            }),
+          ),
+        ),
+      ],
+    );
+  }
+
   Widget _form(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
@@ -177,6 +308,20 @@ class _SkinTypePageState extends ConsumerState<SkinTypePage> {
         padding: const EdgeInsets.fromLTRB(
             AppTheme.pagePadding, 0, AppTheme.pagePadding, 24),
         children: [
+          // 시안은 진행 막대를 화면 맨 위에 둔다 — 제목보다 위다. 어디까지
+          // 왔는지가 제목보다 먼저 보여야 세 단계짜리 설문으로 읽힌다.
+          if (!_lifestyleOnly) ...[
+            ClipRRect(
+              borderRadius: BorderRadius.circular(3.5),
+              child: LinearProgressIndicator(
+                value: _progress,
+                minHeight: 5,
+                backgroundColor: const Color(0xFFECEBEF),
+                valueColor: const AlwaysStoppedAnimation(AppColors.primary),
+              ),
+            ),
+            const SizedBox(height: 33),
+          ],
           // 습관 모드 문구는 온보딩 어투를 쓰지 않는다. 예전에는 가입 흐름 안에
           // 있어서 "거의 다 왔어요!" 가 맞았지만, 지금은 인사이트를 보려다 들른
           // 화면이라 그 말이 어디에 가까워졌다는 것인지 알 수 없다.
@@ -200,37 +345,30 @@ class _SkinTypePageState extends ConsumerState<SkinTypePage> {
                 ProfileFormMode.full => '정확한 분석을 위해 알려주세요',
               },
               style: Theme.of(context).textTheme.bodyMedium),
-          const SizedBox(height: 20),
-          if (!_lifestyleOnly) ...[
-            _ProgressDots(filled: _progress),
-            const SizedBox(height: 26),
+          const SizedBox(height: 24),
 
-            Text('피부 타입', style: Theme.of(context).textTheme.titleMedium),
-            const SizedBox(height: 12),
-            _TypeTiles(
-              selected: _type,
-              onSelect: _busy ? null : (type) => setState(() => _type = type),
+          // 습관만 묻는 모드는 단계가 하나뿐이라 탭도 막대도 그리지 않는다.
+          if (!_lifestyleOnly) ...[
+            _StepSwitcher(
+              current: _step,
+              onSelect: _busy ? null : (step) => setState(() => _step = step),
             ),
             const SizedBox(height: 28),
           ],
 
-          if (!_lifestyleOnly) ...[
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Text('주요 피부 고민',
-                    style: Theme.of(context).textTheme.titleMedium),
-                const SizedBox(width: 6),
-                const Padding(
-                  padding: EdgeInsets.only(bottom: 1),
-                  child: Text('(복수 선택 가능)',
-                      style: TextStyle(
-                          fontSize: 10, color: AppColors.textSecondary)),
-                ),
-              ],
+          if (!_lifestyleOnly && _step == _ProfileStep.type)
+            _TypeTiles(
+              selected: _type,
+              onSelect: _busy ? null : (type) => setState(() => _type = type),
             ),
-            const SizedBox(height: 12),
-            _ConcernChips(
+
+          if (!_lifestyleOnly && _step == _ProfileStep.concern) ...[
+            const Text(
+              '(복수 선택 가능)',
+              style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+            ),
+            const SizedBox(height: 16),
+            _ConcernTiles(
               selected: _concerns,
               onToggle: _busy
                   ? null
@@ -238,134 +376,9 @@ class _SkinTypePageState extends ConsumerState<SkinTypePage> {
                         if (!_concerns.remove(concern)) _concerns.add(concern);
                       }),
             ),
-            const SizedBox(height: 28),
           ],
 
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text('나의 생활 습관',
-                  style: Theme.of(context).textTheme.titleMedium),
-              const SizedBox(width: 6),
-              Padding(
-                padding: const EdgeInsets.only(bottom: 1),
-                child: Text(_lifestyleOnly ? '(필수)' : '(선택)',
-                    style: TextStyle(
-                        fontSize: 10,
-                        color: _lifestyleOnly
-                            ? AppColors.primary
-                            : AppColors.textSecondary)),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-
-          _HabitSection(
-            row: _HabitRow.sleep,
-            icon: Icons.nightlight_outlined,
-            label: '수면 패턴',
-            value: _sleep?.label,
-            expanded: _expanded == _HabitRow.sleep,
-            onToggleExpand: () => setState(() =>
-                _expanded = _expanded == _HabitRow.sleep ? null : _HabitRow.sleep),
-            child: _CardOptions<SleepPattern>(
-              options: SleepPattern.values,
-              selected: _sleep,
-              labelOf: (option) => option.label,
-              descriptionOf: (option) => option.description,
-              iconOf: (option) => switch (option) {
-                SleepPattern.lacking => Icons.sentiment_dissatisfied,
-                SleepPattern.normal => Icons.sentiment_neutral,
-                SleepPattern.enough => Icons.sentiment_satisfied_alt,
-              },
-              iconColorOf: (option, selected) =>
-                  selected ? AppColors.primary : AppColors.textSecondary,
-              onSelect: (option) => setState(() {
-                _sleep = option;
-                _expanded = null;
-              }),
-            ),
-          ),
-          const SizedBox(height: 8),
-
-          _HabitSection(
-            row: _HabitRow.stress,
-            icon: Icons.sentiment_very_dissatisfied_outlined,
-            label: '스트레스 정도',
-            value: _stress?.label,
-            expanded: _expanded == _HabitRow.stress,
-            onToggleExpand: () => setState(() => _expanded =
-                _expanded == _HabitRow.stress ? null : _HabitRow.stress),
-            child: _CardOptions<StressLevel>(
-              options: StressLevel.values,
-              selected: _stress,
-              labelOf: (option) => option.label,
-              descriptionOf: (option) => option.description,
-              iconOf: (option) => switch (option) {
-                StressLevel.low => Icons.sentiment_satisfied_alt,
-                StressLevel.normal => Icons.sentiment_neutral,
-                StressLevel.high => Icons.sentiment_very_dissatisfied,
-              },
-              // 스트레스는 시안이 신호등 색을 쓴다 — 선택 여부와 무관하게 항상.
-              iconColorOf: (option, _) => switch (option) {
-                StressLevel.low => AppColors.good,
-                StressLevel.normal => const Color(0xFFFFC107),
-                StressLevel.high => AppColors.bad,
-              },
-              onSelect: (option) => setState(() {
-                _stress = option;
-                _expanded = null;
-              }),
-            ),
-          ),
-          const SizedBox(height: 8),
-
-          _HabitSection(
-            row: _HabitRow.exercise,
-            icon: Icons.fitness_center,
-            label: '운동 습관',
-            value: _exercise?.label,
-            expanded: _expanded == _HabitRow.exercise,
-            onToggleExpand: () => setState(() => _expanded =
-                _expanded == _HabitRow.exercise ? null : _HabitRow.exercise),
-            child: _RowOptions(
-              selected: _exercise,
-              onSelect: (option) => setState(() {
-                _exercise = option;
-                _expanded = null;
-              }),
-            ),
-          ),
-          const SizedBox(height: 8),
-
-          _HabitSection(
-            row: _HabitRow.water,
-            icon: Icons.water_drop_outlined,
-            label: '수분 섭취',
-            value: _water?.label,
-            expanded: _expanded == _HabitRow.water,
-            onToggleExpand: () => setState(() =>
-                _expanded = _expanded == _HabitRow.water ? null : _HabitRow.water),
-            // 수면과 같은 3단계 척도라 같은 카드형을 쓴다. 운동의 _RowOptions 는
-            // ExerciseHabit 이 박혀 있어 여기 쓰려면 제네릭화부터 해야 한다.
-            child: _CardOptions<WaterIntake>(
-              options: WaterIntake.values,
-              selected: _water,
-              labelOf: (option) => option.label,
-              descriptionOf: (option) => option.description,
-              iconOf: (option) => switch (option) {
-                WaterIntake.lacking => Icons.sentiment_dissatisfied,
-                WaterIntake.normal => Icons.sentiment_neutral,
-                WaterIntake.enough => Icons.sentiment_satisfied_alt,
-              },
-              iconColorOf: (option, selected) =>
-                  selected ? AppColors.primary : AppColors.textSecondary,
-              onSelect: (option) => setState(() {
-                _water = option;
-                _expanded = null;
-              }),
-            ),
-          ),
+          if (_lifestyleOnly || _step == _ProfileStep.habit) _habits(),
 
           if (_error != null) ...[
             const SizedBox(height: 16),
@@ -373,7 +386,16 @@ class _SkinTypePageState extends ConsumerState<SkinTypePage> {
                 style: const TextStyle(color: AppColors.bad, fontSize: 12)),
           ],
           const SizedBox(height: 32),
-          ElevatedButton(
+          SizedBox(
+            height: 50,
+            child: ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14),
+              ),
+              textStyle:
+                  const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+            ),
             onPressed: (_busy || !_complete) ? null : _submit,
             child: _busy
                 ? const SizedBox(
@@ -385,189 +407,227 @@ class _SkinTypePageState extends ConsumerState<SkinTypePage> {
                 // 습관 모드는 인사이트가 불러서 온 화면이다. 제출하면 결과가
                 // 아니라 그 인사이트로 돌아간다 — 버튼도 그렇게 말해야 한다.
                 : Text(_lifestyleOnly ? '완료하고 인사이트 보기' : '프로필 설정 완료'),
+            ),
           ),
         ],
       ),
     );
   }
+}
+
+/// 설문 세 단계. 순서가 곧 탭 순서이고 진행 막대의 분모다.
+enum _ProfileStep {
+  type('피부 타입'),
+  concern('주요 피부 고민'),
+  habit('나의 생활 습관');
+
+  const _ProfileStep(this.label);
+
+  final String label;
 }
 
 enum _HabitRow { sleep, stress, exercise, water }
 
 /// 진행 표시 — 선 위의 점 4개. 채워진 만큼 오렌지다.
-class _ProgressDots extends StatelessWidget {
-  const _ProgressDots({required this.filled});
+/// 선택 타일 하나 — 큰 동그라미 안에 그림, 아래에 이름.
+///
+/// 시안이 사각 카드를 **동그라미**로 바꿨다. 그림이 얼굴 계열이라 원 안에 두면
+/// 아이콘이 아니라 초상처럼 읽히고, 두 열로 나란히 놓았을 때 격자보다 목록처럼
+/// 훑기 쉽다.
+///
+/// 그림은 오렌지 한 벌만 넣고 미선택은 회색으로 물들인다 — 시트에 회색 벌도
+/// 있지만 두 벌을 넣으면 색을 바꿀 때 두 파일을 갈아야 한다.
+class _GlyphTile extends StatelessWidget {
+  const _GlyphTile({
+    required this.glyph,
+    required this.label,
+    required this.selected,
+    required this.diameter,
+    required this.glyphSize,
+    required this.labelSize,
+    this.onTap,
+  });
 
-  final int filled;
+  final String glyph;
+  final String label;
+  final bool selected;
+  final double diameter;
+  final double glyphSize;
+  final double labelSize;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      height: 10,
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          Container(height: 1, color: AppColors.borderOnWhite),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              for (var i = 0; i < 4; i++)
-                Container(
-                  width: 10,
-                  height: 10,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: i < filled
-                        ? AppColors.primary
-                        : AppColors.borderEmptySlot,
-                  ),
+    final accent = selected ? AppColors.primary : AppColors.textSecondary;
+
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: SizedBox(
+        // 이름이 두 줄로 접혀도 옆 칸과 어긋나지 않게 폭을 원에 맞춰 고정한다.
+        width: diameter,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: diameter,
+              height: diameter,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: selected ? const Color(0xFFFFEEE6) : AppColors.background,
+                border: Border.all(
+                  color:
+                      selected ? AppColors.primary : AppColors.borderEmptySlot,
+                  width: 1.2,
                 ),
-            ],
-          ),
-        ],
+              ),
+              child: ColorFiltered(
+                colorFilter: ColorFilter.mode(accent, BlendMode.srcIn),
+                child: Image.asset(
+                  glyph,
+                  width: glyphSize,
+                  height: glyphSize,
+                  // 원 안에 들어갈 크기만큼만 디코드한다. 원본은 132px 이고
+                  // 아홉 칸이 동시에 뜨는 화면이라 그대로 두면 캐시를 먹는다.
+                  cacheWidth: (glyphSize *
+                          MediaQuery.devicePixelRatioOf(context))
+                      .round(),
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              label,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: labelSize,
+                fontWeight: FontWeight.w400,
+                color: selected ? AppColors.primary : AppColors.textSecondary,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 }
 
-/// 피부 타입 타일 4개(시안 크기 77×91) + "잘 모르겠어요" 한 줄.
+/// 단계 세 개를 고르는 알약 줄.
+///
+/// 답을 안 해도 아무 단계로나 갈 수 있다 — 순서를 강제하면 고민을 건너뛰려는
+/// 사용자가 습관에 닿지 못한다. 고민은 원래 필수가 아니다.
+class _StepSwitcher extends StatelessWidget {
+  const _StepSwitcher({required this.current, required this.onSelect});
+
+  final _ProfileStep current;
+  final ValueChanged<_ProfileStep>? onSelect;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        for (final (index, step) in _ProfileStep.values.indexed) ...[
+          if (index > 0) const SizedBox(width: 8),
+          Expanded(
+            child: GestureDetector(
+              onTap: onSelect == null ? null : () => onSelect!(step),
+              behavior: HitTestBehavior.opaque,
+              child: Container(
+                height: 36,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: step == current
+                      ? const Color(0xFFFFEEE6)
+                      : AppColors.background,
+                  border: Border.all(
+                    color: step == current
+                        ? AppColors.primary
+                        : const Color(0xFFE8E8E8),
+                    width: 2,
+                  ),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Text(
+                  step.label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                    color: step == current
+                        ? AppColors.primary
+                        : const Color(0xFFB6B6B6),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+/// 피부 타입 타일 — 2열 동그라미.
 ///
 /// UNKNOWN 을 빼지 않는다 — 빼면 정말 모르는 사용자의 출구가 건너뛰기뿐이고,
-/// 그건 "아직 안 정함(NULL)"이라 두 상태가 섞인다. 시안의 4타일 줄은 그대로
-/// 두고, 다섯째 선택지는 아래 전폭 줄로 붙인다(77px 타일 5개는 폭에 안 들어간다).
+/// 그건 "아직 안 정함(NULL)"이라 두 상태가 섞인다.
+///
+/// **시안의 "수부지" 칸은 그리지 않는다.** 서버 `SkinType` 에 대응하는 값이 없어
+/// 고르면 저장할 곳이 없다. 아이콘 시트에는 그림이 들어 있으니, 서버가 값을
+/// 늘리면 `SkinType` 에 한 줄과 그림 한 장을 더하면 된다.
 class _TypeTiles extends StatelessWidget {
   const _TypeTiles({required this.selected, required this.onSelect});
 
   final SkinType? selected;
   final ValueChanged<SkinType>? onSelect;
 
-  static const _tiles = [
-    (SkinType.dry, Icons.format_color_reset_outlined),
-    (SkinType.oily, Icons.water_drop_outlined),
-    (SkinType.combination, Icons.sentiment_dissatisfied_outlined),
-    (SkinType.sensitive, Icons.mood_bad_outlined),
-  ];
-
   @override
   Widget build(BuildContext context) {
-    return Column(
+    return Wrap(
+      spacing: 34,
+      runSpacing: 26,
+      alignment: WrapAlignment.center,
       children: [
-        Row(
-          children: [
-            for (final (index, tile) in _tiles.indexed) ...[
-              if (index > 0) const SizedBox(width: 10),
-              Expanded(
-                child: GestureDetector(
-                  onTap: onSelect == null ? null : () => onSelect!(tile.$1),
-                  child: _Selectable(
-                    selected: selected == tile.$1,
-                    height: 91,
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(tile.$2,
-                            size: 30,
-                            color: selected == tile.$1
-                                ? AppColors.primary
-                                : AppColors.textSecondary),
-                        const SizedBox(height: 8),
-                        Text(
-                          tile.$1.label,
-                          style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w500,
-                            color: selected == tile.$1
-                                ? AppColors.primary
-                                : AppColors.textPrimary,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ],
-        ),
-        const SizedBox(height: 10),
-        GestureDetector(
-          onTap: onSelect == null ? null : () => onSelect!(SkinType.unknown),
-          child: _Selectable(
-            selected: selected == SkinType.unknown,
-            height: 40,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.help_outline,
-                    size: 18,
-                    color: selected == SkinType.unknown
-                        ? AppColors.primary
-                        : AppColors.textSecondary),
-                const SizedBox(width: 8),
-                Text(
-                  SkinType.unknown.label,
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w500,
-                    color: selected == SkinType.unknown
-                        ? AppColors.primary
-                        : AppColors.textPrimary,
-                  ),
-                ),
-              ],
-            ),
+        for (final type in SkinType.selectable)
+          _GlyphTile(
+            glyph: type.glyph,
+            label: type.label,
+            selected: selected == type,
+            diameter: 109,
+            glyphSize: 62,
+            labelSize: 16,
+            onTap: onSelect == null ? null : () => onSelect!(type),
           ),
-        ),
       ],
     );
   }
 }
 
-/// 고민 칩 9개 — 3열 그리드. 선택되면 오렌지 채움에 흰 글씨다.
-class _ConcernChips extends StatelessWidget {
-  const _ConcernChips({required this.selected, required this.onToggle});
+/// 고민 타일 9개 — 3열 동그라미. 복수 선택이다.
+class _ConcernTiles extends StatelessWidget {
+  const _ConcernTiles({required this.selected, required this.onToggle});
 
   final Set<SkinConcern> selected;
   final ValueChanged<SkinConcern>? onToggle;
 
   @override
   Widget build(BuildContext context) {
-    return GridView.count(
-      crossAxisCount: 3,
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      mainAxisSpacing: 8,
-      crossAxisSpacing: 11,
-      childAspectRatio: 106 / 36,
+    return Wrap(
+      spacing: 22,
+      runSpacing: 20,
+      alignment: WrapAlignment.center,
       children: [
         for (final concern in SkinConcern.values)
-          GestureDetector(
+          _GlyphTile(
+            glyph: concern.glyph,
+            label: concern.label,
+            selected: selected.contains(concern),
+            diameter: 74,
+            glyphSize: 42,
+            labelSize: 12,
             onTap: onToggle == null ? null : () => onToggle!(concern),
-            child: Container(
-              decoration: BoxDecoration(
-                color: selected.contains(concern)
-                    ? AppColors.primary
-                    : AppColors.background,
-                border: Border.all(
-                  color: selected.contains(concern)
-                      ? AppColors.primary
-                      : AppColors.borderEmptySlot,
-                ),
-                borderRadius: BorderRadius.circular(18),
-              ),
-              child: Center(
-                child: Text(
-                  concern.label,
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w500,
-                    color: selected.contains(concern)
-                        ? Colors.white
-                        : AppColors.textPrimary,
-                  ),
-                ),
-              ),
-            ),
           ),
       ],
     );

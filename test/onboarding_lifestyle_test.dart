@@ -56,10 +56,12 @@ void main() {
     expect(find.text('피부 타입'), findsNothing);
     expect(find.text('주요 피부 고민'), findsNothing);
 
-    for (final label in ['수면 패턴', '스트레스 정도', '운동 습관', '수분 섭취']) {
+    // '물 섭취' 로 통일했다 — 예전 '수분 섭취' 는 피부 지표의 '수분' 과 같은
+    // 낱말이라 한 앱에서 두 가지를 같은 말로 부르고 있었다.
+    for (final label in ['수면 패턴', '스트레스 정도', '운동 습관', '물 섭취']) {
       expect(find.text(label), findsOneWidget);
     }
-    expect(find.text('(필수)'), findsOneWidget);
+    expect(find.text('네 가지를 모두 알려주세요'), findsOneWidget);
   });
 
   testWidgets('건너뛰기는 없다 — 네 개를 다 받아야 인사이트를 만들 수 있다', (tester) async {
@@ -122,7 +124,7 @@ void main() {
       ('수면 패턴', '부족해요'),
       ('스트레스 정도', '높음'),
       ('운동 습관', '주 5회 이상'),
-      ('수분 섭취', '충분해요'),
+      ('물 섭취', '충분해요'),
     ]) {
       await tester.tap(find.text(row));
       await tester.pumpAndSettle();
@@ -152,15 +154,32 @@ void main() {
     expect(missingWater.hasIncompleteLifestyle, isTrue);
   });
 
-  testWidgets('full 모드는 그대로다 — 타입·고민·건너뛰기가 살아 있다', (tester) async {
+  testWidgets('full 모드는 그대로다 — 세 단계와 건너뛰기가 살아 있다', (tester) async {
     await tester.binding.setSurfaceSize(designSize);
     await tester.pumpWidget(host(fresh, mode: ProfileFormMode.full));
     await tester.pumpAndSettle();
 
+    // 확정 시안이 한 스크롤이던 세 구역을 탭 세 개로 갈랐다. 세 이름이 다
+    // 보이고, 누르면 그 단계가 열린다.
     expect(find.text('피부 타입'), findsOneWidget);
     expect(find.text('주요 피부 고민'), findsOneWidget);
+    expect(find.text('나의 생활 습관'), findsOneWidget);
     expect(find.text('건너뛰기'), findsOneWidget);
-    expect(find.text('(선택)'), findsOneWidget);
+
+    // 첫 단계는 타입이다.
+    expect(find.text('복합성'), findsOneWidget);
+    expect(find.text('여드름'), findsNothing);
+
+    await tester.tap(find.text('주요 피부 고민'));
+    await tester.pumpAndSettle();
+    expect(find.text('여드름'), findsOneWidget);
+    expect(find.text('(복수 선택 가능)'), findsOneWidget);
+
+    await tester.tap(find.text('나의 생활 습관'));
+    await tester.pumpAndSettle();
+    expect(find.text('수면 패턴'), findsOneWidget);
+    expect(find.text('지금 넘어가도 나중에 채울 수 있어요'), findsOneWidget);
+
     // 타입만 있으면 제출된다. 습관은 여기서 선택이다.
     expect(submitButton(tester).onPressed, isNotNull);
   });

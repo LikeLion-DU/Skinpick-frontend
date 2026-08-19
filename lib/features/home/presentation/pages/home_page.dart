@@ -4,14 +4,14 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../app/router/app_router.dart';
-import '../../../../app/theme/app_colors.dart';
 import '../../../../app/theme/app_theme.dart';
+import '../../../../shared/widgets/ai_comment_card.dart';
 import '../../../../shared/widgets/app_bottom_nav.dart';
 import '../../../auth/presentation/providers/auth_notifier.dart';
 import '../../../skin_analysis/presentation/providers/skin_analysis_notifier.dart';
 import '../../../skin_plate/presentation/providers/plate_history_provider.dart';
 import '../providers/today_provider.dart';
-import '../widgets/daily_score_card.dart';
+import '../widgets/home_hero.dart';
 import '../widgets/today_records_card.dart';
 
 /// S02 — 홈.
@@ -27,6 +27,11 @@ import '../widgets/today_records_card.dart';
 /// 피부 분석으로 가는 입구는 우측 상단 프로필 아이콘 → **나의 피부 프로필**이다.
 /// 홈 본문에 두지 않는 것은 의도다 — 피부 분석은 주인공이 아니라 음식 점수의
 /// 기준값이고, 그 기준을 확인하러 갔을 때 다시 분석하는 흐름이 자연스럽다.
+///
+/// 확정 시안에서 이 화면의 배경이 흰색에서 **오렌지 그라디언트**로 바뀌었다.
+/// 점수가 카드 안이 아니라 배경 위에 직접 얹히므로, 히어로 텍스트는 전부
+/// 흰색이고 [AppTheme.heroTextShadow] 를 단다 — 그라디언트가 아래로 밝아지는
+/// 구간에서 흰 글자가 배경에 묻히는 것을 막는 장치다.
 class HomePage extends ConsumerWidget {
   const HomePage({super.key});
 
@@ -71,81 +76,75 @@ class HomePage extends ConsumerWidget {
         : _explainSkinFirst(context);
 
     return Scaffold(
-      body: SafeArea(
-        bottom: false,
-        child: RefreshIndicator(
-          // invalidate 는 void 라 당기자마자 스피너가 접힌다. 새 값을 기다려야
-          // 요청이 끝날 때까지 스피너가 붙어 있다(기록 화면과 같은 이유).
-          // 주간 리포트는 여기서 부르지 않는다. 서버가 그 응답에 AI 문장을
-          // 같이 만들어 붙이느라 최대 ~27초가 걸리는데, 홈은 촬영을 마치고
-          // 매번 돌아오는 화면이라 그 지연이 그대로 홈의 지연이 된다.
-          onRefresh: () => Future.wait([
-            ref.refresh(latestSkinAnalysisProvider.future),
-            ref.refresh(plateHistoryProvider.future),
-          ]),
-          child: ListView(
-            padding: const EdgeInsets.fromLTRB(
-              AppTheme.pagePadding,
-              14,
-              AppTheme.pagePadding,
-              // 마지막 카드가 떠 있는 네비 밑으로 숨지 않게 띄운다.
-              AppBottomNav.totalHeight + 16,
-            ),
-            children: [
-              Align(
-                alignment: Alignment.centerRight,
-                child: IconButton(
-                  tooltip: '나의 피부 프로필',
-                  onPressed: () => context.push(Routes.skinProfile),
-                  icon: SvgPicture.asset('assets/icons/profile.svg',
-                      width: 28, height: 28),
+      body: Stack(
+        children: [
+          // 배경과 마스코트는 스크롤에 참여하지 않는다. 시안에서 이 둘은
+          // 프레임에 고정된 판이고, 카드만 그 위에 얹혀 있다.
+          const HeroWash(),
+          const HeroMascot(),
+          SafeArea(
+            bottom: false,
+            child: RefreshIndicator(
+              // invalidate 는 void 라 당기자마자 스피너가 접힌다. 새 값을 기다려야
+              // 요청이 끝날 때까지 스피너가 붙어 있다(기록 화면과 같은 이유).
+              // 주간 리포트는 여기서 부르지 않는다. 서버가 그 응답에 AI 문장을
+              // 같이 만들어 붙이느라 최대 ~27초가 걸리는데, 홈은 촬영을 마치고
+              // 매번 돌아오는 화면이라 그 지연이 그대로 홈의 지연이 된다.
+              onRefresh: () => Future.wait([
+                ref.refresh(latestSkinAnalysisProvider.future),
+                ref.refresh(plateHistoryProvider.future),
+              ]),
+              child: ListView(
+                padding: const EdgeInsets.fromLTRB(
+                  AppTheme.pagePadding,
+                  21,
+                  AppTheme.pagePadding,
+                  // 마지막 카드가 떠 있는 네비 밑으로 숨지 않게 띄운다.
+                  AppBottomNav.totalHeight + 16,
                 ),
-              ),
-              const SizedBox(height: 35),
-              Text('안녕하세요, $nickname님',
-                  style: Theme.of(context).textTheme.titleLarge),
-              const SizedBox(height: 5),
-              Text('오늘도 피부에 좋은 선택을 해봐요!',
-                  style: Theme.of(context).textTheme.bodyMedium),
-              const SizedBox(height: 28),
-              DailyScoreCard(
-                nickname: nickname,
-                score: today?.plateScore,
-                targetScore: today?.targetScore ?? 80,
-              ),
-              // 문장은 기록 저장 때 서버가 만들어 둔 것이다. 없으면 카드째 숨긴다 —
-              // 빈 카드를 그리면 "뭔가 로딩 중인가"로 읽힌다.
-              if (today?.aiComment != null) ...[
-                const SizedBox(height: 14),
-                _DailyCommentCard(comment: today!.aiComment!),
-              ],
-              const SizedBox(height: 21),
-              Row(
                 children: [
-                  Expanded(
-                    child: Text('오늘의 기록',
-                        style: Theme.of(context).textTheme.titleMedium),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: GestureDetector(
+                      onTap: () => context.push(Routes.skinProfile),
+                      behavior: HitTestBehavior.opaque,
+                      child: Tooltip(
+                        message: '마이페이지',
+                        child: SvgPicture.asset('assets/icons/profile.svg',
+                            width: 28, height: 28),
+                      ),
+                    ),
                   ),
-                  // 기록 화면으로 가는 **유일한 문**이다. 하단 네비에서 기록
-                  // 자리를 리포트에 내주었으므로 이 줄이 없으면 저장된 기록을
-                  // 날짜별로 넘겨 보는 화면에 닿을 방법이 사라진다.
-                  TextButton(
-                    onPressed: () => context.push(Routes.plateHistory),
-                    child: const Text('전체 기록 보기'),
+                  const SizedBox(height: 35),
+                  HomeHero(
+                    nickname: nickname,
+                    score: today?.plateScore,
+                    grade: today?.grade,
+                    targetScore: today?.targetScore,
+                  ),
+                  // 문장은 기록 저장 때 서버가 만들어 둔 것이다. 없으면 카드째 숨긴다 —
+                  // 빈 카드를 그리면 "뭔가 로딩 중인가"로 읽힌다.
+                  if (today?.aiComment != null) ...[
+                    const SizedBox(height: 25),
+                    AiCommentCard(
+                      title: 'AI 오늘의 한마디',
+                      comment: today!.aiComment!,
+                    ),
+                  ],
+                  const SizedBox(height: 19),
+                  TodayRecordsCard(
+                    items: today?.plates ?? const [],
+                    imageDirectory: imageDirectory,
+                    onCapture: capture,
+                    onSeeAll: () => context.push(Routes.plateHistory),
+                    onItemTap: (item) =>
+                        context.push('${Routes.plateResult}/${item.plateId}'),
                   ),
                 ],
               ),
-              const SizedBox(height: 4),
-              TodayRecordsCard(
-                items: today?.plates ?? const [],
-                imageDirectory: imageDirectory,
-                onCapture: capture,
-                onItemTap: (item) =>
-                    context.push('${Routes.plateResult}/${item.plateId}'),
-              ),
-            ],
+            ),
           ),
-        ),
+        ],
       ),
       bottomNavigationBar: AppBottomNav(
         current: AppTab.home,
@@ -157,45 +156,3 @@ class HomePage extends ConsumerWidget {
     );
   }
 }
-
-/// "오늘의 한 줄 코멘트" — 시안의 크림 카드. 잎사귀 아이콘이 오른쪽에 붙는다.
-class _DailyCommentCard extends StatelessWidget {
-  const _DailyCommentCard({required this.comment});
-
-  final String comment;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(18, 14, 14, 14),
-      decoration: BoxDecoration(
-        color: AppColors.surfaceCard,
-        border: Border.all(color: AppColors.borderOnCream),
-        borderRadius: BorderRadius.circular(AppTheme.cardRadius),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text('오늘의 한 줄 코멘트',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.textPrimary,
-                    )),
-                const SizedBox(height: 6),
-                Text(comment,
-                    style: Theme.of(context).textTheme.bodySmall),
-              ],
-            ),
-          ),
-          const SizedBox(width: 10),
-          const Icon(Icons.eco_outlined, size: 22, color: AppColors.primary),
-        ],
-      ),
-    );
-  }
-}
-

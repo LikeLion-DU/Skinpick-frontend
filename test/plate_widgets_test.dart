@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:skinplate/app/theme/app_theme.dart';
+import 'package:skinplate/shared/enums/skin_level.dart';
 import 'package:skinplate/features/skin_plate/domain/entities/skin_plate.dart';
 import 'package:skinplate/features/skin_plate/presentation/widgets/plate_score_card.dart';
 import 'package:skinplate/features/skin_plate/presentation/widgets/plate_summary_cards.dart';
@@ -39,24 +40,38 @@ FoodAnalysis _food({
 void main() {
   const designSize = Size(402, 874);
 
-  Widget host(Widget child) => MaterialApp(
+  Widget host(Widget child, {double textScale = 1.0}) => MaterialApp(
         theme: AppTheme.light,
         home: Scaffold(
-          body: Padding(
-            padding:
-                const EdgeInsets.symmetric(horizontal: AppTheme.pagePadding),
-            child: Center(child: child),
+          body: MediaQuery(
+            data: MediaQueryData(textScaler: TextScaler.linear(textScale)),
+            child: Padding(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: AppTheme.pagePadding),
+              child: Center(child: child),
+            ),
           ),
         ),
       );
 
+  testWidgets('점수 카드 — 글자 크기 2.0 에서도 넘치지 않는다', (tester) async {
+    await tester.binding.setSurfaceSize(designSize);
+    await tester.pumpWidget(host(
+      const PlateScoreCard(score: 58, grade: SkinLevel.normal),
+      textScale: 2.0,
+    ));
+
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('점수 카드 — 58점은 보통 배지', (tester) async {
     await tester.binding.setSurfaceSize(designSize);
-    await tester.pumpWidget(host(const PlateScoreCard(score: 58)));
+    await tester.pumpWidget(host(
+      // 등급은 서버가 매겨 보낸다. 앱은 58 을 보고 등급을 고르지 않는다.
+      const PlateScoreCard(score: 58, grade: SkinLevel.normal),
+    ));
 
     expect(find.text('58'), findsOneWidget);
-    // 서버 기준으로 41~60 이 NORMAL 이다. 앱이 쓰던 75/60 경계에서는
-    // '주의'였지만, 등급표는 이제 서버 것 하나뿐이다.
     expect(find.text('보통'), findsOneWidget);
   });
 
@@ -65,7 +80,9 @@ void main() {
     // 그대로 떴다 — 음식 판정은 실제 측정 지표로 하므로 이 카드는 기준을
     // 말하지 않는다. 기준은 [SkinBasisLine] 한 곳이다.
     await tester.binding.setSurfaceSize(designSize);
-    await tester.pumpWidget(host(const PlateScoreCard(score: 92)));
+    await tester.pumpWidget(host(
+      const PlateScoreCard(score: 92, grade: SkinLevel.excellent),
+    ));
 
     expect(find.text('92'), findsOneWidget);
     expect(find.textContaining('기준'), findsNothing);
@@ -130,9 +147,17 @@ void main() {
     ));
 
     expect(find.text('단백질 충분'), findsOneWidget);
-    // 카드 안의 Text 는 'GOOD' 과 제목 둘뿐이어야 한다. 설명 자리에 빈 Text 를
-    // 남기면 줄 간격만큼 카드에 구멍이 생긴다.
-    expect(find.byType(Text), findsNWidgets(2));
+    // 확정 시안이 카드를 GOOD·BAD 두 칸으로 갈랐다. 한쪽이 비어도 칸을 남기므로
+    // BAD 칸에는 제목과 빈 안내 한 줄이 있다.
+    expect(find.text('GOOD'), findsOneWidget);
+    expect(find.text('BAD'), findsOneWidget);
+    // 설명(reason) 자리에 **빈 Text 를 남기지 않는다.** 남기면 줄 간격만큼
+    // 카드에 구멍이 생긴다. 위젯 개수를 세는 것보다 이 조건이 뜻에 가깝다.
+    expect(
+      find.byWidgetPredicate(
+          (widget) => widget is Text && (widget.data ?? '').isEmpty),
+      findsNothing,
+    );
   });
 
   testWidgets('피부 기준 — 분석 직후의 TODAY 는 "오늘"이다', (tester) async {
@@ -193,15 +218,14 @@ void main() {
       ),
     ));
 
-    expect(find.text('매운 정도 · 많이 매움'), findsOneWidget);
+    expect(find.text('매운 정도 : 많이 매움'), findsOneWidget);
     expect(find.textContaining('기름기'), findsNothing);
     expect(find.textContaining('UNKNOWN'), findsNothing);
 
-    // **섭취량은 파싱만 하고 화면에는 안 낸다.** LARGE 를 넣어도 칩이 없어야 한다 —
-    // 척도를 정의한 기준이 없는 AI 관찰값이라, 얹으면 사용자가 자기 식사량의
-    // 근거로 읽는다. 서버의 저장·리포트 환산은 그대로다.
-    expect(find.textContaining('섭취량'), findsNothing);
-    expect(find.textContaining('많이 드'), findsNothing);
+    // **확정 시안이 섭취량을 화면에 올렸다.** 그전에는 척도를 정의한 기준이 없는
+    // AI 관찰값이라 숨겼는데, 시안이 "예상" 이라는 말로 그 불확실성을 라벨에
+    // 담았다. 그램·칼로리로 환산하지 않고 척도 이름만 쓴다.
+    expect(find.text('예상 섭취량 : 많음'), findsOneWidget);
   });
 
   testWidgets('음식 특성 — 서버 경고와 맞부딪히는 값은 안 그린다', (tester) async {
