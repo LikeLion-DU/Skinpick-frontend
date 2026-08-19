@@ -40,8 +40,9 @@ class Routes {
   // 않는다: redirect 가 Authenticated 를 홈으로 보내므로 닿는 길은 가입 성공
   // 뒤의 `go` 하나뿐이다.
   static const onboardingWelcome = '/home/onboarding-welcome';
-  // 가입 직후의 촬영 진입점. 화면은 `/skin/capture` 와 **같은** SkinCapturePage 다 —
-  // 경로만 홈의 하위라 `go` 한 번으로 홈이 스택 바닥에 깔린다.
+  // 인사 화면에서 [시작하기] 로 들어오는 촬영 진입점. **가입이 곧장 오는 곳이
+  // 아니다** — 가입은 위 [onboardingWelcome] 으로 간다. 화면은 `/skin/capture` 와
+  // **같은** SkinCapturePage 이고, 경로만 홈의 하위라 홈이 스택 바닥에 깔린다.
   static const onboardingCapture = '/home/skin-capture';
   static const skinCapture = '/skin/capture'; // S03
   static const skinLoading = '/skin/loading'; // S04
@@ -100,13 +101,11 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (_, __) =>
             const SkinTypePage(mode: ProfileFormMode.onboarding),
       ),
-      // 가입 직후 촬영을 홈의 **하위**에 둔다. `go` 한 번으로 홈 위에 얹혀서,
+      // 가입 직후의 두 화면을 홈의 **하위**에 둔다. `go` 한 번으로 홈 위에 얹혀서,
       // 촬영을 거쳐 결과(S05)까지 갔을 때 스택이 [홈, 결과]가 된다 — 홈에서
       // 촬영을 시작한 경우와 같은 모양이라 뒤로가기가 홈으로 간다. 최상위에
-      // 두면 스택 바닥이 카메라라 결과에서 나갈 곳이 없다.
-      //
-      // 페이지는 아래 `/skin/capture` 와 같은 것을 쓴다. 안내 화면은 그 페이지가
-      // 이미 갖고 있다(`_introView`) — 따로 만들면 가입자가 같은 안내를 두 번 본다.
+      // 두면 스택 바닥이 카메라라 결과에서 나갈 곳이 없고, 인사 화면은 스택이
+      // 한 장뿐이라 뒤로가기가 앱을 닫는다.
       GoRoute(
         path: Routes.home,
         builder: (_, __) => const HomePage(),
@@ -114,10 +113,17 @@ final routerProvider = Provider<GoRouter>((ref) {
           // 하위 경로를 리터럴로 적지 않는다. 상수와 따로 놀면 상수만 바꿨을 때
           // analyze 도 테스트도 통과한 채로 가입자가 "페이지 없음" 화면에 떨어진다
           // — signup 은 `go` 라 돌아올 길도 없다. 여기서 잘라 쓰면 어긋날 수 없다.
+          //
+          // **인사(온보딩2)와 촬영 안내는 다른 화면이다.** 인사는 "무엇을 하는
+          // 앱인가"를, 촬영 안내는 "어떻게 찍는가"를 말한다 — 시안이 두 장으로
+          // 나눠 그렸다. 예전 주석은 안내 화면을 새로 만들지 말라고 했는데, 그건
+          // 촬영 안내를 한 벌 더 만들지 말라는 뜻이다. 촬영 안내는 여전히
+          // `SkinCapturePage._introView` 한 곳뿐이다.
           GoRoute(
             path: Routes.onboardingWelcome.substring(Routes.home.length + 1),
             builder: (_, __) => const OnboardingWelcomePage(),
           ),
+          // 페이지는 아래 `/skin/capture` 와 같은 것을 쓴다.
           GoRoute(
             path: Routes.onboardingCapture.substring(Routes.home.length + 1),
             builder: (_, __) => const SkinCapturePage(onboarding: true),

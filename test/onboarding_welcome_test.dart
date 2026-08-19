@@ -70,16 +70,27 @@ void main() {
     expect(find.text('촬영 안내'), findsOneWidget);
   });
 
-  testWidgets('작은 기기에서도 시작하기가 화면 안에 남는다', (tester) async {
+  testWidgets('작은 기기에서도 시작하기까지 스크롤로 닿는다', (tester) async {
     // 장식(300)이 들어 있어 스크롤이 없으면 버튼이 화면 밖으로 밀린다 —
     // 그러면 가입자가 첫 화면에서 갇힌다.
-    await tester.binding.setSurfaceSize(const Size(320, 560));
+    const small = Size(320, 560);
+    await tester.binding.setSurfaceSize(small);
+    addTearDown(() => tester.binding.setSurfaceSize(null));
     await tester.pumpWidget(host());
     await tester.pumpAndSettle();
 
+    // 넘친 채로 스크롤이 없으면 여기서 걸린다.
     expect(tester.takeException(), isNull);
+
     await tester.scrollUntilVisible(find.text('시작하기'), 100);
-    expect(find.text('시작하기'), findsOneWidget);
+    await tester.pumpAndSettle();
+
+    // **찾았다는 것만으로는 부족하다.** SingleChildScrollView 안의 위젯은 화면
+    // 밖으로 밀려도 잘릴 뿐 트리에는 남아서, findsOneWidget 은 닿을 수 없는
+    // 버튼에도 초록을 준다. 실제로 뷰포트 안에 들어왔는지 자리를 재서 본다.
+    final button = tester.getRect(find.text('시작하기'));
+    expect(button.top, greaterThanOrEqualTo(0.0));
+    expect(button.bottom, lessThanOrEqualTo(small.height));
   });
 }
 

@@ -51,13 +51,13 @@ class OnboardingWelcomePage extends StatelessWidget {
                       Text(
                         '반가워요! 지금부터\n나만의 피부 음식을 확인해볼까요?',
                         textAlign: TextAlign.center,
-                        // 시안이 이 화면만 제목을 20 으로 쓴다. 테마의
-                        // titleLarge(24) 를 그대로 쓰면 시안에서 한 줄인 둘째
-                        // 문장이 좁은 기기에서 접혀 세 줄이 된다 — Pretendard
-                        // Bold 실측으로 "나만의 피부 음식을 확인해볼까요?" 가
-                        // 20 에서 266.6px, 24 에서 320px 다. 좌우 여백 32 를
-                        // 뺀 폭이 402 기기는 338, 360 기기는 296 이라 24 는
-                        // 360 에서 넘친다.
+                        // 시안이 이 화면만 제목을 20 으로 쓴다. Pretendard Bold
+                        // 실측으로 둘째 문장이 20 에서 266.6px, 24 에서 320px 다.
+                        // 좌우 여백 32 를 뺀 폭은 402 기기가 338, 360 기기가 296,
+                        // 320 기기가 256 이다. 즉 **360 이상에서만 시안대로 두
+                        // 줄이고**, 24 로 올리면 360 부터 세 줄로 접힌다. 320 은
+                        // 20 으로도 접히는데, 접혀도 읽히므로 거기까지 맞추려고
+                        // 크기를 더 줄이지는 않는다.
                         style: text.titleLarge!.copyWith(
                           fontSize: 20,
                           fontWeight: FontWeight.w700,
@@ -168,7 +168,12 @@ class _CornerBracketPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     const strokeWidth = 11.0;
     const cornerRadius = 18.0;
-    // 획은 중심선을 따라 그려지므로 절반만큼 안으로 들여야 상자 안에 들어온다.
+    // 획은 중심선을 따라 그려지므로 꺾이는 쪽은 절반만큼 안으로 들인다.
+    //
+    // **열린 두 끝은 상자를 넘어간다.** 끝점을 변에 딱 붙여 두고 StrokeCap.round
+    // 를 쓰므로 획이 5.5px 더 나가고, 아래 후광은 그보다 더 번진다. 잘리지 않게
+    // Stack 도 FittedBox 도 클립하지 않는 자리에 두었다 — 상자 크기를 여백
+    // 계산에 그대로 쓰면 실제보다 좁게 잡힌다.
     const inset = strokeWidth / 2;
 
     final path = Path()
