@@ -563,13 +563,13 @@ class _StepSwitcher extends StatelessWidget {
               // 이 줄도 알약이다. 예전에는 높이를 36 으로 박아 두어서 글자 크기
               // 2.0 에서 라벨이 8px 잘렸다(그려진 32 / 필요한 40) — 예외가 나지
               // 않으니 오버플로만 보는 테스트로는 안 잡혔다.
+              // 말줄임이 아니라 축소다 — "주요 피부 …" 는 무엇의 탭인지 지운다.
               child: Pill(
                 label: step.label,
                 minHeight: 36,
                 horizontalPadding: 8,
                 borderRadius: 16,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
+                fitDown: true,
                 color: step == current
                     ? const Color(0xFFFFEEE6)
                     : AppColors.background,
