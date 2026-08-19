@@ -19,11 +19,6 @@ DateTime todayKst() {
 DateTime addDays(DateTime date, int days) =>
     DateTime(date.year, date.month, date.day + days);
 
-/// 그 날짜가 속한 주의 월요일. 주간 리포트의 주 경계가 이 함수 하나로 정해진다.
-/// `DateTime.weekday` 는 월요일이 1 이므로 뺄셈 한 번이면 된다 — 일요일(7)은
-/// 엿새를 되짚어 같은 주의 월요일로 온다.
-DateTime mondayOf(DateTime date) => addDays(date, 1 - date.weekday);
-
 /// 같은 달력일인지. 시·분이 달라도 같은 날이면 true 다.
 bool isSameDay(DateTime a, DateTime b) =>
     a.year == b.year && a.month == b.month && a.day == b.day;
