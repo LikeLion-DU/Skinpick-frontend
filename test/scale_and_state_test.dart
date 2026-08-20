@@ -89,6 +89,36 @@ void main() {
       }
     });
 
+    testWidgets('360dp 에서 배율을 올리면 접히되 알약이 같이 자란다', (tester) async {
+      // 좁은 화면 + 키운 글자는 한 줄로 받을 수 없다. 이때 접히는 것은 사고가
+      // 아니라 이 줄의 정책이다 — 축소로 되돌리면 접근성 설정이 여기만 안 먹는다.
+      //
+      // 지켜야 하는 것은 "한 줄"이 아니라 **글자가 안 잘리는 것**이다. 높이가
+      // minHeight 라 두 줄이 되면 알약이 따라 자라야 한다.
+      const surface = Size(360, 900);
+      final base = await tabTextHeight(tester, 1.0, surface: surface);
+      final scaled = await tabTextHeight(tester, 1.2, surface: surface);
+
+      expect(scaled, greaterThan(base), reason: '배율을 올렸는데 탭 글자가 그대로다');
+
+      final text = tester.renderObject<RenderBox>(find.text('주요 피부 고민'));
+      final pill = tester.renderObject<RenderBox>(find
+          .ancestor(of: find.text('주요 피부 고민'), matching: find.byType(Container))
+          .first);
+
+      // 접을 자리를 준 뒤의 높이와 비교한다. 한 줄 기준(제약 없는 dry layout)과
+      // 재면 접힌 라벨은 언제나 "잘린" 것으로 나온다 — 폭이 좁아진 게 아니라
+      // 좁은 폭을 받아들인 것이다.
+      final needed = text.getDryLayout(BoxConstraints(maxWidth: text.size.width));
+
+      expect(text.size.height, greaterThanOrEqualTo(needed.height),
+          reason: '접힌 줄이 잘렸다 (그려진 ${text.size} / 필요한 $needed)');
+      expect(pill.size.height, greaterThanOrEqualTo(text.size.height),
+          reason: '두 줄이 됐는데 알약이 안 자랐다 '
+              '(알약 ${pill.size} / 글자 ${text.size})');
+      expect(tester.takeException(), isNull);
+    });
+
     testWidgets('360dp 안드로이드에서도 라벨이 한 줄이다', (tester) async {
       // 시연·발표 기기가 안드로이드다. 갤럭시 S 계열의 논리 폭은 360 으로,
       // 시안 프레임보다 42dp 좁다 — 그 42dp 에서 라벨이 두 줄로 접혔다.
