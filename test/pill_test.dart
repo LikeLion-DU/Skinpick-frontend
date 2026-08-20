@@ -177,6 +177,10 @@ void main() {
   /// 단계 탭과 같은 조건 — **3열이어야 한다.** 한 칸만 세우면 폭이 남아돌아
   /// 어떤 접기 전략을 써도 통과한다(줄임표든 축소든). 프로덕션(_StepSwitcher)이
   /// 실제로 겪는 압박을 만들어야 이 테스트가 무언가를 지킨다.
+  ///
+  /// 압박은 폭에서 온다. 좌우 여백(32×2) · 알약 사이 간격(6) · 테두리(2)까지
+  /// 같이 세워야 프로덕션과 같은 자리가 나온다 — 하나라도 빠뜨리면 칸이 실제보다
+  /// 넓어져서, 프로덕션이 접히는 값으로 되돌아가도 여기는 초록으로 남는다.
   Widget stepTabs({required double scale}) => MediaQuery(
         data: MediaQueryData(
           size: designSize,
@@ -191,20 +195,31 @@ void main() {
             body: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Row(
-                  children: [
-                    for (final label in ['피부 타입', '주요 피부 고민', '나의 생활 습관'])
-                      Expanded(
-                        child: Pill(
-                          label: label,
-                          style: const TextStyle(fontSize: 14),
-                          minHeight: 36,
-                          horizontalPadding: 8,
-                          borderRadius: 16,
-                          maxLines: 2,
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: AppTheme.pagePadding),
+                  child: Row(
+                    children: [
+                      for (final (index, label) in const [
+                        '피부 타입',
+                        '주요 피부 고민',
+                        '나의 생활 습관'
+                      ].indexed) ...[
+                        if (index > 0) const SizedBox(width: 6),
+                        Expanded(
+                          child: Pill(
+                            label: label,
+                            style: const TextStyle(fontSize: 14),
+                            minHeight: 36,
+                            horizontalPadding: 2,
+                            borderRadius: 16,
+                            maxLines: 2,
+                            border: Border.all(width: 2),
+                          ),
                         ),
-                      ),
-                  ],
+                      ],
+                    ],
+                  ),
                 ),
               ],
             ),
