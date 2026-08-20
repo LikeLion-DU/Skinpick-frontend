@@ -46,14 +46,17 @@ void main() {
 
   group('단계 탭 — 배율이 실제로 먹는다', () {
     /// 그려진 라벨의 화면상 높이. 변환까지 반영돼야 축소를 볼 수 있다.
-    Future<double> tabTextHeight(WidgetTester tester, double scale) async {
-      await tester.binding.setSurfaceSize(designSize);
+    Future<double> tabTextHeight(WidgetTester tester, double scale,
+        {Size surface = designSize}) async {
+      await tester.binding.setSurfaceSize(surface);
+      addTearDown(() => tester.binding.setSurfaceSize(null));
       await tester.pumpWidget(ProviderScope(
         overrides: [
           // 스플래시 최소 노출(3초) 타이머가 테스트 종료 후까지 살아 !timersPending 에 걸린다.
           splashMinimumHoldProvider.overrideWithValue(Duration.zero),
         ],
         child: MaterialApp(
+          theme: AppTheme.light,
           builder: (context, child) => MediaQuery(
             data: MediaQuery.of(context)
                 .copyWith(textScaler: TextScaler.linear(scale)),
@@ -83,6 +86,24 @@ void main() {
       // "주요 피부 …" 로 접히면 무엇의 탭인지가 사라진다. 세 라벨 모두 온전해야 한다.
       for (final label in ['피부 타입', '주요 피부 고민', '나의 생활 습관']) {
         expect(find.text(label), findsOneWidget);
+      }
+    });
+
+    testWidgets('360dp 안드로이드에서도 라벨이 한 줄이다', (tester) async {
+      // 시연·발표 기기가 안드로이드다. 갤럭시 S 계열의 논리 폭은 360 으로,
+      // 시안 프레임보다 42dp 좁다 — 그 42dp 에서 라벨이 두 줄로 접혔다.
+      //
+      // **실제 폰트가 아니면 이 차이가 안 보인다.** test/flutter_test_config.dart
+      // 가 모든 테스트에 Pretendard 를 올린다.
+      await tabTextHeight(tester, 1.0, surface: const Size(360, 900));
+
+      for (final label in ['피부 타입', '주요 피부 고민', '나의 생활 습관']) {
+        final text = tester.renderObject<RenderBox>(find.text(label));
+        final oneLine = text.getDryLayout(const BoxConstraints());
+
+        expect(text.size.height, oneLine.height,
+            reason: '$label 이 두 줄로 접혔다 '
+                '(그려진 ${text.size} / 한 줄 $oneLine)');
       }
     });
   });

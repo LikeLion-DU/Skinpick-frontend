@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:skinplate/app/theme/app_theme.dart';
 import 'package:skinplate/features/skin_analysis/domain/entities/face_gate_result.dart';
 import 'package:skinplate/features/skin_analysis/domain/face_gate_rules.dart';
 import 'package:skinplate/features/skin_analysis/presentation/pages/skin_capture_page.dart';
@@ -51,6 +52,7 @@ void main() {
         viewPadding: EdgeInsets.only(bottom: inset),
       ),
       child: MaterialApp(
+        theme: AppTheme.light,
         home: Scaffold(
           backgroundColor: Colors.black,
           body: Stack(

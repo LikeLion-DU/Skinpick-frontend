@@ -188,7 +188,7 @@ void main() {
         latestSkinAnalysisProvider.overrideWith(
             (ref) async => const FailureResult(NetworkFailure())),
       ],
-      child: const MaterialApp(home: SkinProfilePage()),
+      child: MaterialApp(theme: AppTheme.light, home: const SkinProfilePage()),
     ));
     await tester.pumpAndSettle();
 

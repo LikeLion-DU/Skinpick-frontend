@@ -174,7 +174,7 @@ void main() {
           return Success(served == 1 ? [day] : <PlateHistoryDay>[]);
         }),
       ],
-      child: const MaterialApp(home: PlateHistoryPage()),
+      child: MaterialApp(theme: AppTheme.light, home: const PlateHistoryPage()),
     ));
     await tester.pumpAndSettle();
 

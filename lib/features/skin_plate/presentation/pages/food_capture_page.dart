@@ -318,23 +318,6 @@ class _FoodCapturePageState extends ConsumerState<FoodCapturePage>
     _runCamera(_resumeStream);
   }
 
-  /// 시안의 0.5x / 1x / 2x. 기기가 지원하는 범위로 잘라서 적용한다.
-  double _zoom = 1.0;
-
-  Future<void> _setZoom(double factor) async {
-    final controller = _controller;
-    if (controller == null) return;
-    try {
-      final min = await controller.getMinZoomLevel();
-      final max = await controller.getMaxZoomLevel();
-      final clamped = factor.clamp(min, max);
-      await controller.setZoomLevel(clamped);
-      _set(() => _zoom = factor);
-    } on Object catch (_) {
-      // 줌이 안 되는 기기면 그냥 둔다. 촬영이 먼저다.
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     _ensureStreaming();
@@ -426,8 +409,6 @@ class _FoodCapturePageState extends ConsumerState<FoodCapturePage>
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      _ZoomChips(current: _zoom, onSelect: _setZoom),
-                      const SizedBox(height: 26),
                       CaptureShutter(enabled: !_busy, busy: _busy, onTap: _capture),
                       const SizedBox(height: 14),
                       const Text(
@@ -571,53 +552,6 @@ class _BracketPainter extends CustomPainter {
   @override
   bool shouldRepaint(_BracketPainter oldDelegate) =>
       oldDelegate.detected != detected;
-}
-
-
-/// 0.5x / 1x / 2x. 현재 배율만 크고 밝게 — 시안 그대로다.
-class _ZoomChips extends StatelessWidget {
-  const _ZoomChips({required this.current, required this.onSelect});
-
-  final double current;
-  final ValueChanged<double> onSelect;
-
-  @override
-  Widget build(BuildContext context) {
-    const factors = [0.5, 1.0, 2.0];
-
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        for (final factor in factors)
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 9),
-            child: GestureDetector(
-              onTap: () => onSelect(factor),
-              child: Container(
-                width: factor == current ? 45 : 32,
-                height: factor == current ? 45 : 32,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: Colors.black.withValues(alpha: 0.45),
-                ),
-                child: Center(
-                  child: Text(
-                    factor == 1.0 || factor == 2.0
-                        ? '${factor.toInt()}x'
-                        : '${factor}x',
-                    style: TextStyle(
-                      color: factor == current ? Colors.white : Colors.white70,
-                      fontSize: factor == current ? 15 : 11,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ),
-      ],
-    );
-  }
 }
 
 /// 라벨 후보 집합을 실기기에서 다듬을 때 쓴다. 릴리즈 빌드에는 나오지 않는다.
