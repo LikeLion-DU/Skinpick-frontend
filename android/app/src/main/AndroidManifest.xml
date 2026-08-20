@@ -1,7 +1,17 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
     <!-- 디버그 매니페스트만 INTERNET 을 넣어준다. 릴리즈 빌드(Day 7)에서 통신이 막히지 않도록 여기 명시한다. -->
     <uses-permission android:name="android.permission.INTERNET"/>
     <uses-permission android:name="android.permission.CAMERA"/>
+
+    <!-- camera 플러그인이 자기 매니페스트에 RECORD_AUDIO 를 넣어 둔다. 이 앱은 촬영
+         화면 두 곳 모두 CameraController(enableAudio: false) 라 오디오를 잡지
+         않는데, 병합된 매니페스트 탓에 설치 화면에는 마이크 권한이 뜬다 —
+         피부·음식 앱에 마이크가 보이면 설치 직전에 손이 멈춘다.
+
+         **enableAudio 를 다시 켜면 이 줄부터 지워야 한다.** 권한 없이 오디오를
+         켜면 카메라 초기화가 실패하는데, 화면에는 프리뷰가 안 뜨는 것만 보인다. -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" tools:node="remove"/>
 
     <application
         android:label="Skinpick"
