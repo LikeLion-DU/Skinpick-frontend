@@ -504,7 +504,7 @@ void main() {
         tester,
         ProviderScope(
           overrides: [reportRepositoryProvider.overrideWithValue(repository)],
-          child: const MaterialApp(home: ReportPage()),
+          child: MaterialApp(theme: AppTheme.light, home: const ReportPage()),
         ),
       );
 
@@ -664,6 +664,34 @@ void main() {
 
     expect(find.text('기록이 없어 고민별 점수를 낼 수 없어요'), findsOneWidget);
     expect(find.textContaining('프로필에서 고민을 골라'), findsNothing);
+  });
+
+  // ---------- 좁은 화면 ----------
+
+  /// 시연·발표 기기가 안드로이드다. 갤럭시 S 계열의 논리 폭은 360 으로 시안
+  /// 프레임보다 42dp 좁고, 영양 타일은 3열이라 그 42dp 를 칸 폭이 그대로 받는다.
+  ///
+  /// 값 문구가 한 줄에 안 들어가면 칸 높이(폭에서 비율로 나온다)를 넘긴다.
+  /// 가장 긴 문구는 못 잰 항목의 "알 수 없음"이고, 실제로 그 상태로 오는 카드가
+  /// **피부 영양 포인트**다 — 픽스처의 아연이 그 경우라 두 카드가 같이 걸린다.
+  testWidgets('360dp 안드로이드 — 영양 타일이 넘치지 않는다', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(360, 2600));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    await tester.pumpWidget(host(
+      _FakeReportRepository(daily: Success(daily('report_daily'))),
+      DailyReportView(date: DateTime(2026, 8, 17)),
+    ));
+    await tester.pumpAndSettle();
+
+    expect(tester.takeException(), isNull, reason: '칸 안에 다 들어가지 않았다');
+
+    // 예외만 보면 놓친다 — spaceBetween 이 두 줄을 흡수하고 아래만 잘리는 경우가
+    // 있다. 접혔는지를 직접 잰다.
+    final unknown = tester.renderObject<RenderBox>(find.text('알 수 없음').first);
+    expect(unknown.size.height,
+        unknown.getDryLayout(const BoxConstraints()).height,
+        reason: '"알 수 없음"이 두 줄로 접혔다 (${unknown.size})');
   });
 
   // ---------- 시스템 글자 크기 ----------

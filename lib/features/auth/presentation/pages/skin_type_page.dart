@@ -563,7 +563,9 @@ class _StepSwitcher extends StatelessWidget {
       child: Row(
         children: [
           for (final (index, step) in _ProfileStep.values.indexed) ...[
-          if (index > 0) const SizedBox(width: 8),
+          // 간격도 라벨이 쓸 폭이다. 줄 전체에서 4px 이 풀리고 세 알약이
+          // 1.3px 씩 나눠 갖는다 — 8px 부족분을 메운 것은 위의 패딩(12px)이다.
+          if (index > 0) const SizedBox(width: 6),
           Expanded(
             child: GestureDetector(
               onTap: onSelect == null ? null : () => onSelect!(step),
@@ -574,7 +576,17 @@ class _StepSwitcher extends StatelessWidget {
               child: Pill(
                 label: step.label,
                 minHeight: 36,
-                horizontalPadding: 8,
+                // 알약 폭은 Expanded 가 정하니 이 값은 겉모습이 아니라 **글자에
+                // 남는 폭**만 바꾼다. 8 이면 360dp(갤럭시 계열)에서 "주요 피부
+                // 고민"(81.4px)에 8px 이 모자라 두 줄로 접혔다 — 테두리 2px 도
+                // 양쪽에서 글자 폭을 먹는다. 시안 폭 402 에서만 재던 탓에 못 보고
+                // 지나갔다.
+                //
+                // **344dp 아래에서는 다시 접힌다.** 세 알약이 폭을 똑같이 나눠
+                // 갖는 한 여기가 천장이다(기기가 320dp 이거나, 360dp 기기에서
+                // 화면 크기를 키운 경우). 그 아래까지 받으려면 알약을 글자 길이
+                // 만큼만 잡아 남는 폭을 나눠 주는 배치로 바꿔야 한다.
+                horizontalPadding: 2,
                 borderRadius: 16,
                 maxLines: 2,
                 color: step == current

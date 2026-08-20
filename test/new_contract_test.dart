@@ -172,8 +172,9 @@ void main() {
 
     testWidgets('등급을 모르면 점수 카드가 배지 없이 숫자만 그린다', (tester) async {
       await tester.binding.setSurfaceSize(designSize);
-      await tester.pumpWidget(const MaterialApp(
-        home: Scaffold(body: PlateScoreCard(score: 58, grade: null)),
+      await tester.pumpWidget(MaterialApp(
+        theme: AppTheme.light,
+        home: const Scaffold(body: PlateScoreCard(score: 58, grade: null)),
       ));
 
       expect(find.text('58'), findsOneWidget);
@@ -324,7 +325,7 @@ void main() {
       await tester.binding.setSurfaceSize(designSize);
       await tester.pumpWidget(ProviderScope(
         overrides: [authNotifierProvider.overrideWith(() => _StubAuth(user))],
-        child: const MaterialApp(home: SkinTypePage()),
+        child: MaterialApp(theme: AppTheme.light, home: const SkinTypePage()),
       ));
       await tester.pumpAndSettle();
 
