@@ -292,8 +292,9 @@ void main() {
     await tester.binding.setSurfaceSize(designSize);
     await tester.pumpWidget(ProviderScope(
       overrides: [authNotifierProvider.overrideWith(() => _StubAuth(fresh))],
-      child: const MaterialApp(
-        home: SkinTypePage(mode: ProfileFormMode.onboarding),
+      child: MaterialApp(
+        theme: AppTheme.light,
+        home: const SkinTypePage(mode: ProfileFormMode.onboarding),
       ),
     ));
     await tester.pumpAndSettle();
@@ -307,7 +308,7 @@ void main() {
     await tester.binding.setSurfaceSize(designSize);
     await tester.pumpWidget(ProviderScope(
       overrides: [authNotifierProvider.overrideWith(() => _StubAuth(fresh))],
-      child: const MaterialApp(home: SkinTypePage()),
+      child: MaterialApp(theme: AppTheme.light, home: const SkinTypePage()),
     ));
     await tester.pumpAndSettle();
 
