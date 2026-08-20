@@ -215,8 +215,26 @@ class AuthNotifier extends Notifier<AuthState> {
     );
   }
 
+  /// **세션을 끊는 것과 저장소를 지우는 것을 분리한다.**
+  ///
+  /// 예전에는 `clear()` 를 await 한 뒤에 정리와 상태 전환을 했다. 저장소가
+  /// 던지면(키스토어 리셋·잠긴 키체인) 그 뒤가 통째로 실행되지 않아 상태가
+  /// `Authenticated` 로 남고, 이전 사용자의 얼굴·음식 사진(수 MB)과 점수가
+  /// 화면에 그대로 있었다. 부르는 쪽이 `onTap: () => logout()` 이라 예외도
+  /// 아무 데도 안 남는다 — 사용자에게는 버튼이 그냥 안 눌리는 것으로 보인다.
+  ///
+  /// 사용자가 로그아웃을 눌렀으면 화면은 로그아웃된다. 지우기 실패를 성공으로
+  /// 위장하지는 않는다(디버그에 남긴다) — 다만 그 실패가 세션을 붙잡지 못하게
+  /// 한다. 토큰이 남더라도 다음 로그인이 덮어쓴다.
   Future<void> logout() async {
-    await ref.read(authRepositoryProvider).logout();
+    try {
+      await ref.read(authRepositoryProvider).logout();
+    } catch (error, stackTrace) {
+      if (kDebugMode) {
+        debugPrint('로그아웃 중 토큰 삭제 실패 — 세션은 끊는다: $error\n$stackTrace');
+      }
+    }
+
     _clearSession();
     state = const Unauthenticated();
   }

@@ -899,8 +899,12 @@ class _SkinCapturePageState extends ConsumerState<SkinCapturePage>
         // 그래서 아래에 붙이고 **간격이 먼저 줄어들게** 해서 블록을 최대한
         // 납작하게 만든다. 그만큼 타원과의 여유가 늘어난다. 화면이 클수록 여유가
         // 커지고, 아주 짧은 화면에서는 안내 문구가 타원 아래 테두리에 걸친다 —
-        // 셔터는 그때도 그 아래에 남는다. 좌표계가 갈리던 문제는 그대로 없다:
-        // 이제 어느 쪽도 화면 높이의 비율을 따로 쓰지 않는다.
+        // 셔터는 그때도 그 아래에 남는다.
+        //
+        // 좌표계가 갈리던 문제는 없어졌지만, **구조가 침범을 막는 것은 아니다.**
+        // 이 블록은 faceGuideOval 을 읽지 않는다 — 아래에 붙을 뿐이고, 타원과의
+        // 여유는 그 결과로 생기는 값이다. 지키는 것은
+        // `test/capture_bottom_bar_test.dart` 의 좌표 단언이다.
         SafeArea(
           top: false,
           child: CaptureBottomBar(

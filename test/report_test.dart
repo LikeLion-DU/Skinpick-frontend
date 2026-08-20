@@ -220,6 +220,50 @@ void main() {
       }
     });
 
+    testWidgets('상태를 스크린리더가 한 번만 읽는다', (tester) async {
+      // addTearDown 은 못 쓴다 — 핸들 검증이 tearDown 보다 먼저 돈다.
+      final handle = tester.ensureSemantics();
+
+      final report = daily('report_daily');
+      final graded =
+          report.concerns.where((concern) => concern.status != null).toList();
+      expect(graded, isNotEmpty);
+
+      await pump(
+        tester,
+        host(
+          _FakeReportRepository(daily: Success(report)),
+          DailyReportView(date: DateTime(2026, 8, 17)),
+        ),
+      );
+
+      // 칩은 고민 카드의 병합 노드 **안에서** 읽혀야 한다 — 떼어내면 어느 고민의
+      // 등급인지 알 수 없고, 카드는 등급 없이 읽힌다. 그래서 독립 노드를 찾지
+      // 않고 라벨 안에 들어 있는지를 본다(RegExp 매칭은 부분 일치다).
+      for (final concern in graded) {
+        final label = concern.status!.label;
+
+        // **고민 이름과 같은 노드에서 읽혀야 한다.** `container: true` 를 주면
+        // 칩이 카드의 병합 노드에서 떨어져 나와, 카드는 등급 없이 읽히고
+        // "상태 보통" 만 어느 고민 것인지 모른 채 따로 뜬다.
+        expect(
+          find.bySemanticsLabel(RegExp(
+              '${RegExp.escape(concern.label)}[\\s\\S]*상태 ${RegExp.escape(label)}')),
+          findsWidgets,
+          reason: '${concern.label} 의 등급이 카드와 떨어져 읽힌다',
+        );
+
+        // excludeSemantics 가 없으면 안쪽 Text 노드가 붙어 "상태 보통 / 보통" 이 된다.
+        expect(
+          find.bySemanticsLabel(RegExp('상태 $label\n$label')),
+          findsNothing,
+          reason: '등급이 두 번 읽힌다',
+        );
+      }
+
+      handle.dispose();
+    });
+
     testWidgets('주간 탭에서도 상태 칩이 산다 — 변화량까지 든 좁은 줄이다', (tester) async {
       // 같은 ConcernList 를 주간이 다시 쓴다. 그쪽 줄에는 변화량 라벨이 더 붙어
       // 가장 빡빡한 배치라, 여기서만 접히는 회귀가 나올 수 있다.
