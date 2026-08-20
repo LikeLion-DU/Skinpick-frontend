@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:skinplate/app/theme/app_theme.dart';
 import 'package:go_router/go_router.dart';
 import 'package:skinplate/app/router/app_router.dart';
 import 'package:skinplate/features/auth/domain/entities/auth_user.dart';
@@ -37,7 +38,8 @@ void main() {
       );
 
   Future<void> pump(WidgetTester tester, GoRouter router) async {
-    await tester.pumpWidget(MaterialApp.router(routerConfig: router));
+    await tester.pumpWidget(
+        MaterialApp.router(theme: AppTheme.light, routerConfig: router));
     await tester.pumpAndSettle();
   }
 

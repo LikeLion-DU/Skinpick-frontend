@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:skinplate/app/theme/app_theme.dart';
 import 'package:go_router/go_router.dart';
 import 'package:skinplate/app/router/app_router.dart';
 import 'package:skinplate/features/auth/domain/entities/auth_user.dart';
@@ -65,7 +66,7 @@ void main() {
     final router = buildRouter();
     await tester.pumpWidget(UncontrolledProviderScope(
       container: container,
-      child: MaterialApp.router(routerConfig: router),
+      child: MaterialApp.router(theme: AppTheme.light, routerConfig: router),
     ));
     // 로딩 화면의 단계 안내가 계속 돌아 pumpAndSettle 은 끝나지 않는다.
     await tester.pump(const Duration(milliseconds: 100));
@@ -102,7 +103,7 @@ void main() {
     final router = buildRouter();
     await tester.pumpWidget(UncontrolledProviderScope(
       container: container,
-      child: MaterialApp.router(routerConfig: router),
+      child: MaterialApp.router(theme: AppTheme.light, routerConfig: router),
     ));
     await tester.pump(const Duration(milliseconds: 100));
 

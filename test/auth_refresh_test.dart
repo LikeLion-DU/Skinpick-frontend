@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:skinplate/app/theme/app_theme.dart';
 import 'package:skinplate/app/router/app_router.dart';
 import 'package:skinplate/features/auth/domain/entities/auth_user.dart';
 import 'package:skinplate/features/auth/domain/entities/skin_profile.dart';
@@ -70,7 +71,7 @@ void main() {
     notifier.state = const Authenticated(user);
     await tester.pumpWidget(UncontrolledProviderScope(
       container: container,
-      child: MaterialApp.router(routerConfig: router),
+      child: MaterialApp.router(theme: AppTheme.light, routerConfig: router),
     ));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 100));
