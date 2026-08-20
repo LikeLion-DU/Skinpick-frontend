@@ -899,8 +899,11 @@ class _StatusPill extends StatelessWidget {
       // 태그들 뒤에 등급 낱말만 읽히면 또 하나의 태그로 들린다.
       //
       // `excludeSemantics` 가 없으면 안쪽 Text 의 노드가 그대로 합쳐져
-      // "상태 보통\n보통" 이 된다 — 스크린리더가 같은 말을 두 번 읽는다.
-      container: true,
+      // "상태 보통 / 보통" 이 된다 — 스크린리더가 같은 말을 두 번 읽는다.
+      //
+      // **`container` 를 켜지 마라.** 켜면 칩이 고민 카드의 병합 노드에서 떨어져
+      // 나와, 카드는 등급 없이 읽히고 "상태 보통" 만 어느 고민 것인지 모른 채
+      // 따로 뜬다. 등급은 그 고민 옆에서 읽혀야 한다.
       excludeSemantics: true,
       label: '상태 ${grade.label}',
       child: Pill(

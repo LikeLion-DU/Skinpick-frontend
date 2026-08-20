@@ -221,7 +221,9 @@ void main() {
     });
 
     testWidgets('상태를 스크린리더가 한 번만 읽는다', (tester) async {
+      // addTearDown 은 못 쓴다 — 핸들 검증이 tearDown 보다 먼저 돈다.
       final handle = tester.ensureSemantics();
+
       final report = daily('report_daily');
       final graded =
           report.concerns.where((concern) => concern.status != null).toList();
@@ -235,12 +237,25 @@ void main() {
         ),
       );
 
-      // excludeSemantics 가 없으면 안쪽 Text 노드가 합쳐져 "상태 보통\n보통" 이
-      // 된다 — 같은 말을 두 번 읽는다.
-      for (final label in graded.map((c) => c.status!.label).toSet()) {
-        expect(find.bySemanticsLabel('상태 $label'), findsWidgets);
+      // 칩은 고민 카드의 병합 노드 **안에서** 읽혀야 한다 — 떼어내면 어느 고민의
+      // 등급인지 알 수 없고, 카드는 등급 없이 읽힌다. 그래서 독립 노드를 찾지
+      // 않고 라벨 안에 들어 있는지를 본다(RegExp 매칭은 부분 일치다).
+      for (final concern in graded) {
+        final label = concern.status!.label;
+
+        // **고민 이름과 같은 노드에서 읽혀야 한다.** `container: true` 를 주면
+        // 칩이 카드의 병합 노드에서 떨어져 나와, 카드는 등급 없이 읽히고
+        // "상태 보통" 만 어느 고민 것인지 모른 채 따로 뜬다.
         expect(
-          find.bySemanticsLabel('상태 $label\n$label'),
+          find.bySemanticsLabel(RegExp(
+              '${RegExp.escape(concern.label)}[\\s\\S]*상태 ${RegExp.escape(label)}')),
+          findsWidgets,
+          reason: '${concern.label} 의 등급이 카드와 떨어져 읽힌다',
+        );
+
+        // excludeSemantics 가 없으면 안쪽 Text 노드가 붙어 "상태 보통 / 보통" 이 된다.
+        expect(
+          find.bySemanticsLabel(RegExp('상태 $label\n$label')),
           findsNothing,
           reason: '등급이 두 번 읽힌다',
         );

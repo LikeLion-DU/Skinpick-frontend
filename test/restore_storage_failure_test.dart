@@ -9,6 +9,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:skinplate/core/di/providers.dart';
 import 'package:skinplate/core/network/dio_client.dart';
+import 'package:skinplate/core/result/result.dart';
 import 'package:skinplate/core/storage/token_storage.dart';
 import 'package:skinplate/features/auth/domain/entities/auth_user.dart';
 import 'package:skinplate/features/auth/domain/repositories/auth_repository.dart';
@@ -21,13 +22,20 @@ import 'package:skinplate/features/auth/presentation/providers/auth_notifier.dar
 /// 잠긴 동안 키체인이 막힌다 — 분석 업로드(25~32초) 중에 화면을 잠그면 바로 그
 /// 상황이다. 흔하지 않지만 한 번 걸리면 그 사용자는 영구히 못 들어온다.
 ///
-/// **막는 자리가 넷이다. 하나만 막으면 반쪽이다.**
+/// **저장소를 만지는 자리마다 각자 답이 있다. 하나만 막으면 반쪽이다.**
 ///
+/// 읽기:
 /// - `TokenStorage.read()` 는 던진다 — "없다" 와 "못 읽는다" 는 다른 사실이다
 /// - `restore()` 가 받아서 로그인으로 보낸다 — 스플래시에 갇히지 않는다
 /// - `AuthInterceptor` 는 헤더 없이 보낸다 — 로그인 요청까지 막히지 않는다
 /// - `UnauthorizedInterceptor` 는 헤더 없이 나간 요청의 401 을 무시한다 —
 ///   자격 증명을 안 보낸 요청의 401 은 세션이 죽었다는 증거가 아니다
+///
+/// 삭제(한 번 빠뜨렸던 자리다 — 위 목록만 보고 다 막았다고 여겼다):
+/// - `UnauthorizedInterceptor` 의 `clear()` — 던지면 Dio 가 401 을 갈아치운다
+/// - `AuthNotifier.logout()` — 던지면 상태 전환이 통째로 건너뛰어진다
+///
+/// **새 자리를 추가하면 이 목록도 같이 늘려라.** 이 목록이 짧아서 삭제를 놓쳤다.
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
@@ -152,10 +160,8 @@ void main() {
 
     test('401 이 만료로 그대로 전달된다 — 저장소 오류가 덮어쓰지 않는다', () async {
       var signalled = false;
-      final dio =
-          DioClient(tokenStorage: undeletable, onUnauthorized: () => signalled = true)
-              .dio
-            ..httpClientAdapter = _Unauthorized();
+      final dio = dioWith(undeletable, _Unauthorized(),
+          onUnauthorized: () => signalled = true);
 
       // 인터셉터가 예외를 흘리면 Dio 가 원래 401 을 지우고
       // DioExceptionType.unknown 을 내보낸다 — mapToFailure 가 AuthFailure 를
@@ -170,18 +176,39 @@ void main() {
       expect(signalled, isTrue, reason: '삭제 실패가 만료 신호까지 삼켰다');
     });
 
+    test('만료 신호가 던져도 401 이 그대로 전달된다', () async {
+      // 신호는 `ref.read` 와 state 대입이라 Riverpod 이 감싸주지 않는다 —
+      // 컨테이너가 이미 버려졌으면(핫 리스타트·앱 종료) StateError 를 던진다.
+      // 그게 새면 clear() 때와 똑같이 Dio 가 401 을 갈아치운다.
+      final dio = dioWith(healthy, _Unauthorized(),
+          onUnauthorized: () => throw StateError('컨테이너가 이미 버려졌다'));
+
+      await expectLater(
+        dio.get<dynamic>('/skin/analyses'),
+        throwsA(isA<DioException>().having(
+            (error) => error.response?.statusCode, 'statusCode', 401)),
+      );
+    });
+
     test('로그아웃이 그래도 비인증으로 전환한다', () async {
+      const user = AuthUser(userId: 1, email: 'a@b.c', nickname: 'n');
       final made = ProviderContainer(overrides: [
         splashMinimumHoldProvider.overrideWithValue(Duration.zero),
         tokenStorageProvider.overrideWithValue(undeletable),
-        authRepositoryProvider.overrideWithValue(
-            const _LogoutFailsRepository()),
+        authRepositoryProvider
+            .overrideWithValue(const _LogoutFailsRepository(user)),
       ]);
       addTearDown(made.dispose);
       made.listen(authNotifierProvider, (_, __) {});
 
-      made.read(authNotifierProvider.notifier).state =
-          const Authenticated(AuthUser(userId: 1, email: 'a@b.c', nickname: 'n'));
+      // **복원이 먼저 끝나게 둔다.** 생성과 함께 도는 restore 도 결국
+      // 상태를 바꾸므로, 겹쳐 두면 logout 이 아무것도 안 해도 통과한다.
+      for (var i = 0; i < 200; i++) {
+        if (made.read(authNotifierProvider) is! AuthInitial) break;
+        await Future<void>.delayed(const Duration(milliseconds: 10));
+      }
+      expect(made.read(authNotifierProvider), isA<Authenticated>(),
+          reason: '복원이 세션을 세워야 로그아웃이 무엇을 바꾸는지 볼 수 있다');
 
       await made.read(authNotifierProvider.notifier).logout();
 
@@ -242,9 +269,18 @@ class _UndeletableSecureStorage extends FlutterSecureStorage {
       throw PlatformException(code: 'KeyStoreException', message: 'delete failed');
 }
 
-/// 로그아웃이 저장소 삭제에서 던지는 레포지토리.
+/// 세션은 정상으로 세우고 **로그아웃만** 저장소 삭제에서 던지는 레포지토리.
+///
+/// getMe 가 성공해야 복원이 Authenticated 를 세우고, 그래야 로그아웃이 실제로
+/// 무엇을 바꾸는지 볼 수 있다. 던지게 두면 복원도 Unauthenticated 로 끝나서
+/// logout 이 아무 일도 안 해도 테스트가 통과한다.
 class _LogoutFailsRepository implements AuthRepository {
-  const _LogoutFailsRepository();
+  const _LogoutFailsRepository(this.user);
+
+  final AuthUser user;
+
+  @override
+  Future<Result<AuthUser>> getMe() async => Success(user);
 
   @override
   Future<void> logout() =>

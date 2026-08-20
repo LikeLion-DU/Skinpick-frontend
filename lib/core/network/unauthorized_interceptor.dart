@@ -71,7 +71,15 @@ class UnauthorizedInterceptor extends Interceptor {
           debugPrint('토큰 삭제 실패 — 만료 처리는 그대로 진행한다: $error');
         }
       }
-      _onUnauthorized();
+
+      // 신호도 같은 이유로 감싼다. `ref.read` 와 state 대입은 Riverpod 이
+      // 감싸주지 않아서, 컨테이너가 이미 버려졌으면(핫 리스타트·앱 종료)
+      // StateError 를 그대로 던진다 — 그게 새면 401 이 또 사라진다.
+      try {
+        _onUnauthorized();
+      } catch (error) {
+        if (kDebugMode) debugPrint('만료 신호 실패: $error');
+      }
     }
     handler.next(err);
   }

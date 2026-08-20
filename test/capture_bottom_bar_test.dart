@@ -139,17 +139,24 @@ void main() {
     // 이 단언이 타원 침범까지 막아 주지는 않는다 — 그건 위 좌표 단언 몫이다.
     await pump(tester, sizes.first, 0, stage: FacePhotoType.front);
 
-    expect(
-      find.ancestor(
-        of: find.text('정면을 바라봐주세요'),
-        matching: find.descendant(
-          of: find.byType(CaptureBottomBar),
-          matching: find.byType(Column),
-        ),
-      ),
-      findsWidgets,
-      reason: '안내를 하단 블록 밖으로 다시 떼어냈다',
-    );
+    // **같은 Column 이어야 한다.** 각각 다른 Column 에 들어 있어도 "어떤 Column
+    // 의 자손" 은 참이라, 그것만 보면 블록이 둘로 쪼개져도 통과한다.
+    final columns = find
+        .descendant(
+            of: find.byType(CaptureBottomBar), matching: find.byType(Column))
+        .evaluate();
+    final shared = columns.where((column) {
+      bool has(Finder target) => find
+          .descendant(of: find.byWidget(column.widget), matching: target)
+          .evaluate()
+          .isNotEmpty;
+      return has(find.text('정면을 바라봐주세요')) &&
+          has(find.byType(CaptureShutter)) &&
+          has(find.text('갤러리에서 선택'));
+    });
+
+    expect(shared, isNotEmpty,
+        reason: '안내와 조작이 서로 다른 Column 으로 갈라졌다 — 겹침을 막던 구조가 사라진다');
   });
 
   testWidgets('셔터를 스크린리더가 읽는다', (tester) async {
